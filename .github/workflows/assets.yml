@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       photos:
-        description: "One per line: name url"
+        description: "name url ; name url ; ..."
         required: false
         default: ""
 
@@ -29,7 +29,7 @@ jobs:
           PHOTOS: ${{ github.event.inputs.photos }}
         run: |
           mkdir -p images raw
-          printf '%s\n' "$PHOTOS" | while read -r name url; do
+          printf '%s\n' "$PHOTOS" | tr ';' '\n' | while read -r name url; do
             [ -z "$name" ] && continue
             curl -sSfL -o "raw/$name.png" "$url"
           done
