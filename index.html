@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2313513a'/%3E%3Cpath d='M22 40 L50 18 L78 40' fill='none' stroke='%23f2ae1c' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ctext x='50' y='80' text-anchor='middle' font-family='Arial' font-weight='800' font-size='38' fill='%23fff'%3ETG%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="TECHगाँव AI Services">
+<meta property="og:description" content="Apps, websites and AI tools for small towns. Makers of FoodGaon (FOODगाँव). Haidergarh, Barabanki.">
+<meta property="og:url" content="https://techgaon.in/">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>TECHगाँव AI Services</title>
+<meta name="description" content="TechGaon AI Services, Haidergarh, Barabanki — apps, websites and AI tools for small towns. Makers of FoodGaon (FOODगाँव).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Mukta:wght@400;500;700;800&display=swap">
+<style>
+
+:root{
+  --leaf:#13513a;
+  --leaf-ink:#0c3a29;
+  --turmeric:#f2ae1c;
+  --clay:#e8461a;
+  --bg:#f7f8f3;
+  --surface:#ffffff;
+  --line:#dfe4da;
+  --fg:#1d2a22;
+  --muted:#5b6b60;
+  --on-leaf:#f4f7f1;
+  --display:"Rozha One", "Mukta", Georgia, serif;
+  --body:"Mukta", "Nirmala UI", "Noto Sans Devanagari", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --leaf:#1d6b4d; --leaf-ink:#0b241a; --turmeric:#f5bd42; --clay:#ff6a3d;
+  --bg:#101612; --surface:#18211b; --line:#2a362e; --fg:#e7ede8; --muted:#9fb0a4; --on-leaf:#f4f7f1;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --leaf:#1d6b4d; --leaf-ink:#0b241a; --turmeric:#f5bd42; --clay:#ff6a3d;
+  --bg:#101612; --surface:#18211b; --line:#2a362e; --fg:#e7ede8; --muted:#9fb0a4; --on-leaf:#f4f7f1;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:17px;line-height:1.6;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--leaf-ink)}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{text-wrap:balance;margin:0}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(1.7rem,4vw,2.3rem);line-height:1.2}
+h3{font-size:1.15rem;font-weight:800}
+p{margin:0}
+:focus-visible{outline:3px solid var(--turmeric);outline-offset:2px;border-radius:6px}
+
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--leaf-ink);color:var(--on-leaf)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:auto}
+.brand svg{width:42px;height:42px;flex:none}
+.wordmark{font-weight:800;font-size:1.25rem;letter-spacing:.02em;line-height:1}
+.wordmark b{font-family:var(--display);font-weight:400;color:var(--turmeric);letter-spacing:0;font-size:1.3rem}
+.wordmark small{display:block;font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;opacity:.8;margin-top:3px}
+.langs{display:flex;gap:4px;background:rgba(255,255,255,.08);padding:4px;border-radius:999px}
+.langs button{font:inherit;font-size:.85rem;font-weight:700;border:0;background:transparent;color:var(--on-leaf);padding:4px 10px;border-radius:999px;cursor:pointer}
+.langs button[aria-pressed="true"]{background:var(--turmeric);color:#2a1d00}
+
+
+.hero{background:var(--leaf);color:var(--on-leaf);position:relative;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:center;padding-block:48px 56px}
+.hero h1{font-family:var(--display);font-weight:400;font-size:clamp(2.1rem,6vw,3.4rem);line-height:1.12}
+.hero h1 em{font-style:normal;color:var(--turmeric)}
+.hero p.lead{margin-top:14px;font-size:1.12rem;max-width:34em;opacity:.92}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:700;text-decoration:none;padding:11px 18px;border-radius:12px;border:2px solid transparent;cursor:pointer}
+.btn.primary{background:var(--turmeric);color:#2a1d00}
+.btn.ghost{border-color:rgba(255,255,255,.45);color:var(--on-leaf)}
+.btn:hover{filter:brightness(1.06)}
+.hero-art{max-width:100%;justify-self:center}
+.hero-art svg{width:100%;max-width:340px;height:auto;display:block}
+.place{margin-top:18px;font-size:.92rem;opacity:.85;display:flex;gap:6px;align-items:center}
+
+
+section.block{padding-block:56px}
+.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--leaf)}
+:root[data-theme="dark"] .eyebrow{color:var(--turmeric)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .eyebrow{color:var(--turmeric)} }
+.sec-head{display:grid;gap:8px;margin-bottom:28px;max-width:40em}
+.sec-head p{color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.svc{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;gap:8px;align-content:start}
+.svc .ic{width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--turmeric) 22%,transparent);display:grid;place-items:center}
+.svc .ic svg{width:24px;height:24px;stroke:var(--fg);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.svc p{color:var(--muted)}
+
+
+.product{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px;border-top:6px solid var(--clay)}
+.product svg.fg{width:132px;height:132px;flex:none}
+.product .meta{display:grid;gap:10px;min-width:0}
+.tag{display:inline-block;font-size:.8rem;font-weight:800;padding:2px 10px;border-radius:999px;background:color-mix(in srgb,var(--clay) 14%,transparent);color:var(--clay);justify-self:start}
+.ticks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px;padding:0;margin:4px 0 0;list-style:none}
+.ticks li{padding-left:24px;position:relative}
+.ticks li::before{content:"";position:absolute;left:2px;top:.55em;width:12px;height:7px;border-left:3px solid #1e9e55;border-bottom:3px solid #1e9e55;transform:rotate(-45deg)}
+.product .btn.primary{background:var(--clay);color:#fff}
+.product .btn.ghost{border-color:var(--line);color:var(--fg)}
+
+
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;counter-reset:s;padding:0;margin:0;list-style:none}
+.steps li{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:6px}
+.steps li::before{content:counter(s);font-family:var(--display);font-size:1.6rem;color:var(--leaf);line-height:1}
+:root[data-theme="dark"] .steps li::before{color:var(--turmeric)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .steps li::before{color:var(--turmeric)} }
+.steps p{color:var(--muted);font-size:.95rem}
+
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.about p+p{margin-top:12px}
+.facts{display:grid;gap:10px;margin-top:18px}
+.fact{display:grid;grid-template-columns:8.5em 1fr;gap:10px;border-top:1px dashed var(--line);padding-top:10px}
+.fact span:first-child{color:var(--muted);font-size:.92rem}
+.contact-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;display:grid;gap:14px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.row .val{font-weight:700;font-variant-numeric:tabular-nums;user-select:all}
+.copy{font:inherit;font-size:.8rem;font-weight:700;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:8px;padding:2px 8px;cursor:pointer}
+form{display:grid;gap:10px}
+label{font-size:.9rem;font-weight:700}
+input,textarea,select{font:inherit;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+textarea{min-height:84px;resize:vertical}
+.wa{background:#1e9e55;color:#fff;justify-content:center}
+.note{font-size:.85rem;color:var(--muted)}
+
+
+.legal{display:none}
+body.show-legal main.home{display:none}
+body.show-legal .legal.active{display:block}
+.legal .wrap{max-width:780px;padding-block:40px 64px}
+.legal h1{font-family:var(--display);font-weight:400;font-size:clamp(1.8rem,5vw,2.4rem)}
+.legal h2{font-family:var(--body);font-weight:800;font-size:1.15rem;margin-top:26px}
+.legal p,.legal li{color:var(--fg)}
+.legal p{margin-top:10px}
+.legal ul{padding-left:1.2em}
+.legal .back{display:inline-block;margin-bottom:18px;font-weight:700;text-decoration:none;color:var(--muted)}
+.legal .upd{color:var(--muted);font-size:.9rem;margin-top:6px}
+.en-note{background:color-mix(in srgb,var(--turmeric) 18%,transparent);border-radius:10px;padding:8px 12px;font-size:.9rem;margin-top:14px}
+
+
+footer{background:var(--leaf-ink);color:var(--on-leaf);margin-top:24px}
+footer .wrap{padding-block:32px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:24px}
+footer h4{margin:0 0 8px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+footer ul{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+footer a{text-decoration:none;opacity:.9}
+footer a:hover{text-decoration:underline}
+.copyline{grid-column:1/-1;border-top:1px solid rgba(255,255,255,.15);padding-top:14px;font-size:.85rem;opacity:.75}
+
+@media (max-width:860px){
+  .hero .wrap,.split{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .product{grid-template-columns:1fr}
+  footer .wrap{grid-template-columns:1fr 1fr}
+  footer .wrap > div:first-child{grid-column:1/-1}
+  .hero-art{order:-1}
+  .hero-art svg{max-width:220px}
+}
+@media (max-width:480px){
+  .steps,.ticks{grid-template-columns:1fr}
+  .fact{grid-template-columns:1fr;gap:0}
+  .langs button{padding:4px 8px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .hero-art .rise{animation:rise 3.2s ease-in-out infinite}
+  .hero-art .rise.b{animation-delay:.6s}.hero-art .rise.c{animation-delay:1.2s}
+  @keyframes rise{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+}
+</style>
+
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="logo" viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="22" fill="#13513a"/>
+      <path d="M22 34 L50 16 L78 34" fill="none" stroke="#f2ae1c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="50" y="58" text-anchor="middle" font-family="Mukta, Arial, sans-serif" font-weight="800" font-size="24" fill="#ffffff" letter-spacing="1">TECH</text>
+      <text x="50" y="84" text-anchor="middle" font-family="Rozha One, Mukta, serif" font-size="24" fill="#f2ae1c">गाँव</text>
+      <circle cx="84" cy="84" r="5" fill="#7fd6a6"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="TECHगाँव AI Services home">
+      <svg aria-hidden="true"><use href="#logo"/></svg>
+      <span class="wordmark">TECH<b>गाँव</b><small>AI Services</small></span>
+    </a>
+    <div class="langs" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="hi" aria-pressed="false">हिंदी</button>
+      <button type="button" data-lang="aw" aria-pressed="false">अवधी</button>
+      <button type="button" data-lang="bh" aria-pressed="false">भोजपुरी</button>
+    </div>
+  </div>
+</header>
+
+<main class="home">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1 data-t="heroTitle">Technology made for <em>small towns</em>.</h1>
+        <p class="lead" data-t="heroLead">We build apps, websites and AI tools for local shops, restaurants and businesses — in your language, at a price that makes sense for a small town.</p>
+        <div class="cta">
+          <a class="btn primary" href="#contact" data-t="ctaTalk">Talk to us</a>
+          <a class="btn ghost" href="#foodgaon" data-t="ctaFood">See FoodGaon</a>
+        </div>
+        <p class="place">📍 <span data-t="place">Haidergarh, Barabanki, Uttar Pradesh</span></p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 320 260">
+          <rect x="20" y="40" width="280" height="200" rx="26" fill="rgba(255,255,255,.07)"/>
+
+          <path d="M50 190 L90 150 L130 190 Z" fill="#f2ae1c"/>
+          <rect x="62" y="190" width="56" height="34" fill="#f4f7f1" opacity=".9"/>
+          <rect x="83" y="202" width="14" height="22" fill="#13513a"/>
+          <path d="M140 196 L172 164 L204 196 Z" fill="#f2ae1c" opacity=".85"/>
+          <rect x="150" y="196" width="44" height="28" fill="#f4f7f1" opacity=".8"/>
+
+          <rect x="214" y="92" width="72" height="132" rx="12" fill="#0c3a29" stroke="#f4f7f1" stroke-width="3"/>
+          <rect x="224" y="110" width="52" height="10" rx="5" fill="#f2ae1c"/>
+          <rect x="224" y="128" width="52" height="24" rx="6" fill="#f4f7f1" opacity=".85"/>
+          <rect x="224" y="158" width="52" height="24" rx="6" fill="#f4f7f1" opacity=".55"/>
+          <circle cx="250" cy="206" r="6" fill="#f4f7f1"/>
+
+          <g fill="none" stroke="#f2ae1c" stroke-width="4" stroke-linecap="round">
+            <path class="rise" d="M232 76 Q250 62 268 76"/>
+            <path class="rise b" d="M222 62 Q250 40 278 62"/>
+            <path class="rise c" d="M212 48 Q250 18 288 48"/>
+          </g>
+
+          <path d="M40 224 H290" stroke="#7fd6a6" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="100" cy="92" r="16" fill="#f2ae1c" opacity=".9"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="services">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" data-t="svcEyebrow">What we do</span>
+        <h2 data-t="svcTitle">Your business, on every phone in town</h2>
+        <p data-t="svcLead">From the first idea to the app in customers' hands — and looking after it every day after.</p>
+      </div>
+      <div class="grid3">
+        <div class="svc">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg></div>
+          <h3 data-t="s1t">Mobile apps</h3>
+          <p data-t="s1d">Android apps for shops, restaurants and services — ordering, bookings, billing and payments by UPI.</p>
+        </div>
+        <div class="svc">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4M2 9h20"/></svg></div>
+          <h3 data-t="s2t">Websites</h3>
+          <p data-t="s2d">Fast, simple websites with your own domain and email, that work well on cheap phones and slow internet.</p>
+        </div>
+        <div class="svc">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l2.2 5.3L20 9l-4.4 3.8L17 18l-5-3-5 3 1.4-5.2L4 9l5.8-.7z"/></svg></div>
+          <h3 data-t="s3t">AI tools</h3>
+          <p data-t="s3d">AI that saves real work — read a menu card from a photo, write Hindi descriptions, prepare daily reports.</p>
+        </div>
+        <div class="svc">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></svg></div>
+          <h3 data-t="s4t">Maintenance & support</h3>
+          <p data-t="s4d">Updates, fixes, backups and a phone number that answers. We stay with you after launch.</p>
+        </div>
+        <div class="svc">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg></div>
+          <h3 data-t="s5t">Hindi & local languages</h3>
+          <p data-t="s5d">Apps that speak Hindi, Awadhi and Bhojpuri, so everyone in the family can use them.</p>
+        </div>
+        <div class="svc">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h3 data-t="s6t">Low running cost</h3>
+          <p data-t="s6d">We build on reliable free and low-cost cloud services, so a small business is not stuck with big monthly bills.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="foodgaon" style="padding-top:8px">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" data-t="prodEyebrow">Our first product</span>
+        <h2 data-t="prodTitle">FoodGaon — the food app for our own town</h2>
+      </div>
+      <div class="product">
+        <svg class="fg" viewBox="0 0 100 100" aria-label="FOODगाँव logo" role="img">
+          <rect width="100" height="100" rx="22" fill="#ff7a1f"/>
+          <path d="M22 34 L50 16 L78 34" fill="none" stroke="#ffd23f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="50" y="58" text-anchor="middle" font-family="Mukta, Arial, sans-serif" font-weight="800" font-size="24" fill="#ffffff" letter-spacing="1">FOOD</text>
+          <text x="50" y="84" text-anchor="middle" font-family="Rozha One, Mukta, serif" font-size="24" fill="#ffd23f">गाँव</text>
+          <rect x="78" y="78" width="12" height="12" rx="2" fill="#fff" stroke="#1e9e55" stroke-width="2"/>
+          <circle cx="84" cy="84" r="3" fill="#1e9e55"/>
+        </svg>
+        <div class="meta">
+          <span class="tag" data-t="prodTag">100% pure veg · Launching in Haidergarh</span>
+          <p data-t="prodLead">Order from trusted local restaurants within 5 km. The restaurant cooks, packs and delivers with its own delivery staff.</p>
+          <ul class="ticks">
+            <li data-t="p1">Free delivery</li>
+            <li data-t="p2">Prices include GST — no surprise charges</li>
+            <li data-t="p3">Pay the restaurant directly by UPI or cash</li>
+            <li data-t="p4">Track your order live</li>
+            <li data-t="p5">Kitchen notes in Hindi</li>
+            <li data-t="p6">Only FSSAI- and GST-registered restaurants</li>
+          </ul>
+          <div class="cta">
+            <a class="btn primary" href="https://github.com/bhanupandey77-oss/petpyaar-app/releases/latest" target="_blank" rel="noopener" data-t="prodApk">Download Android app</a>
+            <a class="btn ghost" href="#partner" data-t="prodPartner">List your restaurant</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="partner" style="padding-top:8px">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" data-t="howEyebrow">For restaurants</span>
+        <h2 data-t="howTitle">How FoodGaon works with your restaurant</h2>
+      </div>
+      <ol class="steps">
+        <li><h3 data-t="h1t">Join</h3><p data-t="h1d">Share your FSSAI and GST details. We set up your menu — even from a photo of your menu card.</p></li>
+        <li><h3 data-t="h2t">Get orders</h3><p data-t="h2d">New orders ring loudly on your phone. Accept and set the cooking time.</p></li>
+        <li><h3 data-t="h3t">Deliver</h3><p data-t="h3d">Your own delivery boy picks it up. The customer pays you directly.</p></li>
+        <li><h3 data-t="h4t">Weekly hisab</h3><p data-t="h4d">Every week you see a clear statement and pay a small 4.90% commission.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="about" style="padding-top:8px">
+    <div class="wrap split">
+      <div class="about">
+        <div class="sec-head" style="margin-bottom:14px">
+          <span class="eyebrow" data-t="abEyebrow">About us</span>
+          <h2 data-t="abTitle">Built in a small town, for small towns</h2>
+        </div>
+        <p data-t="ab1">TechGaon AI Services is a technology firm from Haidergarh in Barabanki district. Big-city apps are often not made for the shops and families of a tehsil town. We build for them.</p>
+        <p data-t="ab2">We keep things simple, honest about money, and easy to use in your own language.</p>
+        <div class="facts">
+          <div class="fact"><span data-t="fFirm">Firm</span><span>TechGaon AI Services</span></div>
+          <div class="fact"><span data-t="fOwner">Proprietor</span><span>Suraj Bhan Pandey</span></div>
+          <div class="fact"><span data-t="fAddr">Address</span><span data-t="addr">Haidergarh, District Barabanki, Uttar Pradesh – 227301</span></div>
+          <div class="fact"><span data-t="fProd">Products</span><span>FoodGaon (FOODगाँव)</span></div>
+        </div>
+      </div>
+
+      <div class="contact-card" id="contact">
+        <div class="sec-head" style="margin-bottom:0">
+          <span class="eyebrow" data-t="ctEyebrow">Contact</span>
+          <h2 data-t="ctTitle">Talk to us</h2>
+        </div>
+        <div class="row"><span>✉️</span><span class="val" id="v-mail">contact@techgaon.in</span><button class="copy" type="button" data-copy="v-mail" data-t="copy">Copy</button></div>
+        <div class="row"><span>📞</span><span class="val" id="v-ph">+91 91292 03268</span><button class="copy" type="button" data-copy="v-ph" data-t="copy">Copy</button></div>
+        <p class="note" data-t="ctNote">Call, WhatsApp or Telegram on the same number.</p>
+        <form id="enq">
+          <div><label for="f-name" data-t="fName">Your name</label><input id="f-name" required autocomplete="name"></div>
+          <div><label for="f-type" data-t="fType">You are</label>
+            <select id="f-type">
+              <option value="restaurant" data-t="oRest">A restaurant owner</option>
+              <option value="app" data-t="oApp">Looking for an app or website</option>
+              <option value="customer" data-t="oCust">A FoodGaon customer</option>
+              <option value="other" data-t="oOther">Something else</option>
+            </select></div>
+          <div><label for="f-msg" data-t="fMsg">Message</label><textarea id="f-msg" required></textarea></div>
+          <a class="btn wa" id="wa-send" href="https://wa.me/919129203268" target="_blank" rel="noopener" data-t="fSend">Send on WhatsApp</a>
+          <p class="note" data-t="fNote">This opens WhatsApp with your message ready to send.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+<article class="legal" id="privacy-policy">
+  <div class="wrap">
+    <a class="back" href="#" data-t="back">← Back to home</a>
+    <h1>Privacy Policy</h1>
+    <p class="upd">Effective date: 29 October 2026</p>
+    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
+    <p>This policy explains how TechGaon AI Services ("TechGaon", "we") collects and uses information when you use our website techgaon.in and our app FoodGaon (FOODगाँव).</p>
+    <h2>1. Information we collect</h2>
+    <ul>
+      <li><b>Account details:</b> your name and mobile number; your email address if you sign in with Google.</li>
+      <li><b>Order details:</b> delivery address, the location you pick on the map, items ordered, kitchen notes, payment method and order status.</li>
+      <li><b>Reviews and favourites:</b> ratings, reviews and dishes you save.</li>
+      <li><b>Restaurant partners:</b> shop name, address, FSSAI and GST numbers, UPI ID, menu and photos.</li>
+      <li><b>Delivery partners:</b> name, mobile number, photo, vehicle details, UPI ID, and live location only while they are marked online.</li>
+      <li><b>Device information:</b> basic technical data needed to run the app and send order notifications.</li>
+    </ul>
+    <h2>2. How we use it</h2>
+    <ul>
+      <li>To place, prepare, deliver and track your orders.</li>
+      <li>To show you your bills, order history and statements.</li>
+      <li>To calculate GST and settlements between restaurants and TechGaon, as required by law.</li>
+      <li>To provide support and keep the service safe.</li>
+    </ul>
+    <h2>3. Who we share it with</h2>
+    <ul>
+      <li>The restaurant you order from and its delivery person receive your name, phone number, address and order.</li>
+      <li>Our service providers: Google Firebase (login, database, hosting) and Google's AI services (used to read menu photos uploaded by restaurants).</li>
+      <li>Government authorities when the law requires it.</li>
+    </ul>
+    <p>We do not sell your personal information.</p>
+    <h2>4. Payments</h2>
+    <p>You pay the restaurant directly through your own UPI app or in cash. TechGaon does not collect or store your card, bank or UPI PIN details.</p>
+    <h2>5. How long we keep it</h2>
+    <p>We keep your account while it is active. Invoices and tax records are kept for as long as Indian GST law requires, even after an account is deleted.</p>
+    <h2>6. Your choices</h2>
+    <p>You can update your name in the app, and you can ask us to delete your account at any time. See <a href="#delete-account">Delete your account</a>.</p>
+    <h2>7. Children</h2>
+    <p>FoodGaon is meant for users aged 18 and above, or for younger users with a parent or guardian.</p>
+    <h2>8. Grievance officer</h2>
+    <p>Suraj Bhan Pandey, TechGaon AI Services, Haidergarh, District Barabanki, Uttar Pradesh – 227301. Email: contact@techgaon.in · Phone: +91 91292 03268. We reply to complaints within 15 days.</p>
+    <h2>9. Changes</h2>
+    <p>If we change this policy, we will update the date above and, for important changes, tell you in the app.</p>
+  </div>
+</article>
+
+<article class="legal" id="terms">
+  <div class="wrap">
+    <a class="back" href="#" data-t="back">← Back to home</a>
+    <h1>Terms of Use</h1>
+    <p class="upd">Effective date: 29 October 2026</p>
+    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
+    <h2>1. About the service</h2>
+    <p>FoodGaon is an online platform run by TechGaon AI Services that connects customers with local restaurants. The restaurant prepares, packs and delivers the food. TechGaon acts as the e-commerce operator.</p>
+    <h2>2. Your account</h2>
+    <p>You log in with your mobile number or Google account. Keep access to your phone and account safe. You are responsible for orders placed from your account.</p>
+    <h2>3. Prices and GST</h2>
+    <p>Menu prices include GST. Delivery is free unless the app shows otherwise before you order. Under section 9(5) of the CGST Act, TechGaon pays the GST on restaurant services ordered through FoodGaon.</p>
+    <h2>4. Orders and cancellation</h2>
+    <ul>
+      <li>You can cancel an order only before the restaurant accepts it.</li>
+      <li>A restaurant may reject an order, for example if an item is sold out or you are outside its delivery area.</li>
+      <li>Delivery times shown are estimates.</li>
+    </ul>
+    <h2>5. Payments</h2>
+    <p>You pay the restaurant directly by UPI or cash on delivery. Any refund is made by the restaurant, as explained in our <a href="#refund-policy">Refund Policy</a>.</p>
+    <h2>6. Restaurants</h2>
+    <p>Restaurants are responsible for the quality, hygiene, quantity and labelling of their food and for holding valid FSSAI and GST registrations. FoodGaon lists only vegetarian food.</p>
+    <h2>7. Fair use</h2>
+    <p>Do not misuse the app, place fake orders, abuse delivery staff, or post false or offensive reviews. We may suspend accounts that do.</p>
+    <h2>8. Liability</h2>
+    <p>We work to keep FoodGaon running smoothly but cannot promise it will always be available or error-free. To the extent the law allows, TechGaon's liability for any order is limited to the value of that order.</p>
+    <h2>9. Law and disputes</h2>
+    <p>These terms are governed by the laws of India. Courts in Barabanki, Uttar Pradesh have jurisdiction. Please contact us first — most problems can be solved with a phone call.</p>
+    <h2>10. Contact</h2>
+    <p>contact@techgaon.in · +91 91292 03268</p>
+  </div>
+</article>
+
+<article class="legal" id="refund-policy">
+  <div class="wrap">
+    <a class="back" href="#" data-t="back">← Back to home</a>
+    <h1>Refund &amp; Cancellation Policy</h1>
+    <p class="upd">Effective date: 29 October 2026</p>
+    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
+    <h2>1. Cancelling an order</h2>
+    <p>You can cancel from the app until the restaurant accepts the order. After that, the food is being prepared and the order cannot be cancelled from the app.</p>
+    <h2>2. When you get a refund</h2>
+    <p>If you paid by UPI in advance and:</p>
+    <ul>
+      <li>you cancelled before the restaurant accepted, or</li>
+      <li>the restaurant rejected or could not deliver the order,</li>
+    </ul>
+    <p>the restaurant will return the full amount to the same UPI account within 7 working days.</p>
+    <h2>3. Wrong, missing or damaged items</h2>
+    <p>Tell us within 24 hours of delivery with a photo, through WhatsApp or email. After checking with the restaurant, you will get a replacement or a refund for the affected items.</p>
+    <h2>4. Cash orders</h2>
+    <p>Cash is paid only on delivery, so a cancelled cash order needs no refund.</p>
+    <h2>5. Who pays the refund</h2>
+    <p>Your payment goes straight to the restaurant, so the restaurant makes the refund. TechGaon follows up with the restaurant until the matter is settled.</p>
+    <h2>6. Contact</h2>
+    <p>contact@techgaon.in · WhatsApp +91 91292 03268</p>
+  </div>
+</article>
+
+<article class="legal" id="delete-account">
+  <div class="wrap">
+    <a class="back" href="#" data-t="back">← Back to home</a>
+    <h1>Delete your FoodGaon account</h1>
+    <p class="upd">TechGaon AI Services · FoodGaon (FOODगाँव)</p>
+    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
+    <h2>How to ask</h2>
+    <p>Send a message from your registered mobile number, or an email, saying <b>"Delete my FoodGaon account"</b> along with your registered mobile number:</p>
+    <ul>
+      <li>WhatsApp: +91 91292 03268</li>
+      <li>Email: contact@techgaon.in</li>
+    </ul>
+    <p>We will confirm and delete your account within 30 days.</p>
+    <h2>What gets deleted</h2>
+    <ul>
+      <li>Your name, phone number, email and saved addresses</li>
+      <li>Your favourites and kitchen notes</li>
+      <li>Your reviews (or we remove your name from them)</li>
+    </ul>
+    <h2>What we must keep</h2>
+    <p>Invoices and order records needed for GST are kept for the period Indian tax law requires. They are not used for anything else.</p>
+  </div>
+</article>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand" style="margin:0 0 10px">
+        <svg aria-hidden="true"><use href="#logo"/></svg>
+        <span class="wordmark">TECH<b>गाँव</b><small>AI Services</small></span>
+      </div>
+      <p style="opacity:.85;font-size:.95rem" data-t="addr">Haidergarh, District Barabanki, Uttar Pradesh – 227301</p>
+    </div>
+    <div>
+      <h4 data-t="ftCo">Company</h4>
+      <ul>
+        <li><a href="#services" data-t="ftSvc">Services</a></li>
+        <li><a href="#foodgaon">FoodGaon</a></li>
+        <li><a href="#about" data-t="ftAbout">About</a></li>
+        <li><a href="#contact" data-t="ftContact">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 data-t="ftLegal">Legal</h4>
+      <ul>
+        <li><a href="#privacy-policy">Privacy Policy</a></li>
+        <li><a href="#terms">Terms of Use</a></li>
+        <li><a href="#refund-policy">Refund Policy</a></li>
+        <li><a href="#delete-account">Delete account</a></li>
+      </ul>
+    </div>
+    <p class="copyline">© 2026 TechGaon AI Services · techgaon.in</p>
+  </div>
+</footer>
+
+<script>
+const T = {
+ heroTitle:["Technology made for <em>small towns</em>.","<em>छोटे शहरों</em> के लिए बनी तकनीक।","<em>छोटे कस्बन</em> खातिर बनी तकनीक।","<em>छोट शहरन</em> खातिर बनल तकनीक।"],
+ heroLead:["We build apps, websites and AI tools for local shops, restaurants and businesses — in your language, at a price that makes sense for a small town.",
+  "हम स्थानीय दुकानों, रेस्टोरेंट और व्यापारियों के लिए ऐप, वेबसाइट और AI टूल बनाते हैं — आपकी भाषा में, छोटे शहर के हिसाब से सही दाम पर।",
+  "हम इलाके की दुकानन, रेस्टोरेंट अउर कारोबारिन खातिर ऐप, वेबसाइट अउर AI टूल बनाइत है — आपन बोली मा, कस्बा के हिसाब से ठीक दाम पर।",
+  "हमनी के इलाका के दोकान, रेस्टोरेंट आ कारोबारी लोग खातिर ऐप, वेबसाइट आ AI टूल बनाइला — रउआ भाषा में, छोट शहर के हिसाब से ठीक दाम पर।"],
+ ctaTalk:["Talk to us","हमसे बात करें","हमसे बात करौ","हमनी से बात करीं"],
+ ctaFood:["See FoodGaon","FoodGaon देखें","FoodGaon देखौ","FoodGaon देखीं"],
+ place:["Haidergarh, Barabanki, Uttar Pradesh","हैदरगढ़, बाराबंकी, उत्तर प्रदेश","हैदरगढ़, बाराबंकी, उत्तर प्रदेश","हैदरगढ़, बाराबंकी, उत्तर प्रदेश"],
+ svcEyebrow:["What we do","हम क्या करते हैं","हम का करित है","हमनी के का करीले"],
+ svcTitle:["Your business, on every phone in town","आपका कारोबार, शहर के हर फ़ोन पर","आपन कारोबार, कस्बा के हर फ़ोन पर","रउआ कारोबार, शहर के हर फ़ोन पर"],
+ svcLead:["From the first idea to the app in customers' hands — and looking after it every day after.","पहले विचार से लेकर ग्राहक के हाथ में ऐप तक — और उसके बाद हर दिन उसकी देखभाल।","पहिले बिचार से लइके ग्राहक के हाथे मा ऐप तक — अउर ओकरे बाद रोज़ ओकर देखभाल।","पहिला बिचार से ले के ग्राहक के हाथ में ऐप ले — आ ओकरा बाद रोज़ ओकर देखभाल।"],
+ s1t:["Mobile apps","मोबाइल ऐप","मोबाइल ऐप","मोबाइल ऐप"],
+ s1d:["Android apps for shops, restaurants and services — ordering, bookings, billing and payments by UPI.","दुकान, रेस्टोरेंट और सेवाओं के लिए Android ऐप — ऑर्डर, बुकिंग, बिल और UPI से भुगतान।","दुकान, रेस्टोरेंट अउर सेवन खातिर Android ऐप — ऑर्डर, बुकिंग, बिल अउर UPI से भुगतान।","दोकान, रेस्टोरेंट आ सेवा खातिर Android ऐप — ऑर्डर, बुकिंग, बिल आ UPI से भुगतान।"],
+ s2t:["Websites","वेबसाइट","वेबसाइट","वेबसाइट"],
+ s2d:["Fast, simple websites with your own domain and email, that work well on cheap phones and slow internet.","आपके अपने डोमेन और ईमेल के साथ तेज़, सरल वेबसाइट — जो सस्ते फ़ोन और धीमे इंटरनेट पर भी अच्छी चलें।","आपन डोमेन अउर ईमेल के साथ तेज़, सीधी वेबसाइट — जउन सस्ते फ़ोन अउर धीमे नेट पर भी बढ़िया चलै।","रउआ आपन डोमेन आ ईमेल के साथे तेज़, सीधा वेबसाइट — जवन सस्ता फ़ोन आ धीमा नेट पर भी बढ़िया चले।"],
+ s3t:["AI tools","AI टूल","AI टूल","AI टूल"],
+ s3d:["AI that saves real work — read a menu card from a photo, write Hindi descriptions, prepare daily reports.","ऐसा AI जो सच में काम बचाए — फ़ोटो से मेन्यू कार्ड पढ़ना, हिंदी विवरण लिखना, रोज़ की रिपोर्ट बनाना।","अइसन AI जउन सही मा काम बचावै — फ़ोटो से मेन्यू कार्ड पढ़ब, हिंदी मा बिवरन लिखब, रोज़ के रिपोर्ट बनाउब।","अइसन AI जवन सचहूँ काम बचावे — फ़ोटो से मेन्यू कार्ड पढ़ल, हिंदी में बिवरन लिखल, रोज़ के रिपोर्ट बनावल।"],
+ s4t:["Maintenance & support","देखरेख और सहायता","देखरेख अउर मदद","देखरेख आ मदद"],
+ s4d:["Updates, fixes, backups and a phone number that answers. We stay with you after launch.","अपडेट, सुधार, बैकअप और एक फ़ोन नंबर जो उठता है। शुरुआत के बाद भी हम आपके साथ रहते हैं।","अपडेट, सुधार, बैकअप अउर एक फ़ोन नंबर जउन उठत है। सुरू होए के बादौ हम आपके साथ रहित है।","अपडेट, सुधार, बैकअप आ एगो फ़ोन नंबर जवन उठेला। शुरू भइला के बादो हमनी के रउआ साथे रहिले।"],
+ s5t:["Hindi & local languages","हिंदी और स्थानीय भाषाएँ","हिंदी अउर इलाके के बोली","हिंदी आ इलाका के बोली"],
+ s5d:["Apps that speak Hindi, Awadhi and Bhojpuri, so everyone in the family can use them.","हिंदी, अवधी और भोजपुरी बोलने वाले ऐप, ताकि परिवार का हर सदस्य इन्हें चला सके।","हिंदी, अवधी अउर भोजपुरी बोलै वाले ऐप, ताकि घर के सब जने इनका चलाय सकैं।","हिंदी, अवधी आ भोजपुरी बोले वाला ऐप, ताकि घर के सब लोग एकरा के चला सके।"],
+ s6t:["Low running cost","कम चालू खर्च","कम चालू खर्चा","कम चालू खरचा"],
+ s6d:["We build on reliable free and low-cost cloud services, so a small business is not stuck with big monthly bills.","हम भरोसेमंद मुफ़्त और सस्ती क्लाउड सेवाओं पर बनाते हैं, ताकि छोटे कारोबार पर बड़ा मासिक बिल न आए।","हम भरोसे वाली मुफ़्त अउर सस्ती क्लाउड सेवन पर बनाइत है, ताकि छोटे कारोबार पर बड़ा महीनवारी बिल न आवै।","हमनी के भरोसा वाला मुफ़्त आ सस्ता क्लाउड सेवा पर बनाइला, ताकि छोट कारोबार पर बड़ महीनवारी बिल ना आवे।"],
+ prodEyebrow:["Our first product","हमारा पहला प्रोडक्ट","हमार पहिला प्रोडक्ट","हमनी के पहिला प्रोडक्ट"],
+ prodTitle:["FoodGaon — the food app for our own town","FoodGaon — हमारे अपने शहर का फ़ूड ऐप","FoodGaon — हमरे आपन कस्बा के फ़ूड ऐप","FoodGaon — हमनी के आपन शहर के फ़ूड ऐप"],
+ prodTag:["100% pure veg · Launching in Haidergarh","100% शुद्ध शाकाहारी · हैदरगढ़ में जल्द शुरू","100% सुद्ध साकाहारी · हैदरगढ़ मा जल्दी सुरू","100% शुद्ध शाकाहारी · हैदरगढ़ में जल्दी शुरू"],
+ prodLead:["Order from trusted local restaurants within 5 km. The restaurant cooks, packs and delivers with its own delivery staff.","5 किमी के अंदर भरोसेमंद स्थानीय रेस्टोरेंट से ऑर्डर करें। रेस्टोरेंट ख़ुद बनाता है, पैक करता है और अपने डिलीवरी वाले से पहुँचाता है।","5 किमी के भीतर भरोसे वाले इलाके के रेस्टोरेंट से ऑर्डर करौ। रेस्टोरेंट खुदै बनावत है, पैक करत है अउर आपन डिलीवरी वाले से पहुँचावत है।","5 किमी के भीतर भरोसा वाला इलाका के रेस्टोरेंट से ऑर्डर करीं। रेस्टोरेंट खुदे बनावेला, पैक करेला आ आपन डिलीवरी वाला से पहुँचावेला।"],
+ p1:["Free delivery","मुफ़्त डिलीवरी","मुफ़्त डिलीवरी","मुफ़्त डिलीवरी"],
+ p2:["Prices include GST — no surprise charges","दाम में GST शामिल — कोई छिपा खर्च नहीं","दाम मा GST सामिल — कउनो छुपा खर्चा नाहीं","दाम में GST शामिल — कवनो छुपल खरचा ना"],
+ p3:["Pay the restaurant directly by UPI or cash","रेस्टोरेंट को सीधे UPI या नकद से भुगतान","रेस्टोरेंट का सीधे UPI या नगद से भुगतान","रेस्टोरेंट के सीधे UPI भा नगद से भुगतान"],
+ p4:["Track your order live","अपना ऑर्डर लाइव देखें","आपन ऑर्डर लाइव देखौ","आपन ऑर्डर लाइव देखीं"],
+ p5:["Kitchen notes in Hindi","रसोई के लिए हिंदी में निर्देश","रसोई खातिर हिंदी मा बात","रसोई खातिर हिंदी में बात"],
+ p6:["Only FSSAI- and GST-registered restaurants","सिर्फ़ FSSAI और GST पंजीकृत रेस्टोरेंट","बस FSSAI अउर GST पंजीकृत रेस्टोरेंट","खाली FSSAI आ GST पंजीकृत रेस्टोरेंट"],
+ prodApk:["Download Android app","Android ऐप डाउनलोड करें","Android ऐप डाउनलोड करौ","Android ऐप डाउनलोड करीं"],
+ prodPartner:["List your restaurant","अपना रेस्टोरेंट जोड़ें","आपन रेस्टोरेंट जोड़ौ","आपन रेस्टोरेंट जोड़ीं"],
+ howEyebrow:["For restaurants","रेस्टोरेंट के लिए","रेस्टोरेंट खातिर","रेस्टोरेंट खातिर"],
+ howTitle:["How FoodGaon works with your restaurant","FoodGaon आपके रेस्टोरेंट के साथ कैसे काम करता है","FoodGaon आपके रेस्टोरेंट के साथ कइसे काम करत है","FoodGaon रउआ रेस्टोरेंट के साथे कइसे काम करेला"],
+ h1t:["Join","जुड़ें","जुड़ौ","जुड़ीं"],
+ h1d:["Share your FSSAI and GST details. We set up your menu — even from a photo of your menu card.","अपना FSSAI और GST बताएँ। आपका मेन्यू हम लगा देंगे — मेन्यू कार्ड की फ़ोटो से भी।","आपन FSSAI अउर GST बतावौ। आपके मेन्यू हम लगाय देब — मेन्यू कार्ड के फ़ोटो से भी।","आपन FSSAI आ GST बताईं। रउआ मेन्यू हमनी के लगा देब — मेन्यू कार्ड के फ़ोटो से भी।"],
+ h2t:["Get orders","ऑर्डर पाएँ","ऑर्डर पावौ","ऑर्डर पाईं"],
+ h2d:["New orders ring loudly on your phone. Accept and set the cooking time.","नया ऑर्डर आते ही फ़ोन पर ज़ोर से घंटी बजती है। स्वीकार करें और पकाने का समय चुनें।","नवा ऑर्डर आवत ही फ़ोन पर जोर से घंटी बजत है। मंजूर करौ अउर पकावै के समय चुनौ।","नया ऑर्डर आवते फ़ोन पर ज़ोर से घंटी बाजेला। मंजूर करीं आ पकावे के समय चुनीं।"],
+ h3t:["Deliver","पहुँचाएँ","पहुँचावौ","पहुँचाईं"],
+ h3d:["Your own delivery boy picks it up. The customer pays you directly.","आपका अपना डिलीवरी बॉय ले जाता है। ग्राहक सीधे आपको भुगतान करता है।","आपन डिलीवरी वाला लइ जात है। ग्राहक सीधे आपका पइसा देत है।","रउआ आपन डिलीवरी वाला ले जाला। ग्राहक सीधे रउआ के पइसा देला।"],
+ h4t:["Weekly hisab","हफ़्ते का हिसाब","हफ्ता के हिसाब","हफ्ता के हिसाब"],
+ h4d:["Every week you see a clear statement and pay a small 4.90% commission.","हर हफ़्ते साफ़ हिसाब मिलता है और सिर्फ़ 4.90% कमीशन देना होता है।","हर हफ्ता साफ हिसाब मिलत है अउर बस 4.90% कमीशन देय का होत है।","हर हफ्ता साफ हिसाब मिलेला आ खाली 4.90% कमीशन देवे के होला।"],
+ abEyebrow:["About us","हमारे बारे में","हमरे बारे मा","हमनी के बारे में"],
+ abTitle:["Built in a small town, for small towns","छोटे शहर में बना, छोटे शहरों के लिए","छोटे कस्बा मा बना, छोटे कस्बन खातिर","छोट शहर में बनल, छोट शहरन खातिर"],
+ ab1:["TechGaon AI Services is a technology firm from Haidergarh in Barabanki district. Big-city apps are often not made for the shops and families of a tehsil town. We build for them.",
+  "TechGaon AI Services बाराबंकी ज़िले के हैदरगढ़ की एक टेक्नोलॉजी फ़र्म है। बड़े शहरों के ऐप अक्सर तहसील के दुकानदारों और परिवारों के लिए नहीं बनते। हम उन्हीं के लिए बनाते हैं।",
+  "TechGaon AI Services बाराबंकी जिला के हैदरगढ़ के एक टेक्नोलॉजी फर्म है। बड़े सहरन के ऐप अकसर तहसील के दुकानदार अउर परिवारन खातिर नाहीं बनत। हम उनहीं खातिर बनाइत है।",
+  "TechGaon AI Services बाराबंकी जिला के हैदरगढ़ के एगो टेक्नोलॉजी फर्म ह। बड़ शहरन के ऐप अक्सर तहसील के दोकानदार आ परिवार खातिर ना बनेला। हमनी के ओही लोग खातिर बनाइला।"],
+ ab2:["We keep things simple, honest about money, and easy to use in your own language.","हम चीज़ें सरल रखते हैं, पैसे के मामले में साफ़ रहते हैं, और सब कुछ आपकी भाषा में आसान बनाते हैं।","हम चीजन सीधी रखित है, पइसा के मामला मा साफ रहित है, अउर सब कुछ आपन बोली मा आसान बनाइत है।","हमनी के चीज़ सीधा राखिले, पइसा के मामला में साफ रहिले, आ सब कुछ रउआ भाषा में आसान बनाइले।"],
+ fFirm:["Firm","फ़र्म","फर्म","फर्म"],
+ fOwner:["Proprietor","स्वामी","मालिक","मालिक"],
+ fAddr:["Address","पता","पता","पता"],
+ fProd:["Products","प्रोडक्ट","प्रोडक्ट","प्रोडक्ट"],
+ addr:["Haidergarh, District Barabanki, Uttar Pradesh – 227301","हैदरगढ़, ज़िला बाराबंकी, उत्तर प्रदेश – 227301","हैदरगढ़, जिला बाराबंकी, उत्तर प्रदेश – 227301","हैदरगढ़, जिला बाराबंकी, उत्तर प्रदेश – 227301"],
+ ctEyebrow:["Contact","संपर्क","संपर्क","संपर्क"],
+ ctTitle:["Talk to us","हमसे बात करें","हमसे बात करौ","हमनी से बात करीं"],
+ copy:["Copy","कॉपी","कॉपी","कॉपी"],
+ ctNote:["Call, WhatsApp or Telegram on the same number.","इसी नंबर पर कॉल, WhatsApp या Telegram करें।","इहै नंबर पर कॉल, WhatsApp या Telegram करौ।","एही नंबर पर कॉल, WhatsApp भा Telegram करीं।"],
+ fName:["Your name","आपका नाम","आपन नाम","रउआ नाम"],
+ fType:["You are","आप हैं","आप हौ","रउआ बानी"],
+ oRest:["A restaurant owner","रेस्टोरेंट मालिक","रेस्टोरेंट मालिक","रेस्टोरेंट मालिक"],
+ oApp:["Looking for an app or website","ऐप या वेबसाइट बनवाना चाहते हैं","ऐप या वेबसाइट बनवावै चाहत हौ","ऐप भा वेबसाइट बनवावे के चाहत बानी"],
+ oCust:["A FoodGaon customer","FoodGaon के ग्राहक","FoodGaon के ग्राहक","FoodGaon के ग्राहक"],
+ oOther:["Something else","कुछ और","कुछ अउर","कुछ अउरी"],
+ fMsg:["Message","संदेश","संदेसा","संदेसा"],
+ fSend:["Send on WhatsApp","WhatsApp पर भेजें","WhatsApp पर भेजौ","WhatsApp पर भेजीं"],
+ fNote:["This opens WhatsApp with your message ready to send.","इससे WhatsApp खुलेगा, जिसमें आपका संदेश भेजने के लिए तैयार होगा।","एसे WhatsApp खुली, जेहमा आपन संदेसा भेजै खातिर तैयार रही।","एसे WhatsApp खुली, जेमें रउआ संदेसा भेजे खातिर तैयार रही।"],
+ back:["← Back to home","← होम पर वापस","← होम पर लौटौ","← होम पर लौटीं"],
+ enNote:["Legal pages are in English.","क़ानूनी पेज अंग्रेज़ी में हैं।","कानूनी पेज अंग्रेजी मा हैं।","कानूनी पेज अंग्रेजी में बा।"],
+ ftCo:["Company","कंपनी","कंपनी","कंपनी"],
+ ftSvc:["Services","सेवाएँ","सेवा","सेवा"],
+ ftAbout:["About","परिचय","परिचय","परिचय"],
+ ftContact:["Contact","संपर्क","संपर्क","संपर्क"],
+ ftLegal:["Legal","क़ानूनी","कानूनी","कानूनी"]
+};
+const LANGS=["en","hi","aw","bh"];
+let lang="en";
+function setLang(l){
+  lang=LANGS.includes(l)?l:"en";
+  const i=LANGS.indexOf(lang);
+  document.documentElement.lang = lang==="en"?"en":"hi";
+  document.querySelectorAll("[data-t]").forEach(el=>{
+    const row=T[el.dataset.t]; if(row) el.innerHTML=row[i];
+  });
+  document.querySelectorAll(".langs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.lang===lang)));
+  try{localStorage.setItem("tg-lang",lang)}catch(e){}
+  updateWa();
+}
+document.querySelectorAll(".langs button").forEach(b=>b.addEventListener("click",()=>setLang(b.dataset.lang)));
+
+
+document.querySelectorAll(".copy").forEach(btn=>btn.addEventListener("click",()=>{
+  const el=document.getElementById(btn.dataset.copy);
+  const txt=el.textContent.replace(/\s/g, btn.dataset.copy==="v-ph"?"":" ").trim();
+  const done=()=>{const o=btn.textContent;btn.textContent="✓";setTimeout(()=>btn.textContent=o,1200)};
+  const sel=()=>{const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r)};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,sel)}else sel();
+}));
+
+
+const wa=document.getElementById("wa-send");
+function updateWa(){
+  const n=document.getElementById("f-name").value.trim();
+  const ty=document.getElementById("f-type");
+  const m=document.getElementById("f-msg").value.trim();
+  const text=`TechGaon website enquiry\nName: ${n||"-"}\nType: ${ty.options[ty.selectedIndex].text}\n\n${m}`;
+  wa.href="https://wa.me/919129203268?text="+encodeURIComponent(text);
+}
+["f-name","f-type","f-msg"].forEach(id=>document.getElementById(id).addEventListener("input",updateWa));
+document.getElementById("enq").addEventListener("submit",e=>e.preventDefault());
+
+
+const LEGAL=["privacy-policy","terms","refund-policy","delete-account"];
+function route(){
+  const h=location.hash.slice(1);
+  const isLegal=LEGAL.includes(h);
+  document.body.classList.toggle("show-legal",isLegal);
+  document.querySelectorAll(".legal").forEach(a=>a.classList.toggle("active",a.id===h));
+  if(isLegal) window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
+
+let saved="en"; try{saved=localStorage.getItem("tg-lang")||"en"}catch(e){}
+setLang(saved); route();
+</script>
+
+</body>
+</html>
