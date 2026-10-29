@@ -148,6 +148,34 @@ footer a{text-decoration:none;opacity:.9}
 footer a:hover{text-decoration:underline}
 .copyline{grid-column:1/-1;border-top:1px solid rgba(255,255,255,.15);padding-top:14px;font-size:.85rem;opacity:.75}
 
+.hero-media{position:relative;max-width:100%;justify-self:center;width:100%;max-width:520px;padding:0 0 30px 30px}
+.hero-photo{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:24px;border:4px solid rgba(255,255,255,.18);box-shadow:0 24px 50px rgba(0,0,0,.28)}
+.phone{border:9px solid #0f1512;border-radius:30px;overflow:hidden;background:#0f1512;box-shadow:0 18px 40px rgba(0,0,0,.35);aspect-ratio:390/844;max-width:100%}
+.phone img{display:block;width:100%;height:100%;object-fit:cover}
+.phone.float{position:absolute;left:0;bottom:0;width:30%;border-width:6px;border-radius:22px}
+.chip{position:absolute;background:#fff;color:#13513a;font-weight:800;font-size:.85rem;padding:6px 12px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.chip.c1{right:-6px;top:18px}
+.chip.c2{right:14px;bottom:44px;background:var(--turmeric);color:#2a1d00}
+@media (prefers-reduced-motion:no-preference){.phone.float{animation:bob 4s ease-in-out infinite}@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}}
+.strip{background:var(--surface);border-bottom:1px solid var(--line)}
+.strip-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding-block:22px}
+.strip-in div{display:grid;gap:2px;text-align:center}
+.strip-in b{font-family:var(--display);font-weight:400;font-size:2rem;color:var(--leaf);line-height:1.1}
+:root[data-theme="dark"] .strip-in b{color:var(--turmeric)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .strip-in b{color:var(--turmeric)} }
+.strip-in span{color:var(--muted);font-size:.9rem}
+.svc-top{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:center;margin-bottom:28px}
+.svc-top .sec-head{margin-bottom:0}
+.side-photo{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:20px}
+.showcase{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:28px}
+.shot{margin:0;display:grid;gap:10px;justify-items:center}
+.shot .phone{width:100%;max-width:240px}
+.shot figcaption,.duo figcaption{color:var(--muted);font-size:.92rem;text-align:center}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:28px}
+.duo figure{margin:0;display:grid;gap:8px}
+.duo img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:20px}
+@media (max-width:860px){.svc-top,.duo{grid-template-columns:1fr}.strip-in{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-media{order:-1;max-width:440px}}
+@media (max-width:560px){.showcase{grid-template-columns:repeat(3,minmax(150px,1fr));overflow-x:auto;padding-bottom:6px}}
 @media (max-width:860px){
   .hero .wrap,.split{grid-template-columns:1fr}
   .grid3{grid-template-columns:1fr}
@@ -212,41 +240,31 @@ footer a:hover{text-decoration:underline}
         </div>
         <p class="place">📍 <span data-t="place">Haidergarh, Barabanki, Uttar Pradesh</span></p>
       </div>
-      <div class="hero-art" aria-hidden="true">
-        <svg viewBox="0 0 320 260">
-          <rect x="20" y="40" width="280" height="200" rx="26" fill="rgba(255,255,255,.07)"/>
-
-          <path d="M50 190 L90 150 L130 190 Z" fill="#f2ae1c"/>
-          <rect x="62" y="190" width="56" height="34" fill="#f4f7f1" opacity=".9"/>
-          <rect x="83" y="202" width="14" height="22" fill="#13513a"/>
-          <path d="M140 196 L172 164 L204 196 Z" fill="#f2ae1c" opacity=".85"/>
-          <rect x="150" y="196" width="44" height="28" fill="#f4f7f1" opacity=".8"/>
-
-          <rect x="214" y="92" width="72" height="132" rx="12" fill="#0c3a29" stroke="#f4f7f1" stroke-width="3"/>
-          <rect x="224" y="110" width="52" height="10" rx="5" fill="#f2ae1c"/>
-          <rect x="224" y="128" width="52" height="24" rx="6" fill="#f4f7f1" opacity=".85"/>
-          <rect x="224" y="158" width="52" height="24" rx="6" fill="#f4f7f1" opacity=".55"/>
-          <circle cx="250" cy="206" r="6" fill="#f4f7f1"/>
-
-          <g fill="none" stroke="#f2ae1c" stroke-width="4" stroke-linecap="round">
-            <path class="rise" d="M232 76 Q250 62 268 76"/>
-            <path class="rise b" d="M222 62 Q250 40 278 62"/>
-            <path class="rise c" d="M212 48 Q250 18 288 48"/>
-          </g>
-
-          <path d="M40 224 H290" stroke="#7fd6a6" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="100" cy="92" r="16" fill="#f2ae1c" opacity=".9"/>
-        </svg>
+      <div class="hero-media">
+        <img class="hero-photo" src="images/ai-shop.webp" alt="A village shopkeeper showing an app on his phone" width="1200" height="897">
+        <div class="phone float" aria-hidden="true"><img src="images/app-1.webp" alt="" width="390" height="844" loading="lazy"></div>
+        <span class="chip c1">UPI ✓</span>
+        <span class="chip c2">हिंदी · अवधी · भोजपुरी</span>
       </div>
     </div>
   </section>
 
+  <div class="strip"><div class="wrap strip-in">
+    <div><b>4</b><span data-t="st1">languages in every app</span></div>
+    <div><b>5 km</b><span data-t="st2">local delivery radius</span></div>
+    <div><b>₹0</b><span data-t="st3">delivery charge for customers</span></div>
+    <div><b>100%</b><span data-t="st4">pure veg on FoodGaon</span></div>
+  </div></div>
+
   <section class="block" id="services">
     <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow" data-t="svcEyebrow">What we do</span>
-        <h2 data-t="svcTitle">Your business, on every phone in town</h2>
-        <p data-t="svcLead">From the first idea to the app in customers' hands — and looking after it every day after.</p>
+      <div class="svc-top">
+        <div class="sec-head">
+          <span class="eyebrow" data-t="svcEyebrow">What we do</span>
+          <h2 data-t="svcTitle">Your business, on every phone in town</h2>
+          <p data-t="svcLead">From the first idea to the app in customers' hands — and looking after it every day after.</p>
+        </div>
+        <img class="side-photo" src="images/ai-office.webp" alt="Building an app on a laptop at a village home office" width="1200" height="897" loading="lazy">
       </div>
       <div class="grid3">
         <div class="svc">
@@ -311,9 +329,19 @@ footer a:hover{text-decoration:underline}
           </ul>
           <div class="cta">
             <a class="btn primary" href="https://github.com/techgaon/foodgaon/releases/latest" target="_blank" rel="noopener" data-t="prodApk">Download Android app</a>
+            <a class="btn ghost" href="https://techgaon.in/foodgaon/" target="_blank" rel="noopener" data-t="prodWeb">Open in browser</a>
             <a class="btn ghost" href="#partner" data-t="prodPartner">List your restaurant</a>
           </div>
         </div>
+      </div>
+      <div class="showcase">
+        <figure class="shot"><div class="phone"><img src="images/app-1.webp" alt="FoodGaon home screen" width="390" height="844" loading="lazy"></div><figcaption data-t="cap1">Home: offers, categories, bestsellers</figcaption></figure>
+        <figure class="shot"><div class="phone"><img src="images/app-3.webp" alt="FoodGaon restaurant menu" width="390" height="844" loading="lazy"></div><figcaption data-t="cap2">Menu with Hindi lines and calories</figcaption></figure>
+        <figure class="shot"><div class="phone"><img src="images/app-4.webp" alt="FoodGaon dish details" width="390" height="844" loading="lazy"></div><figcaption data-t="cap3">Dish photos, price and add to cart</figcaption></figure>
+      </div>
+      <div class="duo">
+        <figure><img src="images/ai-restaurant.webp" alt="Restaurant owner receiving an order on his phone" width="1200" height="897" loading="lazy"><figcaption data-t="cap4">The restaurant gets the order with a loud ring</figcaption></figure>
+        <figure><img src="images/ai-rider.webp" alt="Delivery rider on a scooter on a village road" width="1200" height="897" loading="lazy"><figcaption data-t="cap5">Its own delivery boy brings it home</figcaption></figure>
       </div>
     </div>
   </section>
@@ -616,7 +644,17 @@ const T = {
  ftSvc:["Services","सेवाएँ","सेवा","सेवा"],
  ftAbout:["About","परिचय","परिचय","परिचय"],
  ftContact:["Contact","संपर्क","संपर्क","संपर्क"],
- ftLegal:["Legal","क़ानूनी","कानूनी","कानूनी"]
+ ftLegal:["Legal","क़ानूनी","कानूनी","कानूनी"],
+ st1:["languages in every app","भाषाएँ हर ऐप में","बोली हर ऐप मा","भाषा हर ऐप में"],
+ st2:["local delivery radius","तक लोकल डिलीवरी","तक इलाके मा डिलीवरी","ले इलाका में डिलीवरी"],
+ st3:["delivery charge for customers","ग्राहक के लिए डिलीवरी चार्ज","ग्राहक खातिर डिलीवरी चार्ज","ग्राहक खातिर डिलीवरी चार्ज"],
+ st4:["pure veg on FoodGaon","FoodGaon पर शुद्ध शाकाहारी","FoodGaon पर सुद्ध साकाहारी","FoodGaon पर शुद्ध शाकाहारी"],
+ prodWeb:["Open in browser","ब्राउज़र में खोलें","ब्राउज़र मा खोलौ","ब्राउज़र में खोलीं"],
+ cap1:["Home: offers, categories, bestsellers","होम: ऑफ़र, कैटेगरी, बेस्टसेलर","होम: ऑफर, कैटेगरी, बेस्टसेलर","होम: ऑफर, कैटेगरी, बेस्टसेलर"],
+ cap2:["Menu with Hindi lines and calories","हिंदी लाइन और कैलोरी के साथ मेन्यू","हिंदी लाइन अउर कैलोरी के साथ मेन्यू","हिंदी लाइन आ कैलोरी के साथे मेन्यू"],
+ cap3:["Dish photos, price and add to cart","डिश की फ़ोटो, दाम और कार्ट में जोड़ें","डिश के फोटो, दाम अउर कार्ट मा जोड़ौ","डिश के फोटो, दाम आ कार्ट में जोड़ीं"],
+ cap4:["The restaurant gets the order with a loud ring","रेस्टोरेंट को ज़ोरदार घंटी के साथ ऑर्डर मिलता है","रेस्टोरेंट का जोरदार घंटी के साथ ऑर्डर मिलत है","रेस्टोरेंट के जोरदार घंटी के साथे ऑर्डर मिलेला"],
+ cap5:["Its own delivery boy brings it home","उसका अपना डिलीवरी बॉय घर तक लाता है","ओकर आपन डिलीवरी वाला घर तक लावत है","ओकर आपन डिलीवरी वाला घर ले ले आवेला"]
 };
 const LANGS=["en","hi","aw","bh"];
 let lang="en";
