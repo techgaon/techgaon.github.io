@@ -205,7 +205,7 @@ footer a:hover{text-decoration:underline}
 @media(max-width:560px){.tech-note{left:4px;bottom:12px;padding:12px 15px}.hero .wrap{padding-block:30px 38px;gap:15px}.svc:hover{transform:none}}
 </style>
 
-<style>.hero .art-note{color:#e6eee8}.art-note{max-width:1100px}@media(max-width:560px){.hero-media .c2{display:none}}@media(prefers-reduced-motion:reduce){.float,.chip{animation:none!important}}</style></head>
+<style>.hero .art-note{color:#e6eee8}.art-note{max-width:1100px}@media(max-width:560px){.hero-media .c2{display:none}}@media(prefers-reduced-motion:reduce){.float,.chip{animation:none!important}}</style><style>.enq-consent{display:block!important;font-size:.9rem}.enq-consent input{width:auto;margin-right:6px}.enq-honeypot{position:absolute!important;left:-10000px;width:1px;height:1px;overflow:hidden}</style></head>
 <body class="show-legal">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -335,7 +335,7 @@ footer a:hover{text-decoration:underline}
             <li data-t="p6">English, Hindi & Awadhi interfaces</li>
           </ul>
           <div class="cta">
-            <a class="btn primary" href="https://github.com/techgaon/foodgaon/releases/download/v1.0.13/FoodGaon-v1.0.13-install.apk" target="_blank" rel="noopener" data-t="prodApk">Download Android app</a>
+            <a class="btn primary" href="https://github.com/techgaon/foodgaon/releases/download/v1.0.14/FoodGaon-v1.0.14-install.apk" target="_blank" rel="noopener" data-t="prodApk">Download Android app</a>
             <a class="btn ghost" href="https://techgaon.in/foodgaon/" target="_blank" rel="noopener" data-t="prodWeb">Open in browser</a>
             <a class="btn ghost" href="https://techgaon.in/foodgaon/" data-t="prodPartner">List your restaurant</a>
           </div>
@@ -377,7 +377,7 @@ footer a:hover{text-decoration:underline}
         </div>
         <p data-t="ab1">TechGaon AI Services is based in Haidergarh, Barabanki. We understand that village and small-town work has its own pace, language and trust. We build around that reality.</p>
         <p data-t="ab2">A relationship of heart, with simplicity in the work: listen patiently, explain clearly and remain available after delivery.</p>
-        <div class="facts">
+        <div class="facts"><div class="fact" data-notr=""><small>GSTIN</small><b>09DBSPP3533H1Z5</b></div>
           <div class="fact"><span data-t="fFirm">Firm</span><span>TechGaon AI Services</span></div>
           <div class="fact"><span data-t="fOwner">Proprietor</span><span>Suraj Bhan Pandey</span></div>
           <div class="fact"><span data-t="fAddr">Address</span><span data-t="addr">Pandey Home, Rampur, PO &amp; PS Subeha, Haidergarh, District Barabanki, Uttar Pradesh – 225125</span></div>
@@ -394,7 +394,7 @@ footer a:hover{text-decoration:underline}
         <div class="row"><span>📞</span><span class="val" id="v-ph">+91 91292 03268</span><button class="copy" type="button" data-copy="v-ph" data-t="copy">Copy</button></div>
         <p class="note" data-t="ctNote">Call, WhatsApp or Telegram on the same number.</p>
         <form id="enq">
-          <div><label for="f-name" data-t="fName">Your name</label><input id="f-name" required autocomplete="name"></div>
+          <div><label for="f-name" data-t="fName">Your name</label><input maxlength="100" minlength="2" required id="f-name" autocomplete="name"></div>
           <div><label for="f-type" data-t="fType">You are</label>
             <select id="f-type">
               <option value="school" data-t="oSchool">School / school management</option><option value="shop" data-t="oShop">Shop / local business</option><option value="institution" data-t="oInstitution">Institution / organisation</option><option value="amc" data-t="oAmc">AMC / maintenance support</option>
@@ -402,7 +402,15 @@ footer a:hover{text-decoration:underline}
 
               <option value="other" data-t="oOther">Something else</option>
             </select></div>
-          <div><label for="f-msg" data-t="fMsg">Message</label><textarea id="f-msg" required></textarea></div>
+<label for="f-phone" data-t="enqPhone">Mobile number</label><input id="f-phone" type="tel" inputmode="numeric" pattern="[6-9][0-9]{9}" maxlength="10" required autocomplete="tel-national">
+<label for="f-email" data-t="enqEmail">Email (optional)</label><input id="f-email" type="email" maxlength="180" autocomplete="email">
+<label for="f-budget" data-t="enqBudget">Approximate budget (optional)</label><input id="f-budget" maxlength="100">
+<label for="f-timeline" data-t="enqTimeline">When do you need it? (optional)</label><input id="f-timeline" maxlength="100">
+          <div><label for="f-msg" data-t="fMsg">Message</label><textarea maxlength="3000" minlength="10" required id="f-msg"></textarea></div>
+<label class="enq-consent"><input type="checkbox" required> <span data-t="enqConsent">I agree to be contacted about this enquiry. See the</span> <a href="/privacy-policy/">Privacy Policy</a>.</label>
+<label class="enq-honeypot" aria-hidden="true">Website<input id="f-website" tabindex="-1" autocomplete="off"></label>
+<button class="btn primary" id="enq-submit" type="submit" data-t="enqSubmit">Send enquiry</button>
+<p id="enq-result" role="status" aria-live="polite"></p>
           <a class="btn wa" id="wa-send" href="https://wa.me/919129203268" target="_blank" rel="noopener" data-t="fSend">Send on WhatsApp</a>
           <p class="note" data-t="fNote">This opens WhatsApp with your message ready to send.</p>
         </form>
@@ -412,135 +420,31 @@ footer a:hover{text-decoration:underline}
 </main>
 
 
-<article class="legal" id="privacy-policy">
-  <div class="wrap">
-    <a class="back" href="/#" data-t="back">← Back to home</a>
-    <h1>Privacy Policy</h1>
-    <p class="upd">Effective date: 29 October 2026</p>
-    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
-    <p>This policy explains how TechGaon AI Services ("TechGaon", "we") collects and uses information when you use our website techgaon.in and our app FoodGaon (FOODगाँव).</p>
-    <h2>1. Information we collect</h2>
-    <ul>
-      <li><b>Account details:</b> your name and mobile number; your email address if you sign in with Google.</li>
-      <li><b>Order details:</b> delivery address, the location you pick on the map, items ordered, kitchen notes, payment method and order status.</li>
-      <li><b>Reviews and favourites:</b> ratings, reviews and dishes you save.</li>
-      <li><b>Restaurant partners:</b> shop name, address, FSSAI and GST numbers, UPI ID, menu and photos.</li>
-      <li><b>Delivery partners:</b> name, mobile number, photo, vehicle details, UPI ID, and live location only while they are marked online.</li>
-      <li><b>Device information:</b> basic technical data needed to run the app and send order notifications.</li>
-    </ul>
-    <h2>2. How we use it</h2>
-    <ul>
-      <li>To place, prepare, deliver and track your orders.</li>
-      <li>To show you your bills, order history and statements.</li>
-      <li>To calculate GST and settlements between restaurants and TechGaon, as required by law.</li>
-      <li>To provide support and keep the service safe.</li>
-    </ul>
-    <h2>3. Who we share it with</h2>
-    <ul>
-      <li>The restaurant you order from and its delivery person receive your name, phone number, address and order.</li>
-      <li>Our service providers: Google Firebase (login, database, hosting) and Google's AI services (used to read menu photos uploaded by restaurants).</li>
-      <li>Government authorities when the law requires it.</li>
-    </ul>
-    <p>We do not sell your personal information.</p>
-    <h2>4. Payments</h2>
-    <p>You pay the restaurant directly through your own UPI app or in cash. TechGaon does not collect or store your card, bank or UPI PIN details.</p>
-    <h2>5. How long we keep it</h2>
-    <p>We keep your account while it is active. Invoices and tax records are kept for as long as Indian GST law requires, even after an account is deleted.</p>
-    <h2>6. Your choices</h2>
-    <p>You can update your name in the app, and you can ask us to delete your account at any time. See <a href="/delete-account/">Delete your account</a>.</p>
-    <h2>7. Children</h2>
-    <p>FoodGaon is meant for users aged 18 and above, or for younger users with a parent or guardian.</p>
-    <h2>8. Grievance officer</h2>
-    <p>Suraj Bhan Pandey, TechGaon AI Services, Pandey Home, Rampur, PO &amp; PS Subeha, Haidergarh, District Barabanki, Uttar Pradesh – 225125. Email: contact@techgaon.in · Phone: +91 91292 03268. We reply to complaints within 15 days.</p>
-    <h2>9. Changes</h2>
-    <p>If we change this policy, we will update the date above and, for important changes, tell you in the app.</p>
-  </div>
-</article>
+<article class="legal" id="privacy-policy"><div class="wrap"><a class="back" href="/#" data-t="back">← Back to home</a><h1>Privacy Policy</h1><p class="upd">Updated: 1 November 2026</p><p class="en-note" data-t="enNote">Legal pages are in English.</p><p>TechGaon AI Services, proprietor Suraj Bhan Pandey, operates techgaon.in and FoodGaon. GSTIN: <b>09DBSPP3533H1Z5</b>. This policy distinguishes our technology services from FoodGaon food orders.</p>
+<h2>A. TechGaon enquiries and client projects</h2><p>When you submit our form, we receive your name, mobile number, optional email, work category, message and any budget or timeline you provide. We store the enquiry in our private admin inbox to respond, prepare a quotation and manage follow-up. Submitting the form does not place a paid order or create a project agreement. WhatsApp and email contacts are also handled through those providers.</p><p>For an agreed project, we may receive business requirements, files, agreements and billing details. Please do not send passwords, Aadhaar copies, payment PINs or confidential student/customer records in the public enquiry form. Project access and any sensitive data handling should be agreed separately.</p>
+<h2>B. FoodGaon app</h2><p>FoodGaon processes account details (name, mobile number and, where provided, Google email), chosen delivery address and map location, orders, payment method/status, reviews, favourites and kitchen notes. You may optionally add gender, profile photo, birthdays, anniversaries and family details. These optional details support your profile and personalised in-app greetings; they are not required to browse food.</p><p>Restaurant applications may include owner/contact details, Aadhaar number and copy, PAN, FSSAI/GST details, bank/UPI information, uploaded documents and signed agreement PDF. These are used to review and manage the partnership. Delivery partners' operational details and location are used where the delivery feature requires them.</p>
+<h2>Sharing and service providers</h2><p>The restaurant fulfilling a FoodGaon order and its delivery person receive the contact, address and order information they need. Private family profiles and identity documents are not public listings. Authorised TechGaon staff access information for the relevant support or operational purpose. Google Firebase provides authentication and database services; Google sign-in, maps, AI services and third-party communication/payment services are used where the selected feature requires them. Restaurant menu material may be processed by AI when that feature is used. We do not sell personal information.</p>
+<h2>Payments and security</h2><p>FoodGaon currently offers the payment methods shown at checkout, including direct payment to the restaurant where available. We do not ask for or store UPI PINs or card security codes. TechGaon project payments follow the accepted quotation/agreement. Access controls restrict the enquiry inbox and private records; no online system can be guaranteed risk-free.</p>
+<h2>Retention, correction and deletion</h2><p>We keep enquiries while follow-up is needed and project/account records for the relevant service, support and legal purposes. Invoices, signed agreements, disputes and statutory records may need to be retained after other profile data is removed. You can request access, correction or deletion through the contact below; see <a href="/delete-account/">Account &amp; data deletion</a>. We explain any information that must be retained. Optional family details can be edited in the app. Do not submit children's confidential records in an enquiry; a parent/guardian should manage any optional child-related profile information.</p>
+<h2>Contact and changes</h2><p>Privacy contact: Suraj Bhan Pandey, TechGaon AI Services, Pandey Home, Rampur, PO &amp; PS Subeha, Haidergarh, District Barabanki, Uttar Pradesh – 225125. Email: contact@techgaon.in · Phone/WhatsApp: +91 91292 03268. We will acknowledge and handle requests within applicable legal timelines. Material policy changes will be reflected on this page and communicated where appropriate.</p></div></article>
 
-<article class="legal active" id="terms">
-  <div class="wrap">
-    <a class="back" href="/#" data-t="back">← Back to home</a>
-    <h1>Terms of Use</h1>
-    <p class="upd">Effective date: 29 October 2026</p>
-    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
-    <h2>1. About the service</h2>
-    <p>FoodGaon is an online platform run by TechGaon AI Services that connects customers with local restaurants. The restaurant prepares, packs and delivers the food. TechGaon acts as the e-commerce operator.</p>
-    <h2>2. Your account</h2>
-    <p>You log in with your mobile number or Google account. Keep access to your phone and account safe. You are responsible for orders placed from your account.</p>
-    <h2>3. Prices and GST</h2>
-    <p>Menu prices include GST. Delivery is free unless the app shows otherwise before you order. Under section 9(5) of the CGST Act, TechGaon pays the GST on restaurant services ordered through FoodGaon.</p>
-    <h2>4. Orders and cancellation</h2>
-    <ul>
-      <li>You can cancel an order only before the restaurant accepts it.</li>
-      <li>A restaurant may reject an order, for example if an item is sold out or you are outside its delivery area.</li>
-      <li>Delivery times shown are estimates.</li>
-    </ul>
-    <h2>5. Payments</h2>
-    <p>You pay the restaurant directly by UPI or cash on delivery. Any refund is made by the restaurant, as explained in our <a href="/refund-policy/">Refund Policy</a>.</p>
-    <h2>6. Restaurants</h2>
-    <p>Restaurants are responsible for the quality, hygiene, quantity and labelling of their food and for holding valid FSSAI and GST registrations. FoodGaon lists only vegetarian food.</p>
-    <h2>7. Fair use</h2>
-    <p>Do not misuse the app, place fake orders, abuse delivery staff, or post false or offensive reviews. We may suspend accounts that do.</p>
-    <h2>8. Liability</h2>
-    <p>We work to keep FoodGaon running smoothly but cannot promise it will always be available or error-free. To the extent the law allows, TechGaon's liability for any order is limited to the value of that order.</p>
-    <h2>9. Law and disputes</h2>
-    <p>These terms are governed by the laws of India. Courts in Barabanki, Uttar Pradesh have jurisdiction. Please contact us first — most problems can be solved with a phone call.</p>
-    <h2>10. Contact</h2>
-    <p>contact@techgaon.in · +91 91292 03268</p>
-  </div>
-</article>
+<article class="legal active" id="terms"><div class="wrap"><a class="back" href="/#" data-t="back">← Back to home</a><h1>Terms of Use</h1><p class="upd">Updated: 1 November 2026</p><p class="en-note" data-t="enNote">Legal pages are in English.</p><p>These terms cover TechGaon AI Services (GSTIN: <b>09DBSPP3533H1Z5</b>) and its FoodGaon product. The two services have different workflows.</p>
+<h2>A. TechGaon apps, websites, AI tools and AMC</h2><p>A website enquiry is a request for discussion or a quotation, not confirmation of a paid order. Work begins after the scope, price, payment stages and start conditions are accepted in writing. A project-specific quotation and agreement should identify deliverables, exclusions, responsibilities, timeline, revision limits, acceptance, cancellation and support.</p><p>Domain, hosting, subscriptions, AI/API usage, taxes, AMC and third-party services are included only where expressly stated. Source code, account ownership, licences and handover depend on the accepted agreement. New features or scope changes may require a revised quotation and timeline. Clients must have permission to supply content and access; important AI-generated output should be reviewed before use. We do not promise a particular business result.</p><p>Signed project agreements are handled privately. Do not submit credentials or confidential operational records in the public enquiry form. A separate agreement can set confidentiality, permitted data use, backups and handover obligations.</p>
+<h2>B. FoodGaon customers and restaurant partners</h2><p>FoodGaon connects customers with local vegetarian restaurants, dhabas, cafes and sweet shops. The restaurant prepares, packs and delivers the order. Coverage, distance-based minimum order, availability, estimated delivery time, payment methods, prices and any applicable charges are shown in the app. Review them before placing an order. Current trial offers may change for future orders.</p><p>Keep your Google/mobile account access safe. An order may be cancelled in the app before restaurant acceptance; after acceptance contact support for assistance. Restaurants may reject unavailable or out-of-area orders. Delivery times are estimates. FoodGaon payment/refund handling follows the method used for the order. Restaurants are responsible for food safety, accurate listings and legally required registrations. Partner commercial terms are governed by their accepted FoodGaon agreement.</p><p>GST is accounted for according to the applicable transaction and law; TechGaon's GSTIN is distinct from each restaurant's registration. A technology-project quotation is not a FoodGaon food invoice.</p>
+<h2>Fair use, availability and disputes</h2><p>Do not submit spam, fake enquiries or orders, access another person's data, upload unlawful material or abuse staff. We may restrict misuse. Services can experience outages or third-party failures; agreed support and any remedies remain subject to the specific contract and applicable law. These terms do not remove mandatory consumer rights.</p><p>Indian law applies. Please first contact contact@techgaon.in or +91 91292 03268 to resolve a concern. Any jurisdiction clause in an agreement remains subject to the rights and forums provided by applicable law. See <a href="/refund-policy/">Refund &amp; Cancellation</a> and <a href="/privacy-policy/">Privacy Policy</a>.</p></div></article>
 
-<article class="legal" id="refund-policy">
-  <div class="wrap">
-    <a class="back" href="/#" data-t="back">← Back to home</a>
-    <h1>Refund &amp; Cancellation Policy</h1>
-    <p class="upd">Effective date: 29 October 2026</p>
-    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
-    <h2>1. Cancelling an order</h2>
-    <p>You can cancel from the app until the restaurant accepts the order. After that, the food is being prepared and the order cannot be cancelled from the app.</p>
-    <h2>2. When you get a refund</h2>
-    <p>If you paid by UPI in advance and:</p>
-    <ul>
-      <li>you cancelled before the restaurant accepted, or</li>
-      <li>the restaurant rejected or could not deliver the order,</li>
-    </ul>
-    <p>the restaurant will return the full amount to the same UPI account within 7 working days.</p>
-    <h2>3. Wrong, missing or damaged items</h2>
-    <p>Tell us within 24 hours of delivery with a photo, through WhatsApp or email. After checking with the restaurant, you will get a replacement or a refund for the affected items.</p>
-    <h2>4. Cash orders</h2>
-    <p>Cash is paid only on delivery, so a cancelled cash order needs no refund.</p>
-    <h2>5. Who pays the refund</h2>
-    <p>Your payment goes straight to the restaurant, so the restaurant makes the refund. TechGaon follows up with the restaurant until the matter is settled.</p>
-    <h2>6. Contact</h2>
-    <p>contact@techgaon.in · WhatsApp +91 91292 03268</p>
-  </div>
-</article>
+<article class="legal" id="refund-policy"><div class="wrap"><a class="back" href="/#" data-t="back">← Back to home</a><h1>Refund &amp; Cancellation Policy</h1><p class="upd">Updated: 1 November 2026</p><p class="en-note" data-t="enNote">Legal pages are in English.</p><p>TechGaon technology projects and FoodGaon food orders are handled separately. Contact: contact@techgaon.in · WhatsApp +91 91292 03268. TechGaon GSTIN: <b>09DBSPP3533H1Z5</b>.</p>
+<h2>A. TechGaon technology projects and AMC</h2><p>Submitting an enquiry is free and creates no payment obligation. Before accepting payment, the quotation/agreement should state the work stages, advance, cancellation terms, third-party commitments and refund conditions.</p><p>If a project is cancelled, we review completed or committed work, undelivered scope and any approved third-party costs against that agreement and applicable law. We explain the calculation and any refundable balance; there is no automatic blanket forfeiture of every payment. A proposed change in scope or delivery date should be agreed in writing. AMC cancellation and remaining service periods follow the accepted AMC terms. Statutory rights continue to apply.</p><p>Where a refund is agreed, the amount, method and expected processing time will be confirmed in writing. Actual bank/payment-provider posting times may vary. Do not send UPI PINs or card security codes to request a refund.</p>
+<h2>B. FoodGaon food orders</h2><p>You can cancel in the app before the restaurant accepts the order. After acceptance, contact support; eligibility depends on the circumstances and applicable rights. If a prepaid order is cancelled before acceptance, rejected or not delivered, contact us with its order ID. Where the restaurant received the payment, it returns the eligible amount and TechGaon follows up.</p><p>For wrong, missing, damaged or unsafe food, report the issue promptly, preferably within 24 hours, with order details and photographs where available. We review it with the restaurant and arrange an appropriate replacement or refund for affected items. This reporting preference does not limit rights provided by law.</p><p>Refunds of eligible direct UPI payments are normally processed to the original payer within 7 working days after confirmation; we will communicate any delay. A cancelled unpaid cash order has no prepaid amount to refund. Do not make an additional payment to receive a refund.</p></div></article>
 
-<article class="legal" id="delete-account">
-  <div class="wrap">
-    <a class="back" href="/#" data-t="back">← Back to home</a>
-    <h1>Delete your FoodGaon account</h1>
-    <p class="upd">TechGaon AI Services · FoodGaon (FOODगाँव)</p>
-    <p class="en-note" data-t="enNote">Legal pages are in English.</p>
-    <h2>How to ask</h2>
-    <p>Send a message from your registered mobile number, or an email, saying <b>"Delete my FoodGaon account"</b> along with your registered mobile number:</p>
-    <ul>
-      <li>WhatsApp: +91 91292 03268</li>
-      <li>Email: contact@techgaon.in</li>
-    </ul>
-    <p>We will confirm and delete your account within 30 days.</p>
-    <h2>What gets deleted</h2>
-    <ul>
-      <li>Your name, phone number, email and saved addresses</li>
-      <li>Your favourites and kitchen notes</li>
-      <li>Your reviews (or we remove your name from them)</li>
-    </ul>
-    <h2>What we must keep</h2>
-    <p>Invoices and order records needed for GST are kept for the period Indian tax law requires. They are not used for anything else.</p>
-  </div>
-</article>
+<article class="legal" id="delete-account"><div class="wrap"><a class="back" href="/#" data-t="back">← Back to home</a><h1>Account &amp; Data Deletion</h1><p class="upd">Updated: 1 November 2026</p><p class="en-note" data-t="enNote">Legal pages are in English.</p><p>TechGaon AI Services · FoodGaon · GSTIN: <b>09DBSPP3533H1Z5</b></p>
+<h2>A. Delete a FoodGaon account</h2><p>Send "Delete my FoodGaon account" to contact@techgaon.in or WhatsApp +91 91292 03268, identifying your registered mobile number or Google email. Never send an OTP, login PIN or identity document unless we explain a necessary verification step. We verify control of the account before acting.</p><p>After verification, we aim to complete eligible deletion within 30 days and tell you of any legally required extension. Account/profile information, saved addresses, favourites, optional family dates and photos, and other non-required personal records will be deleted or anonymised as appropriate. Public reviews may be removed or de-identified. You can also edit optional profile details within the app.</p>
+<h2>B. TechGaon enquiry and client data</h2><p>You do not need a customer account to submit a TechGaon enquiry. To correct or delete it, contact us using the enquiry reference and the contact details you submitted. Client project files, access and offboarding are handled under the relevant agreement; we verify the authorised requester.</p>
+<h2>Records we may need to retain</h2><p>Invoices, tax records, signed agreements, outstanding transactions and information required to resolve disputes or comply with law may be retained for the applicable period. Such retention is separate from an active account and is limited to those purposes. We explain any relevant retention or inability to delete requested records. Where information has been shared with an independently responsible restaurant or communication provider, we can help identify the appropriate contact; their own legal duties may also apply.</p></div></article>
 
 <footer>
+<div class="wrap" data-notr=""><b>TechGaon AI Services · GSTIN: 09DBSPP3533H1Z5</b></div>
+<div class="wrap"><a href="/admin/">Admin login</a></div>
   <div class="wrap">
     <div>
       <div class="brand" style="margin:0 0 10px">
@@ -567,7 +471,7 @@ footer a:hover{text-decoration:underline}
         <li><a href="/delete-account/">Delete account</a></li>
       </ul>
     </div>
-    <p class="copyline">© 2026 TechGaon AI Services · techgaon.in · Udyam: UDYAM-UP-14-0065110</p>
+    <p class="copyline">© 2026 TechGaon AI Services · techgaon.in · Udyam: UDYAM-UP-14-0065110 · GSTIN: 09DBSPP3533H1Z5</p>
   </div>
 </footer>
 
@@ -664,6 +568,7 @@ const T = {
 };
 Object.assign(T,{"heroTitle": ["Technology with <em>village understanding.</em>", "<em>गाँव की समझ।</em><br>दिल का रिश्ता।", "<em>गाँव कै समझ।</em><br>दिल कै नाता।", "<em>गाँव के समझ।</em><br>दिल के नाता।"], "heroLead": ["For the schools, shops and institutions of our villages and towns. We listen to how your day works, then build simple apps, websites and AI tools — and stay with you through maintenance and AMC.", "गाँव-कस्बों के स्कूल, दुकान और संस्थाओं के लिए। पहले आपके रोज़ के काम को समझते हैं, फिर उसी हिसाब से सरल App, Website और AI tools बनाते हैं। और AMC व देखभाल में भी साथ रहते हैं।", "गाँव-कस्बन के स्कूल, दुकान अउर संस्थन खातिर। पहिले आपकै रोज कै काम समझित हई, फिर ओही हिसाब से आसान App, Website अउर AI tools बनाइत हई। AMC अउर देखभाल मा भी आपकै साथ रहित हई।", "गाँव-कस्बा के स्कूल, दुकान आ संस्था खातिर। पहिले रउरा रोज के काम समझीं, फेर ओही हिसाब से आसान App, Website आ AI tools बनाईं। AMC आ देखभाल में भी रउरा साथ रहीला।"], "ctaFood": ["Explore our services", "हमारी सेवाएँ देखें", "हमार सेवा देखौ", "हमार सेवा देखीं"], "svcTitle": ["Your everyday work. Made a little easier.", "आपका रोज़ का काम, थोड़ा और आसान।", "आपकै रोज कै काम, अब अउर आसान।", "रउरा रोज के काम, अब अउरी आसान।"], "svcLead": ["A school register, a shop ledger or an institution’s paperwork — good technology starts by understanding the people who use it.", "स्कूल का रजिस्टर हो, दुकान का हिसाब या संस्था के कागज़—अच्छी तकनीक की शुरुआत आपके काम और आपकी जरूरत को समझने से होती है।", "स्कूल कै रजिस्टर होय, दुकान कै हिसाब या संस्था के कागज—बढ़िया तकनीक खातिर पहिले आपकै काम अउर जरूरत समझब जरूरी अहै।", "स्कूल के रजिस्टर होखे, दुकान के हिसाब भा संस्था के कागज—बढ़िया तकनीक खातिर पहिले रउरा काम आ जरूरत समझल जरूरी बा।"], "s1d": ["Apps for school attendance, fees, shop records, bookings and local services. We choose features around your actual workflow.", "स्कूल की attendance व fees, दुकान का हिसाब, booking और स्थानीय सेवाओं के लिए App—आपके काम के हिसाब से जरूरी सुविधाएँ।", "स्कूल कै attendance अउर fees, दुकान कै हिसाब, booking अउर आसपास कै सेवा खातिर App—जौन सुविधा जरूरी होय, उहै बनाइत हई।", "स्कूल के attendance आ fees, दुकान के हिसाब, booking आ आसपास के सेवा खातिर App—जवन सुविधा जरूरी होखे, उहे बनाईं।"], "s2d": ["A clear website for your school, shop or institution: information, enquiries, forms and a design that works on mobile.", "स्कूल, दुकान या संस्था की साफ-सुथरी Website—जानकारी, enquiry, forms और mobile पर आसानी से खुलने वाला design।", "स्कूल, दुकान या संस्था कै साफ-सुथरी Website—जानकारी, पूछताछ, forms अउर mobile पर आसानी से खुलै वाला design।", "स्कूल, दुकान भा संस्था के साफ-सुथरा Website—जानकारी, पूछताछ, forms आ mobile पर आराम से खुले वाला design।"], "s3d": ["Useful AI for Hindi letters, notices, document reading, data entry assistance and reports. You review the important details.", "हिंदी पत्र, notice, documents पढ़ने, data entry में मदद और reports के लिए उपयोगी AI tools। जरूरी जानकारी की अंतिम जाँच आपके हाथ में।", "हिंदी चिट्ठी, notice, कागज पढ़ै, data entry मा मदद अउर reports खातिर AI tools। जरूरी बातन कै आखिरी जाँच आप करिहौ।", "हिंदी चिट्ठी, notice, कागज पढ़े, data entry में मदद आ reports खातिर AI tools। जरूरी बात के आखिरी जाँच रउरा करीं।"], "s4t": ["AMC & ongoing care", "AMC और लगातार देखभाल", "AMC अउर बराबर देखभाल", "AMC आ लगातार देखभाल"], "s4d": ["Updates, backups, fixes and agreed support. We explain what the AMC covers, the cost and the response arrangements before we begin.", "Updates, backup, सुधार और तय support। AMC में क्या शामिल है, खर्च कितना है और सहायता कैसे मिलेगी—शुरुआत में ही साफ बात।", "Updates, backup, सुधार अउर तय मदद। AMC मा का मिली, केतना खर्च होई अउर मदद कइसे मिली—पहिले ही सब साफ बताइत हई।", "Updates, backup, सुधार आ तय मदद। AMC में का मिली, केतना खर्च होई आ मदद कइसे मिली—पहिले से सब साफ बताईं।"], "s5d": ["Simple screens and familiar Hindi or local-language copy, chosen for the people who will use your project.", "सरल screens और जानी-पहचानी हिंदी या स्थानीय भाषा—आपके project का उपयोग करने वाले लोगों के अनुसार।", "आसान screens अउर आपन हिंदी या इलाकाई बोली—जौन लोग project चलइहैं, ओनके हिसाब से।", "आसान screens आ आपन हिंदी भा इलाका के बोली—जे लोग project चलइहें, ओह लोग के हिसाब से।"], "s6t": ["Clear scope & practical costs", "साफ काम, समझदारी का खर्च", "साफ काम, सोच-समझ कै खर्च", "साफ काम, सोच-समझ के खर्च"], "s6d": ["We discuss the work, delivery stages, hosting and ongoing costs in advance. Start with what you need and grow when you are ready.", "काम, उसके चरण, hosting और आगे के खर्च पर पहले बात। शुरुआत उतने से करें जितनी जरूरत है; फिर अपने हिसाब से आगे बढ़ें।", "काम, ओकर चरण, hosting अउर आगे कै खर्च पहिले तय करित हई। जेतनी जरूरत होय ओतने से शुरू करौ, फिर अपने हिसाब से आगे बढ़ौ।", "काम, ओकर चरण, hosting आ आगे के खर्च पहिले तय करीला। जेतना जरूरत होखे ओतने से शुरू करीं, फेर अपना हिसाब से आगे बढ़ीं।"], "abTitle": ["Rooted here. Working alongside you.", "यहीं की जड़ें। आपके साथ काम।", "जड़ इहीं कै। साथ आपकै।", "जड़ इहँवे के। साथ रउरा।"], "ab1": ["TechGaon AI Services is based in Haidergarh, Barabanki. We understand that village and small-town work has its own pace, language and trust. We build around that reality.", "हैदरगढ़, बाराबंकी से TechGaon AI Services। हम समझते हैं कि गाँव-कस्बों के काम की अपनी भाषा, अपना तरीका और अपना भरोसा होता है। हमारी तकनीक उसी समझ से बनती है।", "हैदरगढ़, बाराबंकी से TechGaon AI Services। हम जानित हई कि गाँव-कस्बन कै काम कै आपन बोली, आपन तरीका अउर भरोसा अहै। हमार तकनीक ओही समझ से बनत अहै।", "हैदरगढ़, बाराबंकी से TechGaon AI Services। हम जानीला कि गाँव-कस्बा के काम के आपन बोली, आपन तरीका आ भरोसा होला। हमार तकनीक ओही समझ से बनेला।"], "ab2": ["A relationship of heart, with simplicity in the work: listen patiently, explain clearly and remain available after delivery.", "दिल का रिश्ता, काम में सादगी—धैर्य से आपकी बात सुनना, साफ समझाना और काम देने के बाद भी साथ निभाना।", "दिल कै नाता, काम मा सादगी—धीरज से आपकै बात सुनब, साफ समझाउब अउर काम देय के बाद भी साथ निभाउब।", "दिल के नाता, काम में सादगी—धीरज से रउरा बात सुनल, साफ समझावल आ काम देला के बादो साथ निभावल।"], "howEyebrow": ["How we work", "हम कैसे काम करते हैं", "हम कइसे काम करित हई", "हम कइसे काम करीला"], "howTitle": ["First, a conversation. Then, the right solution.", "पहले आपकी बात। फिर सही समाधान।", "पहिले आपकै बात। फिर सही उपाय।", "पहिले रउरा बात। फेर सही उपाय।"], "h1t": ["Understand", "आपका काम समझें", "आपकै काम समझी", "रउरा काम समझीं"], "h1d": ["We learn who will use it, what takes time today and what needs to become easier.", "कौन इस्तेमाल करेगा, कहाँ समय लगता है और क्या आसान होना चाहिए—पहले यह समझते हैं।", "कौन चलाई, कहाँ बखत लागत अहै अउर का आसान होय का चाही—पहिले इहै समझित हई।", "के चलाई, कहाँ बखत लागेला आ का आसान होखे के चाहीं—पहिले ई समझीं।"], "h2t": ["Agree", "मिलकर तय करें", "मिलि कै तय करी", "मिल के तय करीं"], "h2d": ["Features, budget, stages and any recurring costs are discussed before work starts.", "सुविधाएँ, बजट, काम के चरण और आगे के खर्च—शुरू करने से पहले मिलकर तय करें।", "सुविधा, बजट, काम कै चरण अउर आगे कै खर्च—शुरू करै से पहिले मिलि कै तय करी।", "सुविधा, बजट, काम के चरण आ आगे के खर्च—शुरू करे से पहिले मिल के तय करीं।"], "h3t": ["Build & try", "बनाएँ और चलाकर देखें", "बनाई अउर चलाय कै देखी", "बनाईं आ चला के देखीं"], "h3d": ["You try the project in real work. We explain it and make the agreed improvements.", "आप अपने असली काम में चलाकर देखें। हम समझाएँगे और तय सुधार करेंगे।", "आप अपने असली काम मा चलाय कै देखौ। हम समझाउब अउर तय सुधार करब।", "रउरा अपना असली काम में चला के देखीं। हम समझाइब आ तय सुधार करब।"], "h4t": ["Stay connected", "साथ बना रहे", "साथ बना रहै", "साथ बनल रहे"], "h4d": ["After launch, choose the maintenance or AMC support your project needs.", "काम शुरू होने के बाद भी जरूरत के मुताबिक maintenance या AMC में साथ।", "काम शुरू होय के बाद भी जरूरत के हिसाब से maintenance या AMC मा साथ रहब।", "काम शुरू भइला के बादो जरूरत के हिसाब से maintenance भा AMC में साथ रहब।"], "prodTitle": ["FoodGaon — local food, for villages and towns", "FoodGaon—गाँव-कस्बों के लिए अपना food app", "FoodGaon—गाँव-कस्बन खातिर आपन food app", "FoodGaon—गाँव-कस्बा खातिर आपन food app"], "prodLead": ["Our first product puts local vegetarian restaurants, dhabas, cafes and sweet shops on your phone. Each restaurant sets its delivery area and distance-based minimum order.", "हमारा पहला product: स्थानीय शाकाहारी restaurant, ढाबा, cafe और मिठाई की दुकान आपके phone पर। हर restaurant अपना delivery area और दूरी के हिसाब से minimum order तय करता है।", "हमार पहिला product: आसपास के शाकाहारी restaurant, ढाबा, cafe अउर मिठाई कै दुकान आपकै phone पर। हर restaurant आपन delivery area अउर दूरी के हिसाब से minimum order तय करत अहै।", "हमार पहिलका product: आसपास के शाकाहारी restaurant, ढाबा, cafe आ मिठाई के दुकान रउरा phone पर। हर restaurant आपन delivery area आ दूरी के हिसाब से minimum order तय करेला।"], "prodTag": ["Our first product · Android & web", "हमारा पहला product · Android और web", "हमार पहिला product · Android अउर web", "हमार पहिलका product · Android आ web"], "p1": ["₹0 delivery and platform fee in the current trial", "मौजूदा trial में delivery और platform fee ₹0", "अबही trial मा delivery अउर platform fee ₹0", "एह trial में delivery आ platform fee ₹0 बा"], "p2": ["Guest browsing; sign in when you order", "बिना login खाना देखें; order करते समय login करें", "बिन login खाना देखौ; order देत बखत login करौ", "बिना login खाना देखीं; order देत बेरा login करीं"], "p3": ["Google or mobile login; direct payment options", "Google या mobile login; सीधे भुगतान के विकल्प", "Google या mobile से login; सीधे पैसा देय कै सुविधा", "Google भा mobile से login; सीधे पइसा देवे के सुविधा"], "p4": ["Order status and restaurant delivery updates", "Order status और restaurant delivery updates", "Order कै हाल अउर restaurant से delivery कै खबर", "Order के हाल आ restaurant से delivery के खबर"], "p5": ["Editable profile, family dates and in-app wishes", "Profile, परिवार की तारीखें और app में शुभकामनाएँ", "Profile, परिवार कै तारीख अउर app मा शुभकामना", "Profile, परिवार के तारीख आ app में शुभकामना"], "p6": ["English, Hindi & Awadhi interfaces", "English, हिंदी और अवधी interface", "English, हिंदी अउर अवधी मा app चलावौ", "English, हिंदी आ अवधी में app चलाईं"], "cap1": ["Updated home & village delivery stories", "नया Home और गाँव-कस्बों की delivery झलक", "नवा Home अउर गाँव-कस्बन मा delivery कै झलक", "नया Home आ गाँव-कस्बा में delivery के झलक"], "cap2": ["Menu, prices and add to cart", "Menu, दाम और cart में जोड़ना", "Menu, दाम अउर cart मा जोड़ब", "Menu, दाम आ cart में जोड़ल"], "cap3": ["Cart, fees and order sign-in", "Cart, fees और order के समय login", "Cart, fees अउर order देत बखत login", "Cart, fees आ order देत बेरा login"], "cap4": ["The restaurant prepares and delivers the order", "Restaurant खाना तैयार करके delivery करता है", "Restaurant खाना बनावत अहै अउर पहुँचावत अहै", "Restaurant खाना बनावेला आ पहुँचावेला"], "cap5": ["FoodGaon delivery, from village to office", "गाँव से office तक FoodGaon delivery", "गाँव से office तक FoodGaon कै delivery", "गाँव से office ले FoodGaon के delivery"]});
 Object.assign(T,{"listenChip": ["We listen first 💚", "पहले आपकी बात 💚", "पहिले आपकै बात 💚", "पहिले रउरा बात 💚"], "noteFor": ["Schools · Shops · Institutions", "स्कूल · दुकान · संस्था", "स्कूल · दुकान · संस्था", "स्कूल · दुकान · संस्था"], "noteTitle": ["Your needs → Simple technology", "आपकी जरूरत → सरल तकनीक", "आपकै जरूरत → सरल तकनीक", "रउरा जरूरत → सरल तकनीक"], "artNote": ["AI-created illustration of the community we build for.", "हम जिनके लिए काम करते हैं, उनकी झलक — AI से बनी कल्पनात्मक तस्वीर।", "हम जेनके खातिर काम करित हई, ओनकी झलक — AI से बनी तस्वीर।", "हम जेकरा खातिर काम करीं, ओह समाज के झलक — AI से बनल तस्वीर।"], "school": ["Schools", "स्कूल", "स्कूल", "स्कूल"], "shop": ["Shops", "दुकान", "दुकान", "दुकान"], "institution": ["Institutions", "संस्था", "संस्था", "संस्था"], "care": ["Ongoing care", "हमेशा साथ", "साथ निभाई", "साथ निभाईं"], "oSchool": ["School / school management", "स्कूल / स्कूल का प्रबंधन", "स्कूल / स्कूल कै प्रबंधन", "स्कूल / स्कूल के प्रबंधन"], "oShop": ["Shop / local business", "दुकान / स्थानीय व्यवसाय", "दुकान / स्थानीय कारोबार", "दुकान / स्थानीय कारोबार"], "oInstitution": ["Institution / organisation", "संस्था / संगठन", "संस्था / संगठन", "संस्था / संगठन"], "oAmc": ["AMC / maintenance support", "AMC / देखभाल और सहायता", "AMC / देखभाल अउर मदद", "AMC / देखभाल आ मदद"]});
+Object.assign(T,{"enqPhone": ["Mobile number", "मोबाइल नंबर", "मोबाइल नंबर", "मोबाइल नंबर"], "enqEmail": ["Email (optional)", "Email (वैकल्पिक)", "Email (चाहौ तौ)", "Email (चाहीं त)"], "enqBudget": ["Approximate budget (optional)", "अनुमानित budget (वैकल्पिक)", "लगभग budget (चाहौ तौ)", "लगभग budget (चाहीं त)"], "enqTimeline": ["When do you need it? (optional)", "काम कब तक चाहिए? (वैकल्पिक)", "काम कब तक चाही? (चाहौ तौ)", "काम कब ले चाहीं? (चाहीं त)"], "enqSubmit": ["Send enquiry", "Enquiry भेजें", "अपन बात भेजौ", "आपन बात भेजीं"], "enqConsent": ["I agree to be contacted about this enquiry. See the", "इस enquiry के बारे में मुझसे संपर्क किया जा सकता है। पढ़ें", "ई बात खातिर हमसे संपर्क करि सकत हौ। पढ़ौ", "एह बात खातिर हमसे संपर्क कर सकत बानी। पढ़ीं"]});
 const LANGS=["en","hi","aw","bh"];
 let lang="en";
 function setLang(l){
@@ -716,5 +621,6 @@ let saved="en"; try{saved=localStorage.getItem("tg-lang")||"en"}catch(e){}
 setLang(saved); route();
 </script>
 
+<script src="/enquiries.js" defer></script>
 </body>
 </html>
