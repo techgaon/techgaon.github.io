@@ -1,0 +1,85 @@
+name: Panchayat app dependencies and official directory
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - panchayatai/build-dependencies.mjs
+      - panchayatai/location-refresh.py
+      - .github/workflows/panchayat-completion.yml
+permissions:
+  contents: write
+concurrency:
+  group: panchayat-completion
+  cancel-in-progress: false
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save esbuild@0.25.12 firebase@12.4.0 pdfjs-dist@4.10.38 pdf-lib@1.17.1 tesseract.js@5.1.1
+      - run: node panchayatai/build-dependencies.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: panchayat-vendor
+          path: panchayatai/vendor
+      - name: Publish dependency bundles immediately
+        run: |
+          git config user.name 'TechGaon Data'
+          git config user.email 'data@techgaon.in'
+          git add panchayatai/vendor
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Self-host Panchayat sign-in, PDF and Hindi OCR dependencies'
+          git pull --rebase origin main
+          git push origin HEAD:main
+  directory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        shard: [0, 1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests==2.32.5 beautifulsoup4==4.14.2
+      - run: python panchayatai/location-refresh.py --shard ${{ matrix.shard }} --total 5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: panchayat-directory-${{ matrix.shard }}
+          path: panchayatai/locations
+  publish:
+    if: always()
+    needs: [dependencies, directory]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: panchayat-*
+          path: .panchayat-artifacts
+      - name: Copy successful outputs
+        run: |
+          if test -d .panchayat-artifacts/panchayat-vendor; then mkdir -p panchayatai/vendor; cp -r .panchayat-artifacts/panchayat-vendor/. panchayatai/vendor/; fi
+          for source in .panchayat-artifacts/panchayat-directory-*; do
+            if test -d "$source"; then mkdir -p panchayatai/locations; cp -r "$source"/. panchayatai/locations/; fi
+          done
+      - name: Save verified data
+        run: |
+          git config user.name 'TechGaon Data'
+          git config user.email 'data@techgaon.in'
+          git add panchayatai/vendor panchayatai/locations
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Publish local SDK bundles and official Panchayat directory snapshots'
+          git pull --rebase origin main
+          git push origin HEAD:main
