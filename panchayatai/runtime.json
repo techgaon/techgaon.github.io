@@ -1,0 +1,5 @@
+{
+  "firebase": {"apiKey":"AIzaSyCTemhSPOGUWqESTBu3ebzfQZGJv2XyMWg","authDomain":"petpyaar-a3ea6.firebaseapp.com","projectId":"petpyaar-a3ea6","appId":"1:938080790202:web:0da609eac45f9d54bf0483"},
+  "ai": {"enabled":false,"model":"gemini-2.5-flash-lite","appCheckSiteKey":null},
+  "version":"2026-11-03.2"
+}

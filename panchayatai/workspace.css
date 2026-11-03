@@ -1,0 +1,8 @@
+.ai-text{white-space:pre-wrap;line-height:1.9;overflow-wrap:anywhere;font-family:Arial,"Noto Sans Devanagari",sans-serif;margin:16px 0}
+.ai-consent{display:flex;align-items:center;gap:8px;font-size:12px;padding:10px 0}
+.ai-consent input{width:auto}
+.reading-options{margin:12px 0}
+#draft-error:not(:empty){padding:16px;margin:12px 0;background:#fff5dc;border-radius:10px}
+#gpfield .formgrid{margin-top:14px}
+#directory-status{line-height:1.7}
+button:disabled{opacity:.6;cursor:wait}
