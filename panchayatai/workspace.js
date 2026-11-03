@@ -92,7 +92,9 @@ async function profileLocations(){
       }catch{if(request!==loadId||!form.isConnected)return;$('#pa-blocks').innerHTML=''}
       syncGP();
     }
-    district.addEventListener('change',()=>loadDistrict(true));block.addEventListener('change',()=>{gps.value='';syncGP()});gps.addEventListener('input',syncGP);
+    district.addEventListener('change',()=>loadDistrict(true));
+    district.addEventListener('input',()=>{if(data.districts.some(d=>canonical(d.name)===canonical(district.value)))loadDistrict(true)});
+    block.addEventListener('change',()=>{gps.value='';syncGP()});block.addEventListener('input',syncGP);gps.addEventListener('input',syncGP);
     $('#pa-add-gp').onclick=()=>{const value=$('#pa-gp-picker').value;if(!value)return;const values=[...new Set(gps.value.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean).concat(value))];const multi=/ग्राम पंचायत अधिकारी|ग्राम विकास अधिकारी/.test(form.elements.role.value);if(values.length>(multi?20:1))return window.paToast?.(multi?'Maximum 20 Panchayats.':'This role supports one Panchayat.');gps.value=values.join(', ');syncGP()};
     form.dataset.locations='ready';await loadDistrict(false);
   }catch(e){if(status.isConnected)status.textContent=e.message+' You can enter your office manually.'}
