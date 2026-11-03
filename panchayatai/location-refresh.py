@@ -34,8 +34,11 @@ def extract(soup, district):
         seen.add(key);rows.append({'block':cells[2],'name':cells[3],'lgd':code,'sourceUpdatedAt':cells[21]})
     if len(rows)<5:raise ValueError('District export is empty or report schema changed')
     codes=[r['lgd'] for r in rows if r['lgd']]
-    if len(codes)!=len(set(codes)):raise ValueError('Conflicting duplicate GP LGD codes')
-    return {'district':district['name'],'districtCode':district['code'],'source':URL,'retrievedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'coverage':'Official PB3 report snapshot; not a complete current LGD boundary certification','missingLGDCodes':missing,'panchayats':rows}
+    conflicts={code for code in codes if codes.count(code)>1}
+    for row in rows:
+        if row['lgd'] in conflicts:
+            row['lgd']=None;row['lgdConflict']=True;missing+=1
+    return {'district':district['name'],'districtCode':district['code'],'source':URL,'retrievedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'coverage':'Official PB3 report snapshot; not a complete current LGD boundary certification','missingLGDCodes':missing,'conflictingLGDCodes':sorted(conflicts),'panchayats':rows}
 
 def run(shard=0,total=1):
     session=requests.Session();session.headers['User-Agent']='TechGaon Panchayat directory reader/1.0'
@@ -45,6 +48,11 @@ def run(shard=0,total=1):
     failures=[]
     for i,d in enumerate(items):
         if i%total!=shard:continue
+        existing=OUT/(d['code']+'.json')
+        if existing.exists():
+            previous=json.loads(existing.read_text(encoding='utf-8'))
+            if previous.get('coverage','').startswith('Official PB3'):
+                print('Kept verified snapshot:',d['name'],flush=True);continue
         try:
             soup=page(session)
             data={x['name']:x.get('value','') for x in soup.select('input[type=hidden][name]')}
