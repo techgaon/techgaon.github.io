@@ -10,7 +10,10 @@ def run(shard,total):
     known=set()
     for filename in (ROOT/'corpus').glob('*.json.gz'):
         if filename.name.startswith('ocr-'):continue
-        for row in json.loads(gzip.decompress(filename.read_bytes())):known.add((row['id'],row['p']))
+        for row in json.loads(gzip.decompress(filename.read_bytes())):
+            text=row['t'];bad=len(re.findall(r'[\u00c0-\u02ff]',text))
+            if bad>10 and bad/max(1,len(text))>.008:continue
+            known.add((row['id'],row['p']))
     dest=ROOT/'corpus'/f'ocr-{shard}.json.gz'
     previous=json.loads(gzip.decompress(dest.read_bytes())) if dest.exists() else []
     rows={(r['id'],r['p']):r for r in previous};failures=[];pending=0;done=0

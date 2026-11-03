@@ -5,6 +5,7 @@ const cdn = {
   auth:'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js',
   ai:'https://www.gstatic.com/firebasejs/12.4.0/firebase-ai.js',
   appcheck:'https://www.gstatic.com/firebasejs/12.4.0/firebase-app-check.js',
+  db:'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js',
   pdf:'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs',
   pdflib:'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm',
   ocr:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/+esm'

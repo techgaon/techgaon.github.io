@@ -1,0 +1,12 @@
+// Merge this match into the existing project's /databases/{database}/documents block.
+// It intentionally grants no access to FoodGaon, other users, Admin or payments.
+match /panchayatUsers/{userId} {
+  function isSelf() { return request.auth != null && request.auth.uid == userId; }
+  allow read, delete: if isSelf();
+  allow create, update: if isSelf()
+    && request.resource.data.keys().hasOnly(['profile', 'drafts', 'updatedAt'])
+    && request.resource.data.profile is map
+    && request.resource.data.drafts is list
+    && request.resource.data.drafts.size() <= 100
+    && request.resource.data.updatedAt == request.time;
+}

@@ -4,7 +4,7 @@ import {gzipSync} from 'node:zlib';
 import {build} from 'esbuild';
 const out='panchayatai/vendor';
 await fs.mkdir(out,{recursive:true});
-const inputs={app:'firebase/app',auth:'firebase/auth',ai:'firebase/ai',appcheck:'firebase/app-check',pdf:'pdfjs-dist/build/pdf.mjs',pdflib:'pdf-lib',ocr:'tesseract.js'};
+const inputs={app:'firebase/app',auth:'firebase/auth',ai:'firebase/ai',appcheck:'firebase/app-check',db:'firebase/firestore',pdf:'pdfjs-dist/build/pdf.mjs',pdflib:'pdf-lib',ocr:'tesseract.js'};
 await fs.mkdir('.vendor-build',{recursive:true});
 for(const [name,module]of Object.entries(inputs))await fs.writeFile('.vendor-build/'+name+'.js',`export * from ${JSON.stringify(module)};`);
 await build({entryPoints:Object.keys(inputs).map(n=>'.vendor-build/'+n+'.js'),outdir:out,bundle:true,splitting:true,format:'esm',platform:'browser',minify:true,target:'es2022',legalComments:'linked',define:{'process.env.NODE_ENV':'"production"'}});
