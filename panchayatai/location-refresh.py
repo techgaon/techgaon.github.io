@@ -4,7 +4,7 @@ No contact/personnel fields are retained. Preserve the last good district on fai
 import argparse, datetime, json, pathlib, re, time
 import requests
 from bs4 import BeautifulSoup
-URL='https://panchayatiraj.up.nic.in/pblc_pg/Reports/clsd/PB3FormReport.aspx'
+URL='https://panchayatiraj.up.nic.in/pblc_pg/Reports/clsd/PB3FormReport'
 ROOT=pathlib.Path(__file__).resolve().parent
 OUT=ROOT/'locations';OUT.mkdir(exist_ok=True)
 DISTRICT='ctl00$ContentPlaceHolder1$ddlDistrict'
@@ -26,12 +26,12 @@ def extract(soup, district):
     rows=[];seen=set();missing=0
     for tr in table.find_all('tr'):
         cells=[c.get_text(' ',strip=True) for c in tr.find_all(['td','th'],recursive=False)]
-        if len(cells)!=41 or cells[1]!=district['name'] or not cells[0].isdigit():continue
-        code=cells[38]
+        if len(cells)!=23 or cells[1]!=district['name'] or not cells[0].isdigit():continue
+        code=cells[4]
         if not re.fullmatch(r'\d{4,9}',code):missing+=1;code=None
         key=(cells[2],cells[3],code)
         if key in seen:continue
-        seen.add(key);rows.append({'block':cells[2],'name':cells[3],'lgd':code,'sourceUpdatedAt':cells[39]})
+        seen.add(key);rows.append({'block':cells[2],'name':cells[3],'lgd':code,'sourceUpdatedAt':cells[21]})
     if len(rows)<5:raise ValueError('District export is empty or report schema changed')
     codes=[r['lgd'] for r in rows if r['lgd']]
     if len(codes)!=len(set(codes)):raise ValueError('Conflicting duplicate GP LGD codes')
