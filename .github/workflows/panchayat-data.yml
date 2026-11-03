@@ -1,0 +1,41 @@
+name: Panchayat data refresh
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - panchayatai/news-refresh.py
+      - panchayatai/original-manifest.json
+      - panchayatai/mirror-originals.py
+      - .github/workflows/panchayat-data.yml
+  schedule:
+    - cron: '23 */4 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: panchayat-data
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch source-linked news
+        run: python panchayatai/news-refresh.py
+      - name: Prepare reference files
+        if: github.event_name != 'schedule'
+        run: python panchayatai/mirror-originals.py
+      - name: Save available data
+        run: |
+          git config user.name 'TechGaon Data'
+          git config user.email 'data@techgaon.in'
+          git add panchayatai/news.json
+          if test -f panchayatai/mirrors.json; then git add panchayatai/mirrors.json panchayatai/originals; fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Refresh Panchayat news and verified reference files'
+          git pull --rebase origin main
+          git push origin HEAD:main
