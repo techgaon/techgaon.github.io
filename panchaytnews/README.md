@@ -15,4 +15,3 @@ Last fetched feed is stored locally for immediate/offline reading; bookmarks sto
 District dropdown data: CodingMation/indian-states-districts, `data/india_states_districts.json` (snapshot retrieved 2026-11-04). Includes 36 states/UTs and 779 district entries; this is a convenience dataset, not an authoritative current LGD register. Review when administrative boundaries change.
 
 No dependencies/build step. Serve this directory with any HTTP static server. Run `node --check app.js` and `node --check sw.js` before release. Preserve the main TechGaon website and unrelated app paths.
-
