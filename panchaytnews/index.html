@@ -2,22 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#147451">
-<title>PANCHAYT NEWS - Your village. Your news.</title>
+<title>PANCHAYT NEWS — Your village. Your news.</title>
 <meta name="description" content="Panchayat and rural India news in up to 100 words. Read in Hindi, Awadhi, Bhojpuri and Haryanvi. Filter by state and district.">
 <link rel="icon" href="logo.svg" type="image/svg+xml"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="style.css">
 </head>
 <body>
-<aside class="desktop-note"><img src="logo.svg" alt="Panchayt News"><span>THE VOICE OF RURAL INDIA</span><h1>Your village.<br>Your news.</h1><p>Big stories from the grassroots.<br>One short read at a time.</p><div class="note-line"></div><small>Scroll or use   to explore</small></aside>
+<aside class="desktop-note"><img src="logo.svg" alt="Panchayt News"><span>THE VOICE OF RURAL INDIA</span><h1>Your village.<br>Your news.</h1><p>Big stories from the grassroots.<br>One short read at a time.</p><div class="note-line"></div><small>Scroll or use ↑ ↓ to explore</small></aside>
 <main class="phone" aria-label="Panchayt News app">
-<header><a class="brand" href="./" aria-label="Panchayt News home"><img src="logo.svg" alt=""><span>PANCHAYT <b>NEWS</b><small>???? ?? ?? ?????? ???</small></span></a><button class="icon" id="language" aria-label="Choose news language">?<span class="language-dot">A</span></button></header>
+<header><a class="brand" href="./" aria-label="Panchayt News home"><img src="logo.svg" alt=""><span>PANCHAYT <b>NEWS</b><small>गाँव की हर ज़रूरी खबर</small></span></a><button class="icon" id="language" aria-label="Choose news language">अ<span class="language-dot">A</span></button></header>
 <nav class="tabs" aria-label="News area"><button data-scope="all" class="active">All News</button><button data-scope="state">State News</button><button data-scope="district">District News</button></nav>
-<div class="feed-info"><button id="location"><span class="green-dot"></span><span id="areaLabel">Across India</span><span class="chevron">?</span></button><button id="topics">All Topics <span class="chevron">?</span></button></div>
-<section id="feed" aria-label="News feed" aria-live="polite"><div class="loading"><div class="skeleton picture"></div><div class="skeleton line"></div><div class="skeleton line"></div><p>Loading your news.</p></div></section>
-<div class="feed-controls"><button id="prev" aria-label="Previous story"></button><span id="counter">-</span><span class="swipe-hint">Swipe up for next story</span><button id="next" aria-label="Next story"></button></div>
+<div class="feed-info"><button id="location"><span class="green-dot"></span><span id="areaLabel">Across India</span><span class="chevron">⌄</span></button><button id="topics">All Topics <span class="chevron">⌄</span></button></div>
+<section id="feed" aria-label="News feed" aria-live="polite"><div class="loading"><div class="skeleton picture"></div><div class="skeleton line"></div><div class="skeleton line"></div><p>Loading your news…</p></div></section>
+<div class="feed-controls"><button id="prev" aria-label="Previous story">↑</button><span id="counter">—</span><span class="swipe-hint">Swipe up for next story</span><button id="next" aria-label="Next story">↓</button></div>
 <nav class="bottom" aria-label="Main navigation"><button id="home" class="selected"><i data-icon="home"></i><span>My Feed</span></button><button id="discover"><i data-icon="search"></i><span>Discover</span></button><button id="saved"><i data-icon="bookmark"></i><span>Saved</span><em id="savedCount"></em></button><button id="settings"><i data-icon="settings"></i><span>Settings</span></button></nav>
 </main>
-<aside class="desktop-right"><span class="outline-pill">100 WORDS. A WORLD OF CHANGE.</span><p>Closer to your<br><strong>community.</strong></p><div class="mini-stat"><span>01</span><div>Choose your area<small>India  State  District</small></div></div><div class="mini-stat"><span>02</span><div>Read in your language<small>????? � ???? � ??????? � ????????</small></div></div><div class="mini-stat"><span>03</span><div>Share what matters<small>Keep your community informed</small></div></div><small class="byline">A TECHGAON AI SERVICES INITIATIVE</small></aside>
-<dialog id="sheet"><div class="sheet-head"><h2 id="sheetTitle"></h2><button id="closeSheet" class="icon" aria-label="Close dialog">?</button></div><div id="sheetBody"></div></dialog><div id="toast" role="status"></div>
+<aside class="desktop-right"><span class="outline-pill">100 WORDS. A WORLD OF CHANGE.</span><p>Closer to your<br><strong>community.</strong></p><div class="mini-stat"><span>01</span><div>Choose your area<small>India → State → District</small></div></div><div class="mini-stat"><span>02</span><div>Read in your language<small>हिंदी · अवधी · भोजपुरी · हरियाणवी</small></div></div><div class="mini-stat"><span>03</span><div>Share what matters<small>Keep your community informed</small></div></div><small class="byline">A TECHGAON AI SERVICES INITIATIVE</small></aside>
+<dialog id="sheet"><div class="sheet-head"><h2 id="sheetTitle"></h2><button id="closeSheet" class="icon" aria-label="Close dialog">✕</button></div><div id="sheetBody"></div></dialog><div id="toast" role="status"></div>
 <script src="app.js" defer></script>
 </body></html>
-
