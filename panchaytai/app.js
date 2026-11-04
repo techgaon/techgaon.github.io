@@ -449,6 +449,12 @@ function examples(k, role) {
   Object.assign(E, X);
   return E[k] || [`${(draftsFor(role).find(x => x.k === k) || {}).n || "पत्र"} बनाएँ — क्या चाहिए, एक-दो पंक्ति में लिखें`];
 }
+function progress(btn, label, ms = 22000) {
+  const t0 = Date.now(); btn.disabled = true;
+  const tick = () => { const p = Math.min(95, Math.round(100 * (1 - Math.exp(-(Date.now() - t0) / (ms / 2.5))))); btn.textContent = `${label} ${p}%`; };
+  tick(); const id = setInterval(tick, 300);
+  return ok => { clearInterval(id); btn.textContent = ok ? "✔ 100%" : "✨ Generate in 1 minute"; setTimeout(() => { btn.disabled = false; btn.textContent = "✨ Regenerate"; }, ok ? 900 : 0); };
+}
 function draftEdit(el) {
   if (needLogin("draft")) return;
   const d = draftsFor(S.profile.role).find(x => x.k === S.draftType) || BASE_DRAFTS[0];
@@ -464,13 +470,12 @@ function draftEdit(el) {
   el.querySelectorAll(".ex").forEach(b => b.onclick = () => { $("#pts").value = b.textContent.replace(/[“”]/g, ""); $("#pts").focus(); });
   $("#mk").onclick = async () => {
     const req = $("#pts").value.trim(); if (!req && !S.att.length) return toast("Please write what you need");
-    const b = $("#mk"); b.disabled = true; b.textContent = "Generating…";
+    const done = progress($("#mk"), "⏳ बन रहा है…");
     try {
       const r = await api("/draft", { kind: d.n, profile: S.profile, points: req, gp: (S.profile.gps || [])[0] || "", att: S.att.splice(0),
         refs: searchCatalog(req, 5).map(x => ({ id: x.id, title: x.title, number: x.number, date: x.date, excerpt: (x.text || "").slice(0, 1500) })) });
-      showDraft(r.html, r.refs || [], d.n);
-    } catch (e) { toast(e.message); }
-    b.disabled = false; b.textContent = "✨ Regenerate";
+      done(true); showDraft(r.html, r.refs || [], d.n);
+    } catch (e) { done(false); toast(e.message); }
   };
 }
 function showDraft(html, refs, kind) {
@@ -524,7 +529,23 @@ function news(el) {
   $("#nd").onchange = e => { S.newsDist = e.target.value; news(el); };
   const area = S.newsScope === "district" ? $("#nd").value : "उत्तर प्रदेश";
   aiReady().then(() => window.PAI_AI.news(area)).then(j => {
-    $("#nl").innerHTML = (j.items || []).map(n => `<div class="news-card"><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${esc(n.date || "")} · ${n.url ? `<a href="${esc(n.url)}" target="_blank">${esc(n.source || "Read more")}</a>` : esc(n.source || "")}</div></div>`).join("") || `<p class="hint">No news found right now.</p>`;
+    const E = ["🏡", "🌾", "🚰", "🏗️", "📜", "🗳️", "🧹", "🌳"];
+    S.newsItems = j.items || [];
+    $("#nl").innerHTML = S.newsItems.map((n, i) => {
+      const d = n.date ? new Date(n.date.replace(" ", "T")) : null;
+      const ds = d && !isNaN(d) ? d.toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
+      return `<article class="ns">
+       <div class="ns-img">${n.img ? `<img src="${esc(n.img)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<span class="ns-emoji">${E[i % E.length]}</span></div>
+       <div class="ns-bar"><span class="ns-brand"><span class="logo">पं</span>Panchayat AI</span>
+         <span class="ns-act"><button class="ns-wa" data-wa="${i}" title="WhatsApp">🟢 WhatsApp</button><button class="ns-sh" data-sh="${i}" title="Share">↗ Share</button></span></div>
+       <h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p>
+       <div class="ns-foot">${esc(ds)}${n.source ? ` | ${esc(n.source)}` : ""} | ${n.url ? `<a href="${esc(n.url)}" target="_blank" rel="noopener">पूरा पढ़ें →</a>` : ""}</div></article>`;
+    }).join("") || `<p class="hint">No news found right now.</p>`;
+    const txt = n => `📰 ${n.title}\n\n${n.summary}\n\nपूरा पढ़ें: ${n.url}\n\n— Panchayat AI ${C.appUrl}`;
+    $("#nl").querySelectorAll("[data-wa]").forEach(b => b.onclick = () => window.open("https://wa.me/?text=" + encodeURIComponent(txt(S.newsItems[+b.dataset.wa]))));
+    $("#nl").querySelectorAll("[data-sh]").forEach(b => b.onclick = async () => { const n = S.newsItems[+b.dataset.sh];
+      if (navigator.share) { try { await navigator.share({ title: n.title, text: txt(n), url: n.url }); } catch {} }
+      else { try { await navigator.clipboard.writeText(txt(n)); toast("Copied ✔ — कहीं भी पेस्ट करें"); } catch {} } });
   }).catch(() => { $("#nl").innerHTML = `<p class="hint">Could not load news — please try again shortly.</p>`; });
 }
 
