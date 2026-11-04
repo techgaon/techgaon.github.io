@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - panchayatai/corpus-ocr.py
-      - .github/workflows/panchayat-ocr.yml
 permissions:
   contents: write
 concurrency:
@@ -50,18 +49,7 @@ jobs:
           path: panchayatai/corpus
       - name: Record actual coverage
         run: |
-          python - <<'PY'
-          import datetime,gzip,json,pathlib
-          p=pathlib.Path('panchayatai/corpus');m=json.loads((p/'manifest.json').read_text())
-          keys=set()
-          files=sorted(p.glob('ocr-*.json.gz'))
-          for f in files:
-            for r in json.loads(gzip.decompress(f.read_bytes())):keys.add((r['id'],r['p']))
-          m.setdefault('baseNeedsOCRPages',m['needsOCRPages'])
-          m['ocrPages']=len(keys);m['needsOCRPages']=max(0,m['baseNeedsOCRPages']-len(keys))
-          m['ocrFiles']=[f.name for f in files];m['ocrUpdatedAt']=datetime.datetime.now(datetime.timezone.utc).isoformat()
-          (p/'manifest.json').write_text(json.dumps(m),encoding='utf-8')
-          PY
+          python panchayatai/corpus-coverage.py
       - name: Save OCR index
         run: |
           git config user.name 'TechGaon Data'

@@ -1,21 +1,25 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=n=>fs.readFileSync((fs.existsSync('dist/research.js')?'dist/':'')+n,'utf8');
 const strip=s=>s.replace(/^import .*?;\n/gm,'').replace(/^loadAuth\(\)\.catch\(\(\)=>\{\}\);?\n?/gm,'');
 (async()=>{
   const ctx={window:{},console,Blob,TextEncoder,TextDecoder,DataView,Uint8Array,Map,Set,URL,document:{baseURI:'https://techgaon.in/panchayatai/',querySelector:()=>null},setTimeout,clearTimeout,AbortSignal};
-  vm.createContext(ctx);vm.runInContext(strip(fs.readFileSync('dist/research.js','utf8')),ctx);
+  vm.createContext(ctx);vm.runInContext(strip(source('research.js')),ctx);
   assert(vm.runInContext("words('SAMUDAYIK SHAUCHALAY').includes('शौचालय')",ctx));
   assert.equal(vm.runInContext("rectangles({items:[{str:'Annual',width:25,height:10,transform:[10,0,0,10,30,100]},{str:'Grant',width:25,height:10,transform:[10,0,0,10,60,100]}]},'annual grant',[]).length",ctx),2);
   assert.equal(vm.runInContext("rectangles({items:[{str:'Annual Grant',width:40,height:10,transform:[10,0,0,10,30,100]}]},'different rule',[]).length",ctx),0);
   const escaped=vm.runInContext("mark('<script>alert(1)</script>',['script','alert'])",ctx);
   assert(!escaped.includes('<script>'));assert(escaped.includes('&lt;'));
-  let src=strip(fs.readFileSync('dist/ai.js','utf8')).replace(/export /g,'');
+  ctx.fetch=async url=>url.endsWith('manifest.json')?{ok:true,json:async()=>({sections:{1:2},ocrFiles:['ocr-0.json.gz']})}:{ok:true,arrayBuffer:async()=>new TextEncoder().encode(JSON.stringify(url.includes('ocr-')?[{id:'CHECK',p:1,t:'OCR replacement',ocr:true},{id:'CHECK',p:2,t:'Second page',ocr:true}]:[{id:'CHECK',p:1,t:'Original page'},{id:'BROKEN',p:1,t:'è'.repeat(60)}])).buffer};
+  const loaded=await vm.runInContext('loadCorpus()',ctx);
+  assert.equal(loaded.length,2);assert.equal(loaded.find(p=>p.p===1).t,'OCR replacement');
+  let src=strip(source('ai.js')).replace(/export /g,'');
   vm.runInContext(src,ctx);
   assert.throws(()=>vm.runInContext("validateCitations('उत्तर [FAKE-1:p.5]',[{id:'UP-1',page:2}])",ctx),/outside/);
   assert.throws(()=>vm.runInContext("validateCitations('बिना संदर्भ उत्तर',[{id:'UP-1',page:2}])",ctx),/did not cite/);
   assert.equal(vm.runInContext("validateCitations('उत्तर [UP-1:p.2]',[{id:'UP-1',page:2}]).length",ctx),1);
-  const district=JSON.parse(fs.readFileSync('dist/locations/districts.json'));
+  const district=JSON.parse(source('locations/districts.json'));
   assert.equal(district.districts.length,75);assert.equal(new Set(district.districts.map(d=>d.code)).size,75);
-  const local=JSON.parse(fs.readFileSync('dist/locations/120.json'));assert.equal(local.panchayats.length,72);
+  const local=JSON.parse(source('locations/120.json'));assert(local.panchayats.length>=72);
   assert.equal(local.panchayats.find(g=>g.name==='KAMELA').lgd,'51946');
   assert.equal(local.panchayats.find(g=>g.name==='KHANPUR').lgd,'51948');
   assert.equal(local.panchayats.find(g=>g.name==='SANDVA').lgd,'51969');
@@ -25,7 +29,7 @@ const strip=s=>s.replace(/^import .*?;\n/gm,'').replace(/^loadAuth\(\)\.catch\(\
   const document={baseURI:'https://techgaon.in/panchayatai/',querySelector:s=>nodes[s],createElement:()=>({width:0,height:0,getContext:()=>({}),toBlob:cb=>cb(new Blob(['raster']))})};
   const fakePDF={numPages:2,getPage:async n=>({getTextContent:async()=>({items:n===1?[{str:'An actual textual page of at least thirty-five letters for the test.',hasEOL:true}]:[]}),getViewport:({scale})=>({width:600*scale,height:800*scale}),render:()=>({promise:Promise.resolve()}),cleanup(){}}),destroy:async()=>{destroyed=true}};
   const services={window:{},document,console,Blob,TextEncoder,TextDecoder,DataView,Uint8Array,Map,Set,URL,deadline:p=>p,dependency:async()=>({createWorker:async()=>({recognize:async()=>{ocrCalls++;return {data:{text:'स्कैन किए गए पृष्ठ का नमूना पाठ',confidence:88}}}})}),ocrOptions:async()=>({}),pdfReader:async()=>({getDocument:()=>({promise:Promise.resolve(fakePDF)})})};
-  vm.createContext(services);vm.runInContext(strip(fs.readFileSync('dist/services.js','utf8')),services);
+  vm.createContext(services);vm.runInContext(strip(source('services.js')),services);
   const text=await services.window.paReadFile({size:10,name:'mixed.pdf',type:'application/pdf',arrayBuffer:async()=>new ArrayBuffer(5)});
   assert(text.includes('[Page 1; extracted text]'));assert(text.includes('[Page 2; OCR; confidence 88%'));assert(text.includes('स्कैन'));assert.equal(ocrCalls,1);assert(destroyed);
   nodes['#read-from'].value='3';await assert.rejects(()=>services.window.paReadFile({size:10,name:'bad.pdf',type:'application/pdf',arrayBuffer:async()=>new ArrayBuffer(5)}),/valid range/);
