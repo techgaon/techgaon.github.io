@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>पंचायत AI — भुगतान सत्यापन</title><link rel="stylesheet" href="app.css"></head><body><main>
+<h2>UPI भुगतान सत्यापन (Admin)</h2><p class="hint">बैंक/UPI ऐप में UTR मिलाकर स्वीकृत करें।</p>
+<button class="btn" id="li">Google से लॉगिन</button><div id="list" class="card" style="margin-top:12px"></div></main>
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const C=PAI_CONFIG;firebase.initializeApp(C.firebase);const A=firebase.auth(),D=firebase.firestore();
+li.onclick=()=>A.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+async function act(id,reject){const ref=D.collection("payments").doc(id),x=(await ref.get()).data();
+ if(!reject){const u=(await D.collection("users").doc(x.uid).get()).data()||{};const from=Math.max(Date.now(),(u.plan&&u.plan.until)||0);
+  await D.collection("users").doc(x.uid).set({plan:{name:x.plan,until:from+(x.plan==="yearly"?365:30)*864e5}},{merge:true});}
+ await ref.update({status:reject?"rejected":"approved",by:A.currentUser.email,doneAt:Date.now()});load();}
+async function load(){const s=await D.collection("payments").where("status","==","pending").orderBy("at","desc").get();
+ list.innerHTML=s.docs.map(d=>{const x=d.data();return `<div class="ref"><div><b>${x.email}</b><small>${x.plan} · UTR ${x.utr} · ${new Date(x.at).toLocaleString("hi-IN")}</small></div><div><button class="btn" onclick="act('${d.id}')">✔ स्वीकृत</button> <button class="btn alt" onclick="act('${d.id}',1)">✕</button></div></div>`}).join("")||"कोई लंबित भुगतान नहीं";}
+A.onAuthStateChanged(u=>u&&load());
+</script></body></html>

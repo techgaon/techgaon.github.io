@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>पंचायत AI — PANCHAYT AI | TechGaon AI Services</title>
+<meta name="description" content="ग्राम पंचायत अधिकारी, प्रधान, BDO, ADO पंचायत, DPRO हेतु AI सहायक — पत्र, स्पष्टीकरण, नोटिस, कार्यालय आदेश 1 मिनट में, GO/नियम संदर्भ सहित।">
+<meta name="theme-color" content="#0f5132">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <button class="icon-btn" id="menuBtn" aria-label="मेनू">☰</button>
+    <div class="brand"><span class="logo">पं</span><div><b>पंचायत AI</b><small>PANCHAYT AI</small></div></div>
+    <div class="top-r">
+      <span id="planBadge" class="badge hidden"></span>
+      <button class="btn-sm" id="loginTop">Login</button>
+      <img id="avatar" class="avatar hidden" alt="">
+    </div>
+  </header>
+
+  <nav id="drawer" class="drawer">
+    <a data-go="home">🏠 Home</a>
+    <a data-go="chat">💬 AI से पूछें</a>
+    <a data-go="draft">📝 पत्र / नोटिस बनाएँ</a>
+    <a data-go="library">📚 GO पुस्तकालय</a>
+    <a data-go="news">📰 Panchayat News</a>
+    <a data-go="history">🗂️ My Drafts</a>
+    <a data-go="plans">⭐ Plus Plans</a>
+    <a data-go="profile">👤 My Profile</a>
+    <a id="logoutBtn" class="hidden">🚪 Logout</a>
+    <div class="drawer-foot"><a href="https://techgaon.in" target="_blank">TechGaon AI Services</a></div>
+  </nav>
+  <div id="scrim" class="scrim"></div>
+
+  <main id="view"></main>
+
+  <div id="adSlot" class="ad hidden">Ad · <a data-go="plans">Go Plus to remove ads</a></div>
+  <nav class="tabs">
+    <a data-go="home">🏠<span>Home</span></a>
+    <a data-go="chat">💬<span>पूछें</span></a>
+    <a data-go="draft">📝<span>ड्राफ्ट</span></a>
+    <a data-go="news">📰<span>News</span></a>
+    <a data-go="library">📚<span>GO</span></a>
+  </nav>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="config.js"></script>
+<script src="data/geo.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="app.js"></script>
+<script type="module" src="ai.js"></script>
+</body>
+</html>
