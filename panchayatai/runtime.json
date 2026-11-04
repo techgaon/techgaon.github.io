@@ -7,11 +7,11 @@
   },
   "ai": {
     "enabled": true,
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-3.5-flash-lite",
     "appCheckSiteKey": "6LdwUg8uAAAAAKJYBbw2EI2_PFd8yd4akEDaLICC"
   },
   "cloud": {
     "enabled": false
   },
-  "version": "2026-11-04.1"
+  "version": "2026-11-04.2"
 }
