@@ -13,7 +13,9 @@ async function model(){
     const [apps,ai,check]=await Promise.all([dependency('app'),dependency('ai'),dependency('appcheck')]);
     const app=apps.getApps().find(a=>a.name==='panchayatai')||apps.initializeApp(settings.firebase,'panchayatai');
     appCheck||=check.initializeAppCheck(app,{provider:new check.ReCaptchaEnterpriseProvider(settings.ai.appCheckSiteKey),isTokenAutoRefreshEnabled:true});
-    return ai.getGenerativeModel(ai.getAI(app,{backend:new ai.GoogleAIBackend()}),{model:settings.ai.model||'gemini-2.5-flash-lite',systemInstruction:SYSTEM,generationConfig:{temperature:0.15,maxOutputTokens:3500}});
+    try { await deadline(check.getToken(appCheck),25000,'App Check verification timed out. Please reload and retry.'); }
+    catch(e){throw Error('App Check verification failed: '+(e.code||e.message)+'. Check the registered web app, Enterprise key and techgaon.in domain.');}
+    return ai.getGenerativeModel(ai.getAI(app,{backend:new ai.GoogleAIBackend(),useLimitedUseAppCheckTokens:true}),{model:settings.ai.model||'gemini-2.5-flash-lite',systemInstruction:SYSTEM,generationConfig:{temperature:0.15,maxOutputTokens:3500}});
   })().catch(e=>{modelPromise=null;throw e});
   return modelPromise;
 }
