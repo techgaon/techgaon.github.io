@@ -268,7 +268,7 @@ async function saveProfile() {
 const geoCache = {};
 async function loadDistrict(d) {
   if (geoCache[d] !== undefined) return geoCache[d];
-  try { geoCache[d] = await (await fetch("data/geo/" + encodeURIComponent(d) + ".json")).json(); } catch { geoCache[d] = null; }
+  try { geoCache[d] = await (await fetch("data/geo/" + G.districts.indexOf(d) + ".json")).json(); } catch { geoCache[d] = null; }
   return geoCache[d]; // {tehsils:[..], blocks:{ "हैदरगढ़": ["कमेला", ...] }}
 }
 function profile(el) {
