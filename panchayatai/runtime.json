@@ -1,6 +1,17 @@
 {
-  "firebase": {"apiKey":"AIzaSyCTemhSPOGUWqESTBu3ebzfQZGJv2XyMWg","authDomain":"petpyaar-a3ea6.firebaseapp.com","projectId":"petpyaar-a3ea6","appId":"1:938080790202:web:0da609eac45f9d54bf0483"},
-  "ai": {"enabled":false,"model":"gemini-2.5-flash-lite","appCheckSiteKey":null},
-  "cloud":{"enabled":false},
-  "version":"2026-11-03.2"
+  "firebase": {
+    "apiKey": "AIzaSyCTemhSPOGUWqESTBu3ebzfQZGJv2XyMWg",
+    "authDomain": "petpyaar-a3ea6.firebaseapp.com",
+    "projectId": "petpyaar-a3ea6",
+    "appId": "1:938080790202:web:0da609eac45f9d54bf0483"
+  },
+  "ai": {
+    "enabled": true,
+    "model": "gemini-2.5-flash-lite",
+    "appCheckSiteKey": "6LdwUg8uAAAAAKJYBbw2EI2_PFd8yd4akEDaLICC"
+  },
+  "cloud": {
+    "enabled": false
+  },
+  "version": "2026-11-04.1"
 }

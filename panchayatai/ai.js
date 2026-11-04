@@ -12,7 +12,7 @@ async function model(){
     if(!settings.ai?.enabled||!settings.ai.appCheckSiteKey)throw Error('AI activation pending: the project owner must enable Firebase AI Logic and configure the App Check site key. Source search is available.');
     const [apps,ai,check]=await Promise.all([dependency('app'),dependency('ai'),dependency('appcheck')]);
     const app=apps.getApps().find(a=>a.name==='panchayatai')||apps.initializeApp(settings.firebase,'panchayatai');
-    appCheck||=check.initializeAppCheck(app,{provider:new check.ReCaptchaV3Provider(settings.ai.appCheckSiteKey),isTokenAutoRefreshEnabled:true});
+    appCheck||=check.initializeAppCheck(app,{provider:new check.ReCaptchaEnterpriseProvider(settings.ai.appCheckSiteKey),isTokenAutoRefreshEnabled:true});
     return ai.getGenerativeModel(ai.getAI(app,{backend:new ai.GoogleAIBackend()}),{model:settings.ai.model||'gemini-2.5-flash-lite',systemInstruction:SYSTEM,generationConfig:{temperature:0.15,maxOutputTokens:3500}});
   })().catch(e=>{modelPromise=null;throw e});
   return modelPromise;
