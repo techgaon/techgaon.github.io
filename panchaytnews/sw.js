@@ -1,5 +1,5 @@
 'use strict';
-const CACHE='panchayt-news-v2';
+const CACHE='panchayt-news-v3';
 const ASSETS=['./','index.html','style.css','app.js','logo.svg','rural.svg','regions.json','news.json','manifest.webmanifest'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('panchayt-news-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
