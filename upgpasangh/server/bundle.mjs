@@ -28,7 +28,7 @@ var manager = (a, d) => {
 function visible(s, a) {
   const isState = a.role === "state";
   const isMember = a.role === "gpa";
-  return { me: a, members: s.members.filter((m) => isState || isMember && m.id === a.id || !isMember && m.district === a.district), officers: s.officers.filter((o) => isState || o.scope === "district" && o.district === a.district).map(({ mobile, ...x }) => isState ? { ...x, mobile } : x), funds: s.funds, payments: s.payments.filter((p) => isState || isMember && p.member === a.id || !isMember && p.district === a.district), messages: s.messages.filter((m) => m.scope === "state" || m.district === a.district), letters: s.letters.filter((l) => isState || l.sender === a.id), settings: Object.fromEntries(Object.entries(s.settings).filter(([k]) => isState || k === "state" || k === a.district)), audit: isState ? s.audit.slice(-100) : [] };
+  return { me: a, members: s.members.filter((m) => isState || isMember && m.id === a.id || !isMember && m.district === a.district), officers: s.officers.filter((o) => isState || o.scope === "district" && o.district === a.district).map(({ mobile, ...x }) => isState ? { ...x, mobile } : x), funds: s.funds, payments: s.payments.filter((p) => isState || isMember && p.member === a.id || !isMember && p.district === a.district), messages: s.messages, letters: s.letters.filter((l) => isState || l.sender === a.id), settings: Object.fromEntries(Object.entries(s.settings).filter(([k]) => isState || k === "state" || k === a.district)), audit: isState ? s.audit.slice(-100) : [] };
 }
 function publicView(s) {
   return { messages: s.messages.filter((x) => x.scope === "state" && x.public), profiles: s.settings.profiles || {}, memberCount: s.members.filter((x) => !x.demo).length };
