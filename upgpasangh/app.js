@@ -1,6 +1,6 @@
 // Shared access rules run on the server and also power the explicitly labelled local review.
 (async()=>{
-const {initialState,operation,publicView,districts,password}=await import('./core.mjs');
+const {initialState,operation,publicView,districts,password}=await import('./core.mjs?v=20261111-2');
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let lang=localStorage.getItem('sangh-lang')||'hi',token=localStorage.getItem('sangh-token')||'',data=null,tab='overview',pub={},slide=0,importRows=[];
 const t=(hi,en)=>lang==='hi'?hi:en;
