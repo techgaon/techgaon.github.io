@@ -1,0 +1,9 @@
+name = "upgpasangh-api"
+account_id = "fc14ce3ea45e9966cc8933371cecc0ad"
+main = "d1-worker.mjs"
+compatibility_date = "2026-11-11"
+[[d1_databases]]
+binding = "DB"
+database_name = "upgpasangh"
+# database_id is set after creating the D1 database in the account dashboard.
+database_id = "990ae46b-a702-4596-abc4-b98b3e91c969"
