@@ -158,7 +158,10 @@
     paper.className="pai-printdoc";
     paper.setAttribute("aria-hidden","true");
     paper.innerHTML=cleanHtml(result.value);
-    document.body.appendChild(paper);
+    const offscreen=document.createElement("div");
+    offscreen.style.cssText="position:absolute;left:-20000px;top:0;width:794px";
+    offscreen.appendChild(paper);
+    document.body.appendChild(offscreen);
     try {
       await document.fonts.ready;
       progress("PDF पेज तैयार हो रहे हैं…");
@@ -169,7 +172,7 @@
         jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
         pagebreak:{mode:["css","legacy"]}
       }).from(paper).outputPdf("blob");
-    } finally {paper.remove();}
+    } finally {offscreen.remove();}
   }
   function mount(el) {
     let type=tasks[0],file=null,output=null,outName="",copiedText="",busy=false;

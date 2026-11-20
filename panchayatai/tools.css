@@ -14,7 +14,7 @@
 .pai-status{font-size:14px;min-height:24px;overflow-wrap:anywhere;margin:12px 0}
 .pai-result-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .pai-text-preview{white-space:pre-wrap;overflow-wrap:anywhere;max-height:350px;overflow:auto;padding:12px;background:#f7f9f7;border:1px solid var(--bd);border-radius:10px;font:14px/1.7 "Noto Sans Devanagari",sans-serif}
-.pai-printdoc{position:absolute;left:-10000px;top:0;width:794px;max-width:none;padding:28px 40px;color:#111;background:white;font:16px/1.55 "Noto Sans Devanagari",Arial,sans-serif}
+.pai-printdoc{position:relative;width:794px;max-width:none;padding:28px 40px;color:#111;background:white;font:16px/1.55 "Noto Sans Devanagari",Arial,sans-serif}
 .pai-printdoc p{margin:0 0 10px}.pai-printdoc h1,.pai-printdoc h2,.pai-printdoc h3{line-height:1.4;margin:14px 0 8px}
 .pai-printdoc table{width:100%;border-collapse:collapse;table-layout:auto}.pai-printdoc td,.pai-printdoc th{border:1px solid #aaa;padding:6px;vertical-align:top}
 .pai-printdoc img{max-width:100%;height:auto}.pai-printdoc tr,.pai-printdoc img{break-inside:avoid}
