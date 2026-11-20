@@ -37,12 +37,23 @@
   const filename = f => (f.name || "document").replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]/g,"_").slice(0,90) || "document";
   const reportError = e => e && e.message ? e.message : "फ़ाइल बदलने में समस्या हुई";
   async function makeWord(text) {
-    const d=await loadDocx(), lines=text.replace(/\r\n?/g,"\n").split("\n");
-    const paragraphs=lines.map(line=>new d.Paragraph({
-      children:[new d.TextRun({text:line || " ",font:"Nirmala UI",size:22})],
-      spacing:{after:45}
-    }));
-    const document=new d.Document({sections:[{properties:{},children:paragraphs}]});
+    const d=await loadDocx();
+    const pages=text.replace(/\r\n?/g,"\n").split(/\n\n(?=पृष्ठ \d+\n)/);
+    const paragraphs=[];
+    for(let pageIndex=0;pageIndex<pages.length;pageIndex++){
+      const lines=pages[pageIndex].split("\n");
+      for(let i=0;i<lines.length;i++){
+        paragraphs.push(new d.Paragraph({
+          pageBreakBefore:pageIndex>0&&i===0,
+          children:[new d.TextRun({text:lines[i]||" ",font:"Nirmala UI",size:22})],
+          spacing:{after:50,line:300}
+        }));
+      }
+    }
+    const document=new d.Document({sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},
+      children:paragraphs
+    }]});
     return d.Packer.toBlob(document);
   }
   async function ocrWorker(progress) {
@@ -183,29 +194,32 @@
     return doc.body.innerHTML;
   }
   async function wordToPdf(file,progress,preloaded) {
-    if(!window.mammoth||!window.html2pdf)throw new Error("Word/PDF लाइब्रेरी लोड नहीं हुई");
-    progress("Word के पैराग्राफ, चित्र और टेबल पढ़ रहे हैं…");
-    const result=await window.mammoth.convertToHtml({arrayBuffer:preloaded || await file.arrayBuffer()});
-    if(!result.value.trim())throw new Error("DOCX में पढ़ने योग्य सामग्री नहीं मिली");
+    if(!window.mammoth||!window.html2pdf)throw new Error("Word/PDF converter libraries are unavailable.");
+    progress("Reading Word paragraphs, images and tables…");
+    const result=await window.mammoth.convertToHtml({arrayBuffer:preloaded||await file.arrayBuffer()});
+    if(!result.value.trim())throw Error("No readable content found in the DOCX file.");
     const paper=document.createElement("section");
     paper.className="pai-printdoc";
-    paper.setAttribute("aria-hidden","true");
     paper.innerHTML=cleanHtml(result.value);
-    const offscreen=document.createElement("div");
-    offscreen.style.cssText="position:absolute;left:-20000px;top:0;width:794px";
-    offscreen.appendChild(paper);
-    document.body.appendChild(offscreen);
-    try {
-      await document.fonts.ready;
-      progress("PDF पेज तैयार हो रहे हैं…");
-      return await window.html2pdf().set({
-        margin:[12,12,12,12],filename:filename(file)+".pdf",
+    const stage=document.createElement("div");
+    stage.className="pai-export-stage";
+    stage.style.cssText="position:fixed;left:0;top:0;width:794px;z-index:-1;pointer-events:none;background:white";
+    stage.appendChild(paper);
+    document.body.appendChild(stage);
+    try{
+      if(document.fonts?.ready)await document.fonts.ready;
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      progress("Building A4 PDF pages…");
+      const blob=await window.html2pdf().set({
+        margin:[14,14,14,14],filename:filename(file)+".pdf",
         image:{type:"jpeg",quality:.96},
-        html2canvas:{scale:2,useCORS:false,backgroundColor:"#fff"},
+        html2canvas:{scale:2,useCORS:false,backgroundColor:"#ffffff",scrollX:0,scrollY:0},
         jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
         pagebreak:{mode:["css","legacy"]}
       }).from(paper).outputPdf("blob");
-    } finally {offscreen.remove();}
+      if(!blob?.size||blob.size<800)throw Error("PDF conversion returned an empty file.");
+      return blob;
+    }finally{stage.remove();}
   }
   function mount(el) {
     let type=tasks[0],file=null,loadedBytes=null,serial=0,output=null,outName="",copiedText="",busy=false;

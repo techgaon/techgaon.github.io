@@ -133,11 +133,6 @@ async function availableOriginals(question){
     }catch{return null;}
   }))).filter(Boolean);
 }
-/* PDF footer retained for user-created letters */
-async function stampFooter(bytes) {
-  const { prepareGoPdf } = await import("./go-pdf.js?v=20261120-answer1");
-  return (await prepareGoPdf(bytes)).bytes;
-}
 function saveBlob(blob,name){const a=document.createElement("a"),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 const activeOriginalDownloads=new Set();
 async function downloadOriginalPDF(id){
@@ -213,17 +208,19 @@ function home(el) {
   ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} Login with Google</button></div></div>` : ""}
   <div class="home-options">
-   <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>हर विषय पर सामान्य AI सहायता पाएँ</small></button>
-    <button class="tile ai-tile" data-go="tools"><span class="e">🧰</span><b>AI Tools</b><small>Image, PDF और Word के 6 Conversion Tools</small></button>
-   <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
-   <div class="grid draft-grid">
-    <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
-   </div>
-   <div class="grid draft-grid">
-    <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
-    <button class="tile" data-go="estimate"><span class="e">📐</span><b>Estimate & MB Calculator</b><small>माप, ईंट, सीमेंट, गिट्टी व MB</small></button>
-   </div>
-   <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>For more features and easy work</small></button>
+    <div class="grid draft-grid home-feature-pair">
+      <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>Ask anything</small></button>
+      <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
+    </div>
+    <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
+    <div class="grid draft-grid">
+      <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
+    </div>
+    <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
+    <div class="grid draft-grid home-final-pair">
+      <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
+      <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>More features</small></button>
+    </div>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
    ${["भारत में मानसून कैसे बनता है?","किसी दस्तावेज़ का सार कैसे लिखें?","ग्राम पंचायत के पत्र का प्रारूप बताएँ।","AI का उपयोग पढ़ाई में कैसे करें?"]
@@ -579,18 +576,61 @@ function showDraft(html, refs, kind) {
    <div class="btn-row"><button class="btn" id="dcopy">📋 Copy</button><button class="btn" id="dpdf">⬇ PDF</button><button class="btn alt" id="dword">⬇ Word</button><button class="btn alt" id="dsave">💾 Save</button><button class="btn alt" id="dwa">WhatsApp</button></div>${refsHtml(refs)}</div>`;
   const name = kind + "_" + new Date().toISOString().slice(0, 10);
   $("#dcopy").onclick = async () => { const t = $("#paper").innerText; try { await navigator.clipboard.writeText(t); } catch { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); document.execCommand("copy"); x.remove(); } toast("Copied ✔"); };
+  const makeLetterPdf = async () => {
+    const paper=$("#paper");
+    if(!paper||!paper.textContent.trim())throw Error("The letter is empty. Please generate it first.");
+    if(typeof window.html2pdf!=="function")throw Error("PDF library could not load. Refresh and retry.");
+    if(document.fonts?.ready)await document.fonts.ready;
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const worker=window.html2pdf().set({
+      margin:[14,14,19,14],filename:name+".pdf",
+      image:{type:"jpeg",quality:.97},
+      html2canvas:{scale:2,useCORS:false,backgroundColor:"#ffffff",scrollY:0,scrollX:0},
+      jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
+      pagebreak:{mode:["css","legacy"]}
+    }).from(paper).toPdf();
+    const pdf=await worker.get("pdf");
+    const total=pdf.internal.getNumberOfPages();
+    if(!total)throw Error("PDF contains no pages.");
+    for(let page=1;page<=total;page++){
+      pdf.setPage(page);pdf.setFont("helvetica","normal");pdf.setFontSize(8);pdf.setTextColor(60,95,73);
+      pdf.text("TechGaon AI Services",14,287);
+      pdf.text("PANCHAYAT AI",196,287,{align:"right"});
+      pdf.setDrawColor(185,207,191);pdf.line(14,282,196,282);
+    }
+    const bytes=pdf.output("arraybuffer");
+    if(!bytes||bytes.byteLength<900)throw Error("Generated PDF is unexpectedly empty.");
+    return new Blob([bytes],{type:"application/pdf"});
+  };
   $("#dpdf").onclick = async () => {
-    toast("Creating PDF…");
-    const blob = await html2pdf().set({ margin: [14, 14, 18, 14], filename: name + ".pdf", html2canvas: { scale: 2 }, jsPDF: { format: "a4" } }).from($("#paper")).outputPdf("arraybuffer");
-    saveBlob(new Blob([await stampFooter(blob)], { type: "application/pdf" }), name + ".pdf");
+    const button=$("#dpdf");button.disabled=true;
+    try{toast("Creating A4 PDF…");saveBlob(await makeLetterPdf(),name+".pdf");toast("PDF ready");}
+    catch(e){toast("PDF error: "+(e.message||"Please retry"));console.error(e);}
+    finally{button.disabled=false;}
   };
   $("#dword").onclick = () => {
-    const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:Mangal,"Noto Sans Devanagari";font-size:13pt;line-height:1.6}</style></head><body>${$("#paper").innerHTML}
+    const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>@page{size:A4;margin:20mm}body{font-family:Mangal,"Noto Sans Devanagari";font-size:12pt;line-height:1.6}p,table,tr{page-break-inside:avoid}</style></head><body>${$("#paper").innerHTML}
      <p style="font-size:8pt;color:#666;border-top:1px solid #ccc;margin-top:30px"><a href="${C.companyUrl}">${C.companyName}</a><span style="float:right"><a href="${C.appUrl}">${C.appName}</a></span></p></body></html>`;
     saveBlob(new Blob(["﻿" + doc], { type: "application/msword" }), name + ".doc");
   };
   $("#dsave").onclick = () => { const h = LS.get("drafts") || []; h.unshift({ kind, html: $("#paper").innerHTML, refs, at: Date.now() }); LS.set("drafts", h.slice(0, 50)); toast("Saved ✔"); };
-  $("#dwa").onclick = () => window.open("https://wa.me/?text=" + encodeURIComponent($("#paper").innerText.slice(0, 3000) + "\n\n— " + C.appName + " " + C.appUrl));
+  $("#dwa").onclick = async () => {
+    const message=$("#paper").innerText.trim();
+    if(!message){toast("Nothing to share");return;}
+    const url="https://wa.me/?text="+encodeURIComponent(message.slice(0,6500)+"\n\n— "+C.appName+" "+C.appUrl);
+    if(navigator.share&&typeof File==="function"){
+      try{
+        const blob=await makeLetterPdf();
+        const attachment=new File([blob],name+".pdf",{type:"application/pdf"});
+        if(!navigator.canShare||navigator.canShare({files:[attachment]})){
+          await navigator.share({title:kind,text:"Panchayat AI letter",files:[attachment]});
+          return;
+        }
+      }catch(e){if(e?.name==="AbortError")return;console.warn("File sharing unavailable, opening WhatsApp text",e);}
+    }
+    const link=document.createElement("a");link.href=url;link.target="_blank";link.rel="noopener noreferrer";
+    document.body.appendChild(link);link.click();link.remove();
+  };
 }
 function history(el) {
   const h = LS.get("drafts") || [];

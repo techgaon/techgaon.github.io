@@ -1,38 +1,38 @@
-/* Panchayat AI — Estimate and draft Measurement Book (offline, local browser) */
+/* Panchayat AI — Construction materials and cost estimate (client-side) */
 (() => {
 "use strict";
 const TYPES={
- brick:["ईंट की चिनाई","volume"],pcc:["PCC Concrete","volume"],rcc:["RCC Concrete","volume"],
- plaster:["प्लास्टर","area"],paver:["इंटरलॉकिंग पेवर","area"],tile:["फ्लोर टाइल्स","area"],
- soling:["गिट्टी सोलिंग","volume"],earth:["मिट्टी खुदाई / भराई","volume"],mortar:["सीमेंट मोर्टार","volume"]
+ brick:["Brick Masonry","volume"],pcc:["PCC Concrete","volume"],rcc:["RCC Concrete","volume"],
+ plaster:["Plastering","area"],paver:["Interlocking Paver","area"],tile:["Floor Tiles","area"],
+ soling:["Aggregate Soling","volume"],earth:["Earthwork Excavation / Filling","volume"],mortar:["Cement Mortar","volume"]
 };
 const MATERIAL={cement:["Cement","50 kg bag"],sand:["Sand","m³"],aggregate:["Aggregate","m³"],bricks:["Bricks","pcs"],pavers:["Paver blocks","pcs"],tiles:["Tiles","pcs"],steel:["Steel","kg"]};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const f=x=>new Intl.NumberFormat("en-IN",{maximumFractionDigits:3}).format(x);
 const currency=x=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(x);
-const good=(raw,label,zero=false)=>{const x=Number(raw);if(raw===""||!Number.isFinite(x)||x<0||(!zero&&x===0)||x>1e8)throw Error(label+" सही संख्या में भरें।");return x;};
+const good=(raw,label,zero=false)=>{const x=Number(raw);if(raw===""||!Number.isFinite(x)||x<0||(!zero&&x===0)||x>1e8)throw Error(label+" must be a valid number.");return x;};
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const save=(key,val)=>{try{localStorage.setItem(key,JSON.stringify(val));}catch{}};
 function calculate(v){
  const type=TYPES[v.type];
- if(!type)throw Error("काम चुनें");
+ if(!type)throw Error("Choose a work type.");
  const area=type[1]==="area";
- if(!["m","ft"].includes(v.unit))throw Error("लंबाई/चौड़ाई की इकाई चुनें।");
+ if(!["m","ft"].includes(v.unit))throw Error("Choose a length/width unit.");
  const scale=v.unit==="ft"?.3048:1;
  const hUnit=v.hunit||v.unit;
  const heightFactor={m:1,cm:0.01,mm:0.001,ft:0.3048}[hUnit];
- if(!heightFactor)throw Error("मोटाई की इकाई चुनें।");
- const count=good(v.count,"संख्या");
- if(!Number.isInteger(count)||count>10000)throw Error("संख्या पूर्णांक में भरें (1–10000)।");
- const l=good(v.l,"लंबाई"),b=good(v.b,"चौड़ाई"),h=area?1:good(v.h,"मोटाई/ऊँचाई");
+ if(!heightFactor)throw Error("Choose a thickness/depth unit.");
+ const count=good(v.count,"Count");
+ if(!Number.isInteger(count)||count>10000)throw Error("Count must be an integer from 1 to 10,000.");
+ const l=good(v.l,"Length"),b=good(v.b,"Width"),h=area?1:good(v.h,"Thickness/Height");
  const gross=count*(l*scale)*(b*scale)*(area?1:h*heightFactor);
- const cut=good(v.cut,"कटौती",true)*Math.pow(scale,area?2:3);
- if(!Number.isFinite(gross)||gross<=0||gross>1e9||cut>=gross)throw Error("माप बहुत बड़ा है या कटौती कुल माप से कम नहीं है।");
+ const cut=good(v.cut,"Deduction",true)*Math.pow(scale,area?2:3);
+ if(!Number.isFinite(gross)||gross<=0||gross>1e9||cut>=gross)throw Error("The measurement is invalid or the deduction is too large.");
  const qty=gross-cut;
  const mat={},notes=[];
  function mixed(wet,ratio,dryFactor){
   const parts=String(ratio).split(":").map(Number),sum=parts.reduce((a,b)=>a+b,0);
-  if(parts.some(x=>!Number.isFinite(x)||x<=0)||!sum||parts.length<2||parts.length>3)throw Error("मिक्स अनुपात गलत है।");
+  if(parts.some(x=>!Number.isFinite(x)||x<=0)||!sum||parts.length<2||parts.length>3)throw Error("Invalid mix ratio.");
   const dry=wet*dryFactor;
   mat.cement=(mat.cement||0)+dry*(parts[0]/sum)*1440/50;
   mat.sand=(mat.sand||0)+dry*(parts[1]/sum);
@@ -40,182 +40,250 @@ function calculate(v){
  }
  if(v.type==="pcc"||v.type==="rcc"){
   mixed(qty,v.cmix,1.54);
-  if(v.type==="rcc"){const kg=good(v.steel,"स्टील kg/m³",true);if(kg>0)mat.steel=qty*kg;}
+  if(v.type==="rcc"){const kg=good(v.steel,"Steel kg/m³",true);if(kg>0)mat.steel=qty*kg;}
   notes.push("Dry volume factor: 1.54. RCC mix and steel must follow approved structural design and BOQ.");
  }else if(v.type==="brick"){
-  const per=good(v.brickper,"प्रति m³ ईंटों की संख्या");
-  const mortarShare=good(v.mortarShare??"0.23","मोर्टार अनुपात",true);
-  if(mortarShare>=1)throw Error("मोर्टार अनुपात 0 और 1 के बीच भरें।");
-  const wastage=good(v.brickWaste??"0","ईंट टूटफूट (%)",true);
-  if(wastage>50)throw Error("ईंट टूटफूट अधिकतम 50% रखें।");
+  const per=good(v.brickper,"Bricks per m³");
+  const mortarShare=good(v.mortarShare??"0.23","Mortar ratio",true);
+  if(mortarShare>=1)throw Error("Mortar ratio must be between 0 and 1.");
+  const wastage=good(v.brickWaste??"0","Brick wastage (%)",true);
+  if(wastage>50)throw Error("Brick wastage cannot exceed 50%.");
   mat.bricks=Math.ceil(qty*per*(1+wastage/100));
   mixed(qty*mortarShare,v.mmix,1.33);
   notes.push("Brick and mortar quantities are indicative; check actual brick dimensions and joint thickness.");
  }else if(v.type==="plaster"||v.type==="mortar"){
-  mixed(v.type==="plaster"?qty*good(v.thickness,"प्लास्टर मोटाई (mm)")/1000:qty,v.mmix,1.33);
+  mixed(v.type==="plaster"?qty*good(v.thickness,"Plastering Thickness (mm)")/1000:qty,v.mmix,1.33);
   notes.push("Mortar dry-volume factor: 1.33. Verify actual surface and deductions.");
  }else if(v.type==="paver"||v.type==="tile"){
-  const pieceArea=good(v.piecel,"टाइल लंबाई")*good(v.pieceb,"टाइल चौड़ाई")/1000000;
+  const pieceArea=good(v.piecel,"Tile length")*good(v.pieceb,"Tile width")/1000000;
   const waste=good(v.waste,"Wastage",true);
-  if(waste>50)throw Error("Wastage 0–50% रखें।");
+  if(waste>50)throw Error("Wastage must be between 0% and 50%.");
   mat[v.type==="paver"?"pavers":"tiles"]=Math.ceil(qty*(1+waste/100)/pieceArea);
   if(v.type==="paver")mat.sand=qty*good(v.bedding,"Bedding (mm)",true)/1000;
   notes.push("Piece count includes cutting waste; bedding, adhesive, grout and other layers may be separate.");
  }else if(v.type==="soling"){
   mat.aggregate=qty;notes.push("Volume is measured in place; loose aggregate purchase quantities may differ.");
  }else notes.push("Earthwork lead/lift, bulking and compaction adjustments are excluded.");
- const rate=v.rate===""||v.rate==null?null:good(v.rate,"कार्य दर",true);
+ const rate=v.rate===""||v.rate==null?null:good(v.rate,"Work rate",true);
  return {type:v.type,title:type[0],name:String(v.name||"").slice(0,150),dim:String(count)+" × "+l+" × "+b+" "+v.unit+(area?"":" × "+h+" "+hUnit),
   unit:area?"m²":"m³",qty,gross,cut,mat,notes,rate};
 }
 const FIELDS=[
- ["name","विवरण (वैकल्पिक)","text","जैसे: पंचायत भवन की दीवार"],
- ["unit","इकाई","select",[{value:"m",text:"मीटर"},{value:"ft",text:"फीट"}]],
- ["count","संख्या (No.)","number","1"],
- ["l","लंबाई","number",""],
- ["b","चौड़ाई / ऊँचाई","number",""],
- ["h","मोटाई / गहराई","number",""],
- ["hunit","मोटाई/गहराई की इकाई","select",[{value:"m",text:"मीटर"},{value:"cm",text:"सेमी"},{value:"mm",text:"मिमी"},{value:"ft",text:"फीट"}]],
- ["cut","कटौती (इकाई अनुसार)","number","0"],
+ ["name","Work description (optional)","text","e.g. Community hall wall"],
+ ["unit","Unit","select",[{value:"m",text:"Metre"},{value:"ft",text:"Feet"}]],
+ ["count","Count (No.)","number","1"],
+ ["l","Length","number",""],
+ ["b","Width / Height","number",""],
+ ["h","Thickness / Depth","number",""],
+ ["hunit","Thickness/depth unit","select",[{value:"m",text:"Metre"},{value:"cm",text:"Centimetre"},{value:"mm",text:"Millimetre"},{value:"ft",text:"Feet"}]],
+ ["cut","Deduction (selected unit)","number","0"],
  ["cmix","Concrete Mix (cement:sand:aggregate)","select",["1:4:8","1:3:6","1:2:4","1:1.5:3"]],
  ["mmix","Mortar Mix (cement:sand)","select",["1:4","1:5","1:6","1:8"]],
- ["thickness","प्लास्टर मोटाई (mm)","number","12"],
- ["brickper","1 m³ में ईंट (नग)","number","500"],
- ["mortarShare","1 m³ चिनाई में Wet Mortar (m³)","number","0.23"],
- ["brickWaste","ईंट टूटफूट (%)","number","5"],
- ["piecel","ब्लॉक/टाइल लंबाई (mm)","number","200"],
- ["pieceb","ब्लॉक/टाइल चौड़ाई (mm)","number","100"],
- ["waste","टूटफूट/कटिंग (%)","number","5"],
- ["bedding","पेवर Sand Bedding (mm)","number","30"],
- ["steel","स्टील kg/m³ (अभियंता से तय करें)","number","0"],
- ["rate","कार्य दर ₹/इकाई (वैकल्पिक, SOR अनुसार)","number",""]
+ ["thickness","Plastering Thickness (mm)","number","12"],
+ ["brickper","Bricks per m³ (pieces)","number","500"],
+ ["mortarShare","Wet mortar per m³ masonry (m³)","number","0.23"],
+ ["brickWaste","Brick wastage (%)","number","5"],
+ ["piecel","Block/tile Length (mm)","number","200"],
+ ["pieceb","Block/tile Width (mm)","number","100"],
+ ["waste","Cutting/breakage (%)","number","5"],
+ ["bedding","Paver sand bedding (mm)","number","30"],
+ ["steel","Steel kg/m³ (engineering design)","number","0"],
+ ["rate","Work rate ₹/Unit (optional, approved SOR)","number",""]
 ];
 function mount(el){
- let mb=read("pai_mb_draft_items",[]),rates=read("pai_mb_draft_rates",{});
- if(!Array.isArray(mb))mb=[];
- mb=mb.slice(0,100).filter(x=>x&&TYPES[x.type]&&Number.isFinite(x.qty)&&x.qty>0).map(x=>({...x,rate:x.rate==null||x.rate===""||!Number.isFinite(Number(x.rate))||Number(x.rate)<0?null:Number(x.rate)}));
- if(!rates||typeof rates!=="object")rates={};
- let current=null;
- const selectField=(key,label,options)=>{
-  return '<label data-field="'+key+'"><span>'+label+'</span><select data-key="'+key+'">'+options.map(o=>
+ const storedRates=(()=>{try{return JSON.parse(localStorage.getItem("pai_mb_draft_rates"))||{};}catch{return {};}})();
+ const rates=storedRates&&typeof storedRates==="object"?storedRates:{};
+ let current=null,exportBusy=false;
+ const selectField=(key,label,options)=>
+  '<label data-field="'+key+'"><span>'+esc(label)+'</span><select data-key="'+key+'">'+options.map(o=>
    '<option value="'+esc(o.value??o)+'"'+((key==="cmix"&&o==="1:2:4")||(key==="mmix"&&o==="1:6")?' selected':'')+'>'+esc(o.text??o)+'</option>').join("")+'</select></label>';
- };
  const renderField=([key,label,type,def])=>{
   if(type==="select")return selectField(key,label,def);
   const preset=["1","0","12","500","200","100","5","30","0.23"].includes(def)?def:"";
-  return '<label data-field="'+key+'"><span>'+label+'</span><input data-key="'+key+'" type="'+type+'"'+(type==="number"?' min="0" step="any" inputmode="decimal"':'')+' value="'+preset+'" placeholder="'+esc(def)+'"></label>';
+  return '<label data-field="'+key+'"><span>'+esc(label)+'</span><input data-key="'+key+'" type="'+type+'"'+(type==="number"?' min="0" step="any" inputmode="decimal"':'')+' value="'+esc(preset)+'" placeholder="'+esc(def)+'"></label>';
  };
- el.innerHTML='<section class="card mb-head"><span class="mb-logo">📐</span><div><h2>Estimate & MB Calculator</h2><p>सीमेंट, बालू, गिट्टी, ईंट, कंक्रीट और अन्य कार्यों का अनुमान।</p></div></section>'+
- '<div class="mb-steps"><span>① काम चुनें</span><span>② माप भरें</span><span>③ MB तैयार</span></div>'+
- '<section class="card mb-editor"><h3>कार्य और माप</h3><label for="mb-type">कार्य का प्रकार</label><select id="mb-type">'+
- Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+v[0]+'</option>').join("")+'</select>'+
- '<div id="mb-fields">'+FIELDS.map(renderField).join("")+'</div>'+
- '<div class="btn-row"><button type="button" id="mb-example" class="btn alt">✨ उदाहरण भरें</button><button type="button" id="mb-run" class="btn">गणना करें</button></div>'+
- '<p id="mb-notice" role="status" aria-live="polite" class="mb-notice"></p></section>'+
- '<section class="card mb-result-box"><h3>Estimate तैयार</h3><div id="mb-answer"><p class="hint">Enter measurements and click Calculate.</p></div>'+
- '<button id="mb-add" type="button" class="btn" disabled>＋ Add to MB</button>'+
- '<details class="mb-rates"><summary>Material rates (optional)</summary><div class="mb-rate-grid">'+
- Object.entries(MATERIAL).map(([k,v])=>'<label>'+v[0]+' (₹/'+v[1]+')<input type="number" min="0" step="any" data-material="'+k+'" placeholder="Enter rate"></label>').join("")+'</div></details></section>'+
- '<section class="card mb-book"><h3>Measurement Book (Draft)</h3><div id="mb-items"></div><div class="btn-row">'+
- '<button type="button" id="mb-csv" class="btn alt">⬇️ Export MB CSV</button><button type="button" id="mb-print" class="btn alt">🖨️ Print / Save PDF</button>'+
- '<button type="button" id="mb-clear" class="btn alt">🗑️ Clear MB</button></div>'+
- '<p class="hint">Preliminary estimate only, not an official MB. Site measurements, SOR, BOQ, design and payable quantities must be verified by an authorised engineer/officer.</p></section>'+
- '<div id="mb-print-sheet"></div>';
- const q=s=>el.querySelector(s),inputs=Object.fromEntries(FIELDS.map(([k])=>[k,q('[data-key="'+k+'"]')]));
- function values(){return Object.fromEntries(Object.entries(inputs).map(([k,x])=>[k,x.value]));}
- function alert(t){q("#mb-notice").textContent=t;}
- function clearPreview(){current=null;q("#mb-add").disabled=true;q("#mb-answer").innerHTML='<p class="hint">Enter measurements and click Calculate.</p>';}
+ el.innerHTML=
+  '<section class="card mb-head"><span class="mb-logo">📐</span><div><h2>Estimate Calculator</h2><p>Calculate materials and approximate costs for construction works.</p></div></section>'+
+  '<div class="mb-steps"><span>① Select work</span><span>② Enter sizes</span><span>③ Get estimate</span></div>'+
+  '<section class="card mb-editor"><h3>Work Measurements</h3><label for="mb-type">Work type</label><select id="mb-type">'+
+  Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+esc(v[0])+'</option>').join("")+'</select>'+
+  '<div id="mb-fields">'+FIELDS.map(renderField).join("")+'</div>'+
+  '<div class="btn-row"><button type="button" id="mb-example" class="btn alt">✨ Sample values</button><button type="button" id="mb-run" class="btn">Calculate Estimate</button></div>'+
+  '<p id="mb-notice" role="status" aria-live="polite" class="mb-notice"></p></section>'+
+  '<section class="card mb-result-box"><h3>Estimate Ready</h3><div id="mb-answer"><p class="hint">Enter measurements and tap Calculate Estimate.</p></div>'+
+  '<div class="btn-row mb-export-actions" id="mb-export-actions" hidden>'+
+  '<button id="estimate-word" type="button" class="btn alt">⬇ Word</button><button id="estimate-pdf" type="button" class="btn alt">⬇ PDF</button>'+
+  '<button id="estimate-whatsapp" type="button" class="btn mb-whatsapp">🟢 WhatsApp</button></div>'+
+  '<details class="mb-rates"><summary>Material rates (optional)</summary><div class="mb-rate-grid">'+
+  Object.entries(MATERIAL).map(([k,v])=>'<label>'+esc(v[0])+' (₹/'+esc(v[1])+')<input type="number" min="0" step="any" data-material="'+k+'" placeholder="Enter rate"></label>').join("")+'</div></details></section>';
+ const q=selector=>el.querySelector(selector),inputs=Object.fromEntries(FIELDS.map(([key])=>[key,q('[data-key="'+key+'"]')]));
+ const values=()=>Object.fromEntries(Object.entries(inputs).map(([key,node])=>[key,node.value]));
+ const alert=text=>q("#mb-notice").textContent=text;
+ function reset(){
+  current=null;q("#mb-export-actions").hidden=true;
+  q("#mb-answer").innerHTML='<p class="hint">Enter measurements and tap Calculate Estimate.</p>';
+ }
  function adapt(){
-  const k=q("#mb-type").value,area=TYPES[k][1]==="area";
-  const visible={h:!area,hunit:!area,cmix:k==="pcc"||k==="rcc",mmix:["brick","plaster","mortar"].includes(k),
-   thickness:k==="plaster",brickper:k==="brick",mortarShare:k==="brick",brickWaste:k==="brick",piecel:k==="paver"||k==="tile",pieceb:k==="paver"||k==="tile",
-   waste:k==="paver"||k==="tile",bedding:k==="paver",steel:k==="rcc"};
-  for(const [key,yes] of Object.entries(visible))q('[data-field="'+key+'"]').classList.toggle("hidden",!yes);
-  q('[data-field="cut"] span').textContent="पूरी कटौती ("+(inputs.unit.value==="ft"?"ft":"m")+(area?"²":"³")+")";
-  q('[data-field="rate"] span').textContent="कार्य दर ₹/"+(area?"m²":"m³")+" (वैकल्पिक, SOR अनुसार)";
-  if(!area&&inputs.unit.dataset.prevUnit!==inputs.unit.value){
-    inputs.hunit.value=inputs.unit.value;inputs.unit.dataset.prevUnit=inputs.unit.value;
+  const kind=q("#mb-type").value,area=TYPES[kind][1]==="area";
+  const visible={
+   h:!area,hunit:!area,cmix:kind==="pcc"||kind==="rcc",mmix:["brick","plaster","mortar"].includes(kind),
+   thickness:kind==="plaster",brickper:kind==="brick",mortarShare:kind==="brick",brickWaste:kind==="brick",
+   piecel:kind==="paver"||kind==="tile",pieceb:kind==="paver"||kind==="tile",
+   waste:kind==="paver"||kind==="tile",bedding:kind==="paver",steel:kind==="rcc"
+  };
+  for(const [key,on] of Object.entries(visible))q('[data-field="'+key+'"]').classList.toggle("hidden",!on);
+  q('[data-field="cut"] span').textContent="Deduction ("+(inputs.unit.value==="ft"?"ft":"m")+(area?"²":"³")+")";
+  q('[data-field="rate"] span').textContent="Work rate ₹/"+(area?"m²":"m³")+" (optional)";
+  if(!area&&inputs.unit.dataset.previous!==inputs.unit.value){inputs.hunit.value=inputs.unit.value;inputs.unit.dataset.previous=inputs.unit.value;}
+  if(kind==="tile"&&inputs.piecel.value==="200"&&inputs.pieceb.value==="100"){inputs.piecel.value="600";inputs.pieceb.value="600";}
+  if(kind==="paver"&&inputs.piecel.value==="600"&&inputs.pieceb.value==="600"){inputs.piecel.value="200";inputs.pieceb.value="100";}
+  reset();
+ }
+ function materialPrices(){
+  if(!current)return {cost:0,count:0};
+  let cost=0,count=0;
+  for(const [name,amount] of Object.entries(current.mat)){
+   const raw=rates[name];
+   if(raw===undefined||raw==="")continue;
+   cost+=amount*good(raw,"Material rate",true);count++;
   }
-  if(k==="tile"&&inputs.piecel.value==="200"&&inputs.pieceb.value==="100"){inputs.piecel.value="600";inputs.pieceb.value="600";}
-  if(k==="paver"&&inputs.piecel.value==="600"&&inputs.pieceb.value==="600"){inputs.piecel.value="200";inputs.pieceb.value="100";}
-  clearPreview();
+  return {cost,count};
+ }
+ function formattedLines(){
+  if(!current)return [];
+  const x=current,pricing=materialPrices();
+  return [
+   ["Work",x.name||x.title],
+   ["Work type",x.title],["Measurements",x.dim],["Gross quantity",f(x.gross)+" "+x.unit],
+   ["Deduction",f(x.cut)+" "+x.unit],["Net measured quantity",f(x.qty)+" "+x.unit],
+   ...Object.entries(x.mat).map(([name,quantity])=>[MATERIAL[name][0]+" ("+MATERIAL[name][1]+")",f(quantity)]),
+   ...(pricing.count?[["Estimated material cost"+(pricing.count<Object.keys(x.mat).length?" (partial)":""),currency(pricing.cost)]]:[]),
+   ...(x.rate!==null?[["Entered work rate",currency(x.rate)+" / "+x.unit],["Estimated work amount",currency(x.qty*x.rate)]]:[])
+  ];
+ }
+ function estimateText(){
+  if(!current)return "";
+  return ["Panchayat AI — Construction Estimate",
+   "Date: "+new Date().toLocaleDateString("en-IN"),
+   ...formattedLines().map(([name,value])=>name+": "+value),
+   "Notes: "+current.notes.join(" "),
+   "Indicative calculation only. Check actual dimensions, approved SOR and structural design before payment."
+  ].join("\n");
+ }
+ function estimateHtml(){
+  const rows=formattedLines().map(([key,value])=>'<tr><th>'+esc(key)+'</th><td>'+esc(value)+'</td></tr>').join("");
+  return '<article class="mb-export-document"><h1>Construction Estimate</h1><p>Panchayat AI · '+esc(new Date().toLocaleDateString("en-IN"))+'</p>'+
+   '<table><tbody>'+rows+'</tbody></table><p>'+esc(current.notes.join(" "))+'</p>'+
+   '<p class="mb-disclaimer">Indicative calculation only. Verify site measurements, approved SOR, BOQ and engineering specifications.</p></article>';
+ }
+ function report(){
+  const x=current;
+  const entries=[["Measured quantity",f(x.qty)+" "+x.unit],...Object.entries(x.mat).map(([key,value])=>[MATERIAL[key][0]+" ("+MATERIAL[key][1]+")",f(value)])];
+  const price=materialPrices();
+  q("#mb-answer").innerHTML='<div class="mb-figures">'+entries.map(([name,value],i)=>
+   '<div class="mb-figure" style="--index:'+i+'"><small>'+esc(name)+'</small><strong>'+esc(value)+'</strong></div>').join("")+'</div>'+
+   '<p class="hint">Gross: '+esc(f(x.gross)+" "+x.unit)+'; Deduction: '+esc(f(x.cut)+" "+x.unit)+'</p>'+
+   (price.count?'<p><strong>'+(price.count<Object.keys(x.mat).length?"Partial material cost":"Material cost")+': '+esc(currency(price.cost))+'</strong></p>':"")+
+   (x.rate!==null?'<p><strong>Work amount: '+esc(currency(x.rate*x.qty))+'</strong></p>':"")+
+   '<p class="hint">'+esc(x.notes.join(" "))+'</p>';
+  q("#mb-export-actions").hidden=false;
  }
  function compute(){
-  try{
-   current=calculate({type:q("#mb-type").value,...values()});
-   const x=current,mats=Object.entries(x.mat),cards=[["Measured quantity",f(x.qty)+" "+x.unit]].concat(
-    mats.map(([k,v])=>[MATERIAL[k][0]+" ("+MATERIAL[k][1]+")",f(v)]));
-   let materialCost=0,priced=0;
-   mats.forEach(([k,v])=>{if(rates[k]!==undefined&&rates[k]!==""){const rate=good(rates[k],"Material rate",true);materialCost+=rate*v;priced++;}});
-   q("#mb-answer").innerHTML='<div class="mb-figures">'+cards.map(([a,b],i)=>
-    '<div class="mb-figure" style="--index:'+i+'"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join("")+'</div>'+
-    '<p class="hint">Gross: '+f(x.gross)+" "+x.unit+"; Deduction: "+f(x.cut)+" "+x.unit+"</p>"+
-    (priced?'<p><b>'+(priced<mats.length?'Partial material cost':'Material cost')+': '+currency(materialCost)+'</b></p>':"")+
-    (x.rate!==null?'<p><b>Work amount: '+currency(x.rate*x.qty)+'</b></p>':"")+
-    '<p class="hint">'+x.notes.map(esc).join(" ")+'</p>';
-   q("#mb-add").disabled=false;alert("✅ Estimate ready. Add the item to MB.");
-  }catch(e){clearPreview();alert("⚠️ "+e.message);}
+  try{current=calculate({type:q("#mb-type").value,...values()});report();alert("✓ Estimate calculated. Download or share below.");}
+  catch(error){reset();alert("⚠ "+error.message);}
  }
- function outputSheet(){
-  const total=mb.reduce((a,x)=>a+(x.rate===null?0:x.qty*x.rate),0);
-  q("#mb-print-sheet").innerHTML='<h1>Panchayat AI — Draft Measurement Book</h1><p>Date: '+
-   new Date().toLocaleDateString("en-IN")+'</p><table><thead><tr><th>No.</th><th>Work</th><th>Measurement</th><th>Quantity</th><th>Rate ₹</th><th>Amount ₹</th></tr></thead><tbody>'+
-   mb.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.name||x.title)+'</td><td>'+esc(x.dim)+'</td><td>'+f(x.qty)+' '+x.unit+'</td><td>'+(x.rate===null?"—":f(x.rate))+'</td><td>'+(x.rate===null?"—":currency(x.qty*x.rate))+'</td></tr>').join("")+
-   '</tbody></table><p><b>Total based on entered rates: '+currency(total)+'</b></p><p>Draft only: verify site measurements before official use.</p>';
+ function saveFile(blob,name){
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
  }
- function refreshBook(){
-  if(!mb.length){q("#mb-items").innerHTML='<p class="hint">No measurements added yet. Calculate and add an item.</p>';}
-  else{
-   const total=mb.reduce((a,x)=>a+(x.rate===null?0:x.qty*x.rate),0);
-   q("#mb-items").innerHTML='<div class="mb-scroll"><table class="mb-table"><thead><tr><th>No.</th><th>Work</th><th>Quantity</th><th>Rate ₹</th><th>Amount ₹</th><th></th></tr></thead><tbody>'+
-   mb.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.name||x.title)+'</b><small>'+esc(x.dim)+'</small></td>'+
-    '<td>'+f(x.qty)+' '+x.unit+'</td><td><input type="number" min="0" step="any" aria-label="Rate" data-mb-rate="'+i+'" value="'+(x.rate===null?"":x.rate)+'"></td>'+
-    '<td>'+(x.rate===null?"—":currency(x.qty*x.rate))+'</td><td><button type="button" class="mb-delete" data-delete="'+i+'" aria-label="Remove">×</button></td></tr>').join("")+
-   '</tbody></table></div><p class="mb-total"><b>Total based on entered rates: '+currency(total)+'</b></p>';
-   q("#mb-items").querySelectorAll("[data-mb-rate]").forEach(input=>input.onchange=()=>{
-    const s=input.value.trim(),v=s===""?null:Number(s);
-    if(v!==null&&(!Number.isFinite(v)||v<0)){alert("Please enter a valid rate.");return;}
-    mb[Number(input.dataset.mbRate)].rate=v;save("pai_mb_draft_items",mb);refreshBook();
-   });
-   q("#mb-items").querySelectorAll("[data-delete]").forEach(button=>button.onclick=()=>{
-    mb.splice(Number(button.dataset.delete),1);save("pai_mb_draft_items",mb);refreshBook();
+ async function makeWordBlob(){
+  if(!window.docx?.Packer){
+   await new Promise((resolve,reject)=>{
+    const script=document.createElement("script");
+    script.src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js";
+    script.onload=resolve;script.onerror=()=>reject(new Error("Word library could not load. Check your connection."));
+    document.head.appendChild(script);
    });
   }
-  outputSheet();
-  ["mb-csv","mb-print","mb-clear"].forEach(id=>q("#"+id).disabled=!mb.length);
+  const d=window.docx;
+  if(!d?.Packer)throw Error("Word exporter is not available.");
+  const paras=[new d.Paragraph({text:"Construction Estimate",heading:d.HeadingLevel.HEADING_1}),
+    new d.Paragraph({text:"Panchayat AI · "+new Date().toLocaleDateString("en-IN")}),
+    ...formattedLines().map(([name,value])=>new d.Paragraph({children:[
+      new d.TextRun({text:name+": ",bold:true}),new d.TextRun(String(value))]})),
+    new d.Paragraph({text:current.notes.join(" ")}),
+    new d.Paragraph({text:"Indicative estimate only. Verify site measurements and applicable SOR."})
+  ];
+  return d.Packer.toBlob(new d.Document({sections:[{children:paras}]}));
  }
- function exportCSV(){
-  const all=[["No.","Work","Description","Measurements","Quantity","Unit","Rate ₹","Amount ₹"],...mb.map((x,i)=>[
-   i+1,x.title,x.name,x.dim,x.qty.toFixed(3),x.unit,x.rate===null?"":x.rate,x.rate===null?"":(x.qty*x.rate).toFixed(2)
-  ])];
-  const cell=x=>{let s=String(x??"");if(/^\s*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
-  const url=URL.createObjectURL(new Blob(["\uFEFF"+all.map(row=>row.map(cell).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"}));
-  const a=document.createElement("a");a.href=url;a.download="Panchayat-AI-MB.csv";document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),10000);
+ async function makePdfBlob(){
+  if(typeof window.html2pdf!=="function")throw Error("PDF converter could not load. Please reload the page.");
+  const holder=document.createElement("div");
+  holder.className="mb-export-holder";
+  holder.innerHTML=estimateHtml();
+  document.body.appendChild(holder);
+  try{
+   if(document.fonts?.ready)await document.fonts.ready;
+   const blob=await window.html2pdf().set({
+    margin:[12,13,12,13],filename:"Panchayat-AI-Estimate.pdf",
+    image:{type:"jpeg",quality:.96},html2canvas:{scale:2,useCORS:false,backgroundColor:"#fff"},
+    jsPDF:{format:"a4",unit:"mm",orientation:"portrait"},pagebreak:{mode:["css","legacy"]}
+   }).from(holder.firstElementChild).outputPdf("blob");
+   if(!blob?.size)throw Error("The PDF was empty.");
+   return blob;
+  }finally{holder.remove();}
  }
- q("#mb-type").onchange=adapt;inputs.unit.onchange=adapt;
- Object.values(inputs).forEach(i=>i.addEventListener("input",()=>{if(current){clearPreview();alert("माप बदला है। पुनः गणना करें।");}}));
+ async function perform(action,callback){
+  if(!current||exportBusy)return;
+  exportBusy=true;
+  const btn=q("#estimate-"+action);
+  btn.disabled=true;
+  const original=btn.textContent;
+  btn.textContent="Preparing…";
+  try{await callback();alert("✓ "+(action==="whatsapp"?"Share option opened.":"File is ready."));}
+  catch(error){if(error?.name!=="AbortError")alert("⚠ "+(error.message||"Export failed. Retry."));}
+  finally{exportBusy=false;btn.disabled=false;btn.textContent=original;}
+ }
+ q("#mb-type").onchange=adapt;
+ inputs.unit.onchange=adapt;
+ Object.values(inputs).forEach(input=>input.addEventListener("input",()=>{if(current){reset();alert("Measurements changed. Recalculate the estimate.");}}));
  q("#mb-example").onclick=()=>{
-  const k=q("#mb-type").value,a=TYPES[k][1]==="area"?[8,3,""]:[5,3,15];
-  [inputs.l,inputs.b,inputs.h].forEach((input,i)=>input.value=a[i]);inputs.count.value="1";inputs.cut.value="0";inputs.hunit.value="cm";
-  clearPreview();alert("उदाहरण भरा है। वास्तविक माप के अनुसार बदलें।");
+  const kind=q("#mb-type").value,example=TYPES[kind][1]==="area"?[8,3,""]:[5,3,15];
+  [inputs.l,inputs.b,inputs.h].forEach((node,i)=>node.value=example[i]);
+  inputs.count.value="1";inputs.cut.value="0";inputs.hunit.value="cm";
+  reset();alert("Sample dimensions applied. Update them with actual measurements.");
  };
  q("#mb-run").onclick=compute;
- q("#mb-add").onclick=()=>{
-  if(!current)return;if(mb.length>=100){alert("MB supports up to 100 items.");return;}
-  mb.push({...current});save("pai_mb_draft_items",mb);refreshBook();alert("✅ Item added to MB.");
- };
- q("#mb-csv").onclick=exportCSV;
- q("#mb-print").onclick=()=>{if(mb.length)window.print();};
- q("#mb-clear").onclick=()=>{if(mb.length&&confirm("Clear all MB entries?")){mb=[];save("pai_mb_draft_items",mb);refreshBook();}};
+ q("#estimate-word").onclick=()=>perform("word",async()=>saveFile(await makeWordBlob(),"Panchayat-AI-Estimate.docx"));
+ q("#estimate-pdf").onclick=()=>perform("pdf",async()=>saveFile(await makePdfBlob(),"Panchayat-AI-Estimate.pdf"));
+ q("#estimate-whatsapp").onclick=()=>perform("whatsapp",async()=>{
+  const text=estimateText();
+  if(navigator.share&&typeof File==="function"){
+   try{
+    const blob=await makePdfBlob();
+    const file=new File([blob],"Panchayat-AI-Estimate.pdf",{type:"application/pdf"});
+    if(!navigator.canShare||navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:"Panchayat AI Estimate",text:"Construction estimate PDF"});
+      return;
+    }
+   }catch(error){if(error?.name==="AbortError")throw error;}
+  }
+  const share="https://wa.me/?text="+encodeURIComponent(text.slice(0,7000));
+  const link=document.createElement("a");link.href=share;link.target="_blank";link.rel="noopener noreferrer";
+  document.body.appendChild(link);link.click();link.remove();
+ });
  q(".mb-rate-grid").querySelectorAll("[data-material]").forEach(input=>{
   input.value=rates[input.dataset.material]??"";
   input.onchange=()=>{
-   const s=input.value.trim();if(s!==""&&(!Number.isFinite(Number(s))||Number(s)<0)){alert("Please enter a valid material rate.");return;}
-   rates[input.dataset.material]=s;save("pai_mb_draft_rates",rates);if(current)compute();
+   const value=input.value.trim();
+   if(value!==""&&(!Number.isFinite(Number(value))||Number(value)<0)){alert("Enter a valid material rate.");return;}
+   rates[input.dataset.material]=value;
+   try{localStorage.setItem("pai_mb_draft_rates",JSON.stringify(rates));}catch{}
+   if(current){try{report();}catch(error){alert("⚠ "+error.message);}}
   };
  });
- adapt();refreshBook();
+ adapt();
 }
 window.PAI_ESTIMATE={mount,calculate};
 })();

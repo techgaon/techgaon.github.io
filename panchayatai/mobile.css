@@ -16,3 +16,14 @@ main{max-width:480px;padding:16px 14px 32px}.hero h1{font-size:22px;line-height:
 @keyframes bar-in{from{transform:scaleY(0)}to{transform:scaleY(1)}}@keyframes metric-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
 
 .msg p{margin:0 0 12px}.msg p:last-child{margin-bottom:0}.msg .chat-salutation{margin-bottom:6px}.msg .role-heading{margin-top:16px;margin-bottom:6px}.followups{display:grid;gap:8px;margin-top:14px}.followup{text-align:left;white-space:normal;line-height:1.55;padding:10px 12px;width:100%}.go-downloads{margin-top:14px}.go-downloads .ref{display:block}.go-downloads button{margin-top:8px;white-space:normal}.go-downloads b{font-size:14px;overflow-wrap:anywhere}
+
+/* Panchayat AI home: paired key tiles and gently animated NEW indicator */
+.home-options .home-feature-pair,.home-options .home-final-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.home-options .home-feature-pair>.tile,.home-options .home-final-pair>.tile{min-width:0;min-height:116px;padding:12px 6px}
+.home-options .home-feature-pair>.tile b,.home-options .home-final-pair>.tile b{font-size:15px}
+.home-options .home-feature-pair>.tile small,.home-options .home-final-pair>.tile small{font-size:11px}
+.home-options .home-ai-new{position:relative;overflow:hidden;border-color:#74be94}
+.home-options .home-ai-new .new-pulse{position:absolute;top:7px;right:8px;color:#fff;background:#15964f;border-radius:999px;padding:2px 7px;font:700 10px/1.7 Arial,sans-serif;letter-spacing:.4px;animation:pai-new-pulse 2s ease-in-out infinite}
+.home-options .home-estimate{min-height:106px}
+@keyframes pai-new-pulse{0%,100%{box-shadow:0 0 0 0 #149e4c40;transform:scale(1)}50%{box-shadow:0 0 0 6px #149e4c00;transform:scale(1.04)}}
+@media(prefers-reduced-motion:reduce){.home-options .home-ai-new .new-pulse{animation:none!important}}
