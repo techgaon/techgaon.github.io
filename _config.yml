@@ -1,0 +1,3 @@
+# Serve Android Digital Asset Links alongside the existing static website.
+include:
+  - .well-known
