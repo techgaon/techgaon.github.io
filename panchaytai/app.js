@@ -171,21 +171,25 @@ const callName = () => S.profile ? ((S.profile.name || "").split(" ")[0] + " " +
 function chrome() {
   $("#loginTop").classList.toggle("hidden", !!S.user);
   $("#logoutBtn").classList.toggle("hidden", !S.user);
-  $("#backBtn").classList.toggle("hidden", S.view === "home");
+  $("#backBtn").classList.toggle("hidden", isAdmin() || S.view === "home");
   $("#avatar").onclick = () => go(isAdmin() ? "admin" : "profile");
   $("#avatar").classList.toggle("hidden", !S.user || !S.user.photoURL);
   if (S.user && S.user.photoURL) $("#avatar").src = S.user.photoURL;
   $("#planBadge").classList.toggle("hidden", !isPlus()); $("#planBadge").textContent = "PLUS";
   const adminLink = $("#adminLink"); if (adminLink) adminLink.classList.toggle("hidden", !isAdmin());
+  document.querySelectorAll("#drawer [data-go]").forEach(link => {
+    link.classList.toggle("hidden", isAdmin() ? link.dataset.go !== "admin" : link.id === "adminLink");
+  });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
 }
 function needLogin(next) {
+  if (isAdmin()) { go("admin"); return true; }
   if (!S.user) { S.after = next; go("login"); return true; }
   if (!isAdmin() && (!S.profile || !S.profile.role)) { S.after = next; go("profile"); return true; }
   return false;
 }
 function render() {
-  if (isAdmin() && ["details", "profile", "login"].includes(S.view)) {
+  if (isAdmin() && S.view !== "admin") {
     S.view = "admin";
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
