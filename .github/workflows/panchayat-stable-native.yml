@@ -1,0 +1,199 @@
+name: Build Panchayat AI Stable Native Launcher
+on:
+  workflow_dispatch:
+  push:
+    branches: [panchayat-android-20261120]
+    paths:
+      - .github/workflows/panchayat-stable-native.yml
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Recover Android source
+        shell: bash
+        run: |
+          cat android-build-transfer/part-* | base64 -d > /tmp/panchayat-transfer.zip
+          mkdir -p /tmp/panchayat-original
+          unzip -q /tmp/panchayat-transfer.zip -d /tmp/panchayat-original
+          unzip -q /tmp/panchayat-original/PanchayatAI-Android-source.zip
+          test -f panchayat-android/app/build.gradle
+      - name: Replace fragile TWA trampoline with native launcher and browser fallback
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          build=Path("panchayat-android/app/build.gradle")
+          s=build.read_text(encoding="utf-8")
+          assert "namespace 'in.techgaon.panchayatai'" in s
+          assert "applicationId 'in.techgaon.panchayatai'" in s
+          s=s.replace("applicationId 'in.techgaon.panchayatai'","applicationId 'in.techgaon.panchayatai.fresh'")
+          s=s.replace("versionCode 1","versionCode 5").replace("versionName '1.0.0'","versionName '1.0.4'")
+          if "implementation 'androidx.browser:browser:1.8.0'" not in s:
+              s=s.replace("dependencies {","dependencies { implementation 'androidx.browser:browser:1.8.0'")
+          build.write_text(s,encoding="utf-8")
+          manifest=Path("panchayat-android/app/src/main/AndroidManifest.xml")
+          xml=manifest.read_text(encoding="utf-8")
+          assert 'android:name=".MainActivity"' in xml
+          xml=xml.replace('android:name=".MainActivity"','android:name="in.techgaon.panchayatai.MainActivity" android:launchMode="singleTop"')
+          xml=xml.replace('@android:style/Theme.Translucent.NoTitleBar','@android:style/Theme.Material.Light.NoActionBar')
+          token='   <intent-filter android:autoVerify="true">'
+          assert token in xml
+          xml=xml.replace(token,
+             '   <intent-filter>\n'
+             '    <action android:name="android.intent.action.VIEW"/>\n'
+             '    <category android:name="android.intent.category.DEFAULT"/>\n'
+             '    <category android:name="android.intent.category.BROWSABLE"/>\n'
+             '    <data android:scheme="panchayatai" android:host="open"/>\n'
+             '   </intent-filter>\n'+token,1)
+          xml=xml.replace('<application ', '<queries><intent><action android:name="android.support.customtabs.action.CustomTabsService"/></intent><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries><application ',1)
+          manifest.write_text(xml,encoding="utf-8")
+          PY
+          cat > panchayat-android/app/src/main/java/in/techgaon/panchayatai/MainActivity.java <<'JAVA'
+          package in.techgaon.panchayatai;
+          
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.content.Intent;
+          import android.content.pm.ResolveInfo;
+          import android.net.Uri;
+          import android.graphics.Color;
+          import android.graphics.Typeface;
+          import android.graphics.drawable.GradientDrawable;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.widget.LinearLayout;
+          import android.widget.Button;
+          import android.widget.TextView;
+          import androidx.browser.customtabs.CustomTabsClient;
+          import androidx.browser.customtabs.CustomTabsIntent;
+          import java.util.List;
+          
+          public class MainActivity extends Activity {
+            private static final String SITE = "https://techgaon.in/panchayatai/";
+            private TextView status;
+            private int dp(int d) { return (int) (d * getResources().getDisplayMetrics().density + 0.5f); }
+            private TextView text(String value, int size, boolean bold, int color) {
+              TextView t = new TextView(this);
+              t.setText(value);
+              t.setTextSize(size);
+              t.setTextColor(color);
+              t.setGravity(Gravity.CENTER);
+              if (bold) t.setTypeface(null,Typeface.BOLD);
+              return t;
+            }
+            @Override public void onCreate(Bundle state) {
+              super.onCreate(state);
+              getWindow().setStatusBarColor(Color.rgb(12,73,49));
+              getWindow().setNavigationBarColor(Color.rgb(12,73,49));
+              LinearLayout root = new LinearLayout(this);
+              root.setOrientation(LinearLayout.VERTICAL);
+              root.setBackgroundColor(Color.rgb(247,249,247));
+              root.setGravity(Gravity.CENTER);
+              root.setPadding(dp(28),dp(30),dp(28),dp(30));
+              TextView logo = text("पं",68,true,Color.rgb(13,79,51));
+              root.addView(logo,new LinearLayout.LayoutParams(-1,dp(110)));
+              TextView title = text("पंचायत AI",30,true,Color.rgb(13,79,51));
+              root.addView(title,new LinearLayout.LayoutParams(-1,dp(60)));
+              TextView desc = text("उत्तर प्रदेश पंचायत कार्यों का डिजिटल सहायक",15,false,Color.rgb(95,111,101));
+              root.addView(desc,new LinearLayout.LayoutParams(-1,dp(70)));
+              Button open = new Button(this);
+              open.setText("पंचायत AI खोलें");
+              open.setAllCaps(false);
+              open.setTextSize(17);
+              open.setTextColor(Color.WHITE);
+              GradientDrawable bg = new GradientDrawable();
+              bg.setColor(Color.rgb(13,79,51));
+              bg.setCornerRadius(dp(14));
+              open.setBackground(bg);
+              LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1,dp(56));
+              bp.topMargin=dp(16);
+              root.addView(open,bp);
+              status = text("लॉगिन और सेवाएँ सुरक्षित Browser tab में खुलेंगी।",13,false,Color.rgb(95,111,101));
+              LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1,dp(80));
+              sp.topMargin=dp(12);
+              root.addView(status,sp);
+              setContentView(root);
+              open.setOnClickListener(v -> openSite());
+              if (state==null) new Handler(Looper.getMainLooper()).postDelayed(this::openSite,350);
+            }
+            @Override protected void onNewIntent(Intent intent) {
+              super.onNewIntent(intent);
+              setIntent(intent);
+              Uri uri=intent.getData();
+              if (uri!=null && "panchayatai".equals(uri.getScheme()) && "open".equals(uri.getHost())) {
+                new Handler(Looper.getMainLooper()).postDelayed(this::openSite,200);
+              }
+            }
+            private void openSite() {
+              Uri site = Uri.parse(SITE);
+              try {
+                String browser = CustomTabsClient.getPackageName(this, null);
+                if (browser != null && !browser.equals(getPackageName())) {
+                  CustomTabsIntent tab = new CustomTabsIntent.Builder()
+                      .setShowTitle(false)
+                      .setToolbarColor(Color.rgb(13,79,51))
+                      .build();
+                  tab.intent.setPackage(browser);
+                  tab.launchUrl(this,site);
+                  status.setText("पंचायत AI खुल गया है।");
+                  return;
+                }
+              } catch (Exception e) {
+                android.util.Log.w("PanchayatAILauncher","Custom Tab not available",e);
+              }
+              try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, site);
+                intent.addCategory(Intent.CATEGORY_BROWSABLE);
+                List<ResolveInfo> handlers = getPackageManager().queryIntentActivities(intent,0);
+                for (ResolveInfo handler: handlers) {
+                  String pkg=handler.activityInfo.packageName;
+                  if (pkg==null || pkg.equals(getPackageName()))continue;
+                  intent.setPackage(pkg);
+                  startActivity(intent);
+                  status.setText("पंचायत AI ब्राउज़र में खुल गया है।");
+                  return;
+                }
+                status.setText("Chrome जैसे Browser को इंस्टॉल/अपडेट करें, फिर खोलें दबाएँ।");
+              } catch (Exception e) {
+                android.util.Log.e("PanchayatAILauncher","Could not open website",e);
+                status.setText("ब्राउज़र नहीं खुल सका। Chrome अपडेट करके दोबारा खोलें।");
+              }
+            }
+          }
+          JAVA
+      - name: Build and lint Android APK
+        working-directory: panchayat-android
+        run: gradle --no-daemon assembleRelease lintRelease
+      - name: Verify manifest and collect unsigned APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          apk=panchayat-android/app/build/outputs/apk/release/app-release-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" > out/manifest-info.txt
+          grep -F "name='in.techgaon.panchayatai.fresh'" out/manifest-info.txt
+          grep -F "versionCode='5'" out/manifest-info.txt
+          grep -F "launchable-activity: name='in.techgaon.panchayatai.MainActivity'" out/manifest-info.txt
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f -v 4 "$apk" out/PanchayatAI-v1.0.4-StableLauncher-unsigned.apk
+          sha256sum out/*.apk > out/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PanchayatAI-v1.0.4-Stable-Native-Launcher
+          path: out/*
+          retention-days: 30
