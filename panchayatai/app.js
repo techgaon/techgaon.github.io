@@ -4,20 +4,29 @@ const C = window.PAI_CONFIG, G = window.PAI_GEO;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const toast = m => { const t = $("#toast"); t.textContent = m; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2600); };
-// TWA Google OAuth may complete in external Chrome. Do not put access tokens in URLs.
-// Use a user-tapped Android intent to return to the installed Panchayat AI app.
-const PAI_RETURN_INTENT = "intent://techgaon.in/panchayatai/?auth_return=1#Intent;scheme=https;package=in.techgaon.panchayatai;S.browser_fallback_url=https%3A%2F%2Ftechgaon.in%2Fpanchayatai%2F%3Fauth_return%3D1;end";
+// Google OAuth may finish in Chrome outside the Android Trusted Web Activity.
+// The user taps a return link; never carry OAuth tokens inside deep links.
+const PAI_RETURN_INTENT = "intent://open#Intent;scheme=panchayatai;package=in.techgaon.panchayatai.fresh;S.browser_fallback_url=https%3A%2F%2Ftechgaon.in%2Fpanchayatai%2F;end";
+const PAI_RETURN_LEGACY_INTENT = "intent://open#Intent;scheme=panchayatai;package=in.techgaon.panchayatai;S.browser_fallback_url=https%3A%2F%2Ftechgaon.in%2Fpanchayatai%2F;end";
 function showAndroidAppReturn() {
   const old = document.getElementById("pai-return-app");
   const standalone = !!window.matchMedia?.("(display-mode: standalone)")?.matches;
   if (!S.user || !/Android/i.test(navigator.userAgent) || standalone) { old?.remove(); return; }
   if (old) return;
+  const wrap = document.createElement("div");
+  wrap.id = "pai-return-app";
+  wrap.style.cssText="position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1100;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:96vw";
   const a = document.createElement("a");
-  a.id="pai-return-app";
   a.href=PAI_RETURN_INTENT;
   a.textContent="📱 पंचायत AI ऐप में वापस जाएँ";
-  a.style.cssText="position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1100;background:#13513a;color:white;border-radius:999px;padding:12px 18px;font:600 15px system-ui;text-decoration:none;box-shadow:0 6px 20px #0004;white-space:nowrap;max-width:96vw";
-  document.body.appendChild(a);
+  a.style.cssText="background:#13513a;color:white;border-radius:999px;padding:12px 18px;font:600 15px system-ui;text-decoration:none;box-shadow:0 6px 20px #0004;white-space:nowrap;max-width:96vw";
+  wrap.appendChild(a);
+  const legacy = document.createElement("a");
+  legacy.href = PAI_RETURN_LEGACY_INTENT;
+  legacy.textContent = "पुराने ऐप में खोलें";
+  legacy.style.cssText="color:#13513a;background:white;padding:5px 12px;border-radius:99px;font:500 12px system-ui;text-decoration:underline";
+  wrap.appendChild(legacy);
+  document.body.appendChild(wrap);
 }
 
 /* ---------- पद (भूमिकाएँ) ---------- */
