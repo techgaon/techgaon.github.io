@@ -5,7 +5,7 @@ on:
     paths: ['.github/workflows/panchayat-android.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -62,3 +62,15 @@ jobs:
           name: PanchayatAI-Android-1.0.0
           path: out/*
           retention-days: 30
+      - name: Retain build transfer chunks
+        shell: bash
+        run: |
+          mkdir -p android-build-transfer
+          zip -j build-transfer.zip out/*
+          base64 -w0 build-transfer.zip | split -b 700000 - android-build-transfer/part-
+          sha256sum build-transfer.zip > android-build-transfer/archive.sha256
+          git config user.name "TechGaon build"
+          git config user.email "actions@users.noreply.github.com"
+          git add android-build-transfer
+          git commit -m "Retain Panchayat AI Android build transfer"
+          git push origin HEAD:panchayat-android-20261120
