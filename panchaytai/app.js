@@ -19,10 +19,14 @@ const ROLES = {
   adpro:    { n: "सहायक जिला पंचायत राज अधिकारी (ADPRO)", call: "ADPRO साहब", scope: "district" },
   dpro:     { n: "जिला पंचायत राज अधिकारी (DPRO)", call: "DPRO साहब", scope: "district" },
   ddo:      { n: "जिला विकास अधिकारी (DDO)", call: "DDO साहब", scope: "district" },
-  resident: { n: "ग्रामवासी / नागरिक", call: "जी", scope: "gp" }
+  resident: { n: "पंचायत निवासी", call: "जी", scope: "gp" }
 };
 
 /* पदवार ड्राफ्ट प्रकार — सभी के लिए 4 मूल + पद अनुसार अतिरिक्त */
+const RTI_DRAFTS = [
+  { k: "rtiApplication", e: "ℹ️", n: "RTI आवेदन" },
+  { k: "rtiReply", e: "📄", n: "RTI उत्तर" }
+];
 const BASE_DRAFTS = [
   { k: "patra", e: "✉️", n: "पत्र", d: "उच्चाधिकारी/विभाग को पत्र" },
   { k: "spasht", e: "🧾", n: "स्पष्टीकरण", d: "प्राप्त नोटिस का उत्तर / स्पष्टीकरण" },
@@ -69,7 +73,7 @@ async function useQuota(kind) {
   }
   const day = Math.floor(Date.now() / 864e5), plus = isPlus();
   const lim = plus ? 200 : C.plans.free[kind === "chat" ? "dailyChats" : "dailyDrafts"];
-  const msg = plus ? "आज की उचित उपयोग सीमा पूरी हुई" : `Today's free limit (${lim}) is over — Go Plus / आज की निःशुल्क सीमा पूरी हुई`;
+  const msg = plus ? "आज की उचित उपयोग सीमा पूरी हुई" : `Today's free limit (${lim}) is over — Plus / आज की निःशुल्क सीमा पूरी हुई`;
   if (!S.db || !S.user || S.user.uid === "demo") {
     let u = LS.get("usage") || {}; if (u.day !== day) u = { day, chat: 0, draft: 0 };
     if (u[kind] >= lim) throw new Error(msg); u[kind]++; LS.set("usage", u); return;
@@ -194,7 +198,7 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin }[S.view] || home;
+  const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin, rti }[S.view] || home;
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
 }
@@ -204,15 +208,20 @@ function home(el) {
   const p = S.profile;
   el.innerHTML = `
   <div class="card hero"><h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI — PANCHAYT AI"}</h1>
-   <p>${p ? esc((ROLES[p.role] || ROLES.resident).n) + " · " + esc([p.block, p.district].filter(Boolean).join(", ")) : "AI assistant for Panchayat officials — Pradhan, Secretary, ADO, BDO, DPRO & clerks"}</p></div>
-  ${!S.user ? `<div class="card"><b>अगर आप विभागीय अधिकारी, कर्मचारी या प्रधान हैं तो अपनी प्रोफ़ाइल पूरी करें और अपने काम — पत्र, स्पष्टीकरण आदि — 1 मिनट में निपटाएँ।</b>
+   <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "AI assistant for Panchayat officials — Pradhan, Secretary, ADO, BDO, DPRO & clerks"}</p></div>
+  ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} Login with Google</button></div></div>` : ""}
   <div class="home-options">
    <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>चैट करें और Act, GO सहित उत्तर पाएँ</small></button>
    <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
-   <button class="tile" data-go="library"><span class="e">📚</span><b>GO संग्रह</b></button>
-   <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
-   <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Go Plus</b><small>For more features and easy work</small></button>
+   <div class="grid draft-grid">
+    <button class="tile" data-go="library"><span class="e">📚</span><b>GO संग्रह</b></button>
+    <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
+   </div>
+   <div class="grid draft-grid">
+    <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
+    <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>For more features and easy work</small></button>
+   </div>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
    ${["सामुदायिक शौचालय की केयरटेकर को मानदेय कितना देना चाहिए?","15वें वित्त आयोग की टाइड धनराशि किन कार्यों पर खर्च होगी?","परिवार रजिस्टर में नाम जोड़ने की प्रक्रिया क्या है?","ग्राम सभा की खुली बैठक का कोरम कितना होता है?"]
@@ -260,11 +269,20 @@ async function afterLogin() {
   S.gInfo = S.gInfo || { name: S.user.displayName || "", email: S.user.email || "", phone: S.user.phoneNumber || "" };
   let p = LS.get("profile");
   if (S.db && S.user.uid !== "demo") { const s = await S.db.collection("users").doc(S.user.uid).get(); if (s.exists) p = s.data(); }
-  S.profile = p && p.uid === S.user.uid ? p : null;
-  S.blocked = !!(p && p.blocked);
-  if (!S.profile || !S.profile.name) go("details");
-  else if (!S.profile.role) go("profile");
-  else go(S.after || "home");
+  const previous = p && p.uid === S.user.uid ? p : null;
+  const needsDefaults = !previous || !previous.name || !ROLES[previous.role];
+  S.profile = Object.assign({
+    uid: S.user.uid, email: S.user.email, name: S.user.displayName || "पंचायत निवासी",
+    gender: "", phone: S.user.phoneNumber || ""
+  }, previous || {});
+  if (!ROLES[S.profile.role]) S.profile.role = "resident";
+  if (!S.profile.name) S.profile.name = S.user.displayName || "पंचायत निवासी";
+  S.profile.sign = ROLES[S.profile.role].n;
+  S.blocked = S.profile.blocked === true;
+  if (needsDefaults && !S.blocked) await saveProfile();
+  const next = S.after || "home";
+  S.after = null;
+  go(next);
 }
 if (S.auth) S.auth.onAuthStateChanged(async u => {
   if (S.userWatch) S.userWatch();
@@ -316,13 +334,11 @@ async function loadDistrict(d) {
 }
 function profile(el) {
   if (!S.user) return go("login");
-  const p = S.profile || {};
-  el.innerHTML = `<div class="card"><h2 style="margin-top:0">Complete your profile</h2>
+  const p = S.profile || { role: "resident" };
+  el.innerHTML = `<div class="card"><h2 style="margin-top:0">Your profile</h2>
    <p class="hint">अगर आप विभागीय अधिकारी, कर्मचारी या प्रधान हैं तो अपनी प्रोफ़ाइल पूरी करें और अपने काम — पत्र, स्पष्टीकरण आदि — 1 मिनट में निपटाएँ।</p>
-   <label>Your post</label><select id="pRole"><option value="">— Select post —</option>${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${p.role === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
+   <label>Your post</label><select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
-   <label>Designation / office (used in letter signature)</label><input id="pSign" value="${esc(p.sign || "")}" placeholder="जैसे: ग्राम पंचायत अधिकारी, विकास खण्ड हैदरगढ़, बाराबंकी">
-   <label>Chat language</label><select id="pLang"><option value="en">English</option><option value="hi" ${p.lang === "hi" ? "selected" : ""}>हिन्दी (देवनागरी)</option></select>
    <div class="btn-row"><button class="btn" id="pSave">Save ✔</button><button class="btn alt" data-go="details">Edit name/mobile</button></div></div>`;
   const area = $("#pArea");
   const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", gps: (p.gps || []).slice(), clerkLevel: p.clerkLevel || "block" };
@@ -362,11 +378,11 @@ function profile(el) {
     const v = id => { const x = $("#" + id); return x ? x.value.trim() : ""; };
     if ($("#aTeh")) st.tehsil = v("aTeh"); if ($("#aBlock")) st.block = v("aBlock"); if ($("#aGp")) st.gps = v("aGp") ? [v("aGp")] : [];
     let scope = ROLES[role].scope; if (scope === "clerk") scope = st.clerkLevel === "district" ? "district" : "block";
-    if (!st.district) return toast("Select district");
-    if (scope !== "district" && !st.block) return toast("Select block");
-    if ((scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
+    if (role !== "resident" && !st.district) return toast("Select district");
+    if (role !== "resident" && scope !== "district" && !st.block) return toast("Select block");
+    if (role !== "resident" && (scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
     Object.assign(S.profile, { role, state: "उत्तर प्रदेश", district: st.district, tehsil: scope.includes("gp") ? st.tehsil : "", block: scope === "district" ? "" : st.block,
-      gps: scope.includes("gp") ? st.gps : [], clerkLevel: role === "clerk" ? st.clerkLevel : "", sign: $("#pSign").value.trim(), lang: $("#pLang").value });
+      gps: scope.includes("gp") ? st.gps : [], clerkLevel: role === "clerk" ? st.clerkLevel : "", sign: ROLES[role].n });
     saveProfile(); toast("Profile saved ✔"); const n = S.after || "home"; S.after = null; go(n);
   };
 }
@@ -449,6 +465,8 @@ function draft(el) {
 /* पद के अनुसार उदाहरण — "मेरी तरफ़ से" लिखने की शैली */
 const SACHIV = ["gpa", "gva"], BLOCKO = ["ado", "bdo"], DISTO = ["dpro", "adpro", "ddo"];
 function examples(k, role) {
+  if (k === "rtiApplication") return ["सूचना का अधिकार अधिनियम, 2005 के अंतर्गत ग्राम पंचायत के वर्ष 2025-26 के निर्माण कार्यों और भुगतान अभिलेखों की प्रमाणित प्रतियाँ माँगने हेतु आवेदन बनाएँ"];
+  if (k === "rtiReply") return ["प्राप्त RTI आवेदन के प्रत्येक बिंदु का उपलब्ध अभिलेखों के आधार पर उत्तर बनाएँ — आवेदन संलग्न है, अनुपलब्ध तथ्य खाली छोड़ें"];
   const R = x => x.includes(role);
   const E = {
     patra: R(SACHIV) ? ["ADO पंचायत को 2 दिन के आकस्मिक अवकाश (CL) के लिए पत्र बनाएँ", "BDO को ग्राम पंचायत कमेला में सामुदायिक शौचालय की मरम्मत हेतु धनराशि माँगने का पत्र"]
@@ -498,9 +516,14 @@ function progress(btn, label, ms = 22000) {
   tick(); const id = setInterval(tick, 300);
   return ok => { clearInterval(id); btn.textContent = ok ? "✔ 100%" : "✨ Generate in 1 minute"; setTimeout(() => { btn.disabled = false; btn.textContent = "✨ Regenerate"; }, ok ? 900 : 0); };
 }
+function rti(el) {
+  if (needLogin("rti")) return;
+  el.innerHTML = '<h2>RTI</h2><div class="grid draft-grid">' + RTI_DRAFTS.map(d => '<button class="tile" data-rti="' + d.k + '">' + d.e + ' ' + d.n + ' बनाएँ</button>').join('') + '</div>';
+  el.querySelectorAll('[data-rti]').forEach(button => button.onclick = () => { S.draftType = button.dataset.rti; go("draftEdit"); });
+}
 function draftEdit(el) {
   if (needLogin("draft")) return;
-  const d = draftsFor(S.profile.role).find(x => x.k === S.draftType) || BASE_DRAFTS[0];
+  const d = RTI_DRAFTS.concat(draftsFor(S.profile.role)).find(x => x.k === S.draftType) || BASE_DRAFTS[0];
   const ex = examples(d.k, S.profile.role);
   el.innerHTML = `<div class="card"><h2 style="margin-top:0">${d.e} ${d.n} बनाएँ</h2>
    <p class="hint">संक्षेप में हिन्दी में लिखें कि क्या बनाना है — जैसे मुझसे कहते हैं, वैसे ही। उदाहरण पर क्लिक करें:</p>
@@ -608,7 +631,7 @@ if (S.db) settingsRef().onSnapshot(doc => {
 }, () => { settingsError = true; if (S.view === "plans") render(); });
 
 function plans(el) {
-  el.innerHTML = '<h2>Go Plus</h2><p>For more features and easy work</p>';
+  el.innerHTML = '<h2>Plus</h2><p>For more features and easy work</p>';
   if (settingsError) { el.innerHTML += '<div class="card">Plans could not load. <button class="btn" data-go="plans">Try again</button></div>'; return; }
   if (!liveSettings) { el.innerHTML += '<p class="typing">Loading plans…</p>'; return; }
   if (isPlus()) el.innerHTML += `<div class="card hero">Plus active until ${new Date(S.profile.plan.until).toLocaleDateString("en-IN")}</div>`;
@@ -767,7 +790,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin', 'rti'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {

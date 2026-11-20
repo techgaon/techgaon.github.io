@@ -15,23 +15,22 @@ const model = (system, search) => getGenerativeModel(ai, { model: MODEL, systemI
 
 const ROLE_CALL = { pradhan: "प्रधान जी", prashasak: "प्रशासक जी", sahayak: "पंचायत सहायक जी", gpa: "सचिव जी", gva: "सचिव जी",
   ado: "ADO पंचायत जी", bdo: "BDO साहब", clerk: "बाबू जी", adpro: "ADPRO साहब", dpro: "DPRO साहब", ddo: "DDO साहब", resident: "" };
-const who = p => !p ? "" : `उपयोगकर्ता: ${p.name} (${p.gender}), पद: ${p.role}, जनपद: ${p.district || ""}, ब्लॉक: ${p.block || ""}, ग्राम पंचायत: ${(p.gps || []).join(", ")}. सम्बोधन: "प्रणाम ${(p.name || "").split(" ")[0]} ${p.gender === "महिला" ? "बहन" : "भैया"} जी" (पद: ${ROLE_CALL[p.role] || ""}). अभिवादन में "नमस्ते" नहीं, हमेशा "प्रणाम".`;
+const who = p => !p ? "" : `उपयोगकर्ता: ${p.name} (${p.gender}), पद: ${p.role}, जनपद: ${p.district || ""}, ब्लॉक: ${p.block || ""}, ग्राम पंचायत: ${(p.gps || []).join(", ")}. सम्बोधन: "प्रणाम ${(p.name || "").split(" ")[0]} ${p.gender === "महिला" ? "बहन" : "भैया"} जी" (पद: ${ROLE_CALL[p.role] || ""}). हिन्दी उत्तर का अभिवादन "प्रणाम" से करें; English उत्तर में English अभिवादन करें.`;
 const refBlock = (refs = []) => refs.map(r => `[${r.id}] ${r.title} | ${r.type || ""} | सं. ${r.number || ""} | दिनांक ${r.date || ""}\nअंश: ${(r.excerpt || "").slice(0, 1800)}`).join("\n\n");
 const parts = (text, att = []) => { const p = [{ text }];
   for (const a of att.slice(0, 5)) { if (a.text) p.push({ text: `\n[संलग्न Word फ़ाइल: ${a.name}]\n${a.text}` }); else if (a.data) p.push({ inlineData: { mimeType: a.mime, data: a.data } }); }
   return p; };
-const lang = p => p && p.lang === "hi" ? "हमेशा शुद्ध हिन्दी (देवनागरी) में उत्तर दें। रोमन हिन्दी कभी नहीं।"
-  : "Reply in English by default (keep official Hindi terms like ग्राम पंचायत, शासनादेश where natural); switch to Hindi if the user writes in Hindi or asks.";
+const lang = () => "Choose the response language from the latest user's own question. If it is Hindi, whether written in Devanagari or Roman Hindi/Hinglish (for example 'gaon me paisa kaise milega'), answer in Devanagari Hindi, never Roman Hindi. If it is clearly English (for example 'What is the procedure for an RTI application?'), answer in English. For mixed Hindi-English, greetings, or ambiguous short messages, default to Devanagari Hindi. Follow an explicit language request. Ignore any saved profile language and the language of reference documents, attached files, or prior turns when choosing the reply language.";
 
 const SYS_CHAT = p => `You are "PANCHAYT AI" (पंचायत AI) by TechGaon AI Services — expert assistant for Uttar Pradesh Panchayati Raj officials (Pradhan, Secretary GPA/GVA, ADO Panchayat, BDO, DPRO, ADPRO, DDO, clerks) and villagers.
 ${who(p)}
 Rules:
-- ${lang(p)} Start every reply with the greeting/address above.
-- Structure: **Short answer** → **Details / possible answer** → **Your side (what to do as per your post, precautions)** → **Basis**.
+- ${lang(p)} Use a respectful greeting in the selected reply language. For an English response, translate the greeting into English.
+- Structure: Short answer, Details / possible answer, Your side (what to do as per your post, precautions), Basis. Translate these section headings into the selected response language.
 - Treat the "Reference documents" (original GOs/rules from the connected database) as the primary basis; cite each one you use by its ID in square brackets like [UP-4234]. Do not cite IDs you did not use.
 - If not found there, use Google Search for recent info and say it is from the web. Never invent amounts/rates/dates — if unsure, advise checking the latest GO.
 - Old GOs may be amended/superseded — warn when relevant. If a PDF/photo/Word file is attached, read it first and answer based on it.`;
-const whoDraft = p => !p ? "" : `प्रेषक: ${p.name} (${p.gender}), पद-कोड: ${p.role} (${({pradhan:"ग्राम प्रधान",prashasak:"प्रशासक, ग्राम पंचायत",sahayak:"पंचायत सहायक",gpa:"ग्राम पंचायत अधिकारी",gva:"ग्राम विकास अधिकारी",ado:"सहायक विकास अधिकारी (पंचायत)",bdo:"खण्ड विकास अधिकारी",clerk:"लिपिक",adpro:"सहायक जिला पंचायत राज अधिकारी",dpro:"जिला पंचायत राज अधिकारी",ddo:"जिला विकास अधिकारी",resident:"ग्रामवासी"})[p.role] || ""}), जनपद: ${p.district || ""}, विकास खण्ड: ${p.block || ""}, ग्राम पंचायत: ${(p.gps || []).join(", ")}.`;
+const whoDraft = p => !p ? "" : `प्रेषक: ${p.name} (${p.gender}), पद-कोड: ${p.role} (${({pradhan:"ग्राम प्रधान",prashasak:"प्रशासक, ग्राम पंचायत",sahayak:"पंचायत सहायक",gpa:"ग्राम पंचायत अधिकारी",gva:"ग्राम विकास अधिकारी",ado:"सहायक विकास अधिकारी (पंचायत)",bdo:"खण्ड विकास अधिकारी",clerk:"लिपिक",adpro:"सहायक जिला पंचायत राज अधिकारी",dpro:"जिला पंचायत राज अधिकारी",ddo:"जिला विकास अधिकारी",resident:"पंचायत निवासी"})[p.role] || ""}), जनपद: ${p.district || ""}, विकास खण्ड: ${p.block || ""}, ग्राम पंचायत: ${(p.gps || []).join(", ")}.`;
 const SYS_DRAFT = p => `आप उत्तर प्रदेश शासन के कार्यालयी पत्राचार के विशेषज्ञ हैं। ${whoDraft(p)}
 कठोर नियम:
 1. पूरा दस्तावेज़ शुद्ध औपचारिक सरकारी हिन्दी (देवनागरी) में। सभी नाम, पदनाम, ग्राम पंचायत, विकास खण्ड, जनपद देवनागरी में लिखें — अंग्रेज़ी/रोमन नामों का हिन्दी लिप्यंतरण करें (जैसे Haidargarh → हैदरगढ़, Kamela → कमेला, Barabanki → बाराबंकी)।
@@ -53,8 +52,9 @@ async function chat(b) {
   return { text, refs, web: grounding(r) };
 }
 async function draft(b) {
-  const prompt = `दस्तावेज़ प्रकार: ${b.kind}\nउपयोगकर्ता का अनुरोध (उसी के अनुसार पूरा दस्तावेज़ बनाएँ; प्राप्तकर्ता, विषय, कारण अनुरोध से समझें): ${b.points || "(संलग्न फ़ाइल देखें)"}\nप्रेषक की ग्राम पंचायत: ${b.gp || ""}\nहस्ताक्षर पदनाम: ${(b.profile && b.profile.sign) || ""}\nआज की तिथि: ${new Date().toLocaleDateString("hi-IN")}\n\nसंदर्भ GO:\n${refBlock(b.refs) || "(कोई नहीं)"}`;
-  const r = await model(SYS_DRAFT(b.profile), false).generateContent({ contents: [{ role: "user", parts: parts(prompt, b.att) }] });
+  const prompt = `दस्तावेज़ प्रकार: ${b.kind}\nउपयोगकर्ता का अनुरोध (उसी के अनुसार पूरा दस्तावेज़ बनाएँ; प्राप्तकर्ता, विषय, कारण अनुरोध से समझें): ${b.points || "(संलग्न फ़ाइल देखें)"}\nप्रेषक की ग्राम पंचायत: ${b.gp || ""}\nहस्ताक्षर पदनाम: प्रेषक की ऊपर दी गई भूमिका के अनुसार\nआज की तिथि: ${new Date().toLocaleDateString("hi-IN")}\n\nसंदर्भ GO:\n${refBlock(b.refs) || "(कोई नहीं)"}`;
+  const rtiInstructions = b.kind === "RTI आवेदन" ? "\nयह नागरिक का सूचना आवेदन है। कार्यालय शीर्षक के स्थान पर आवेदक का नाम और पता रखें। संबोधन संबंधित जन सूचना अधिकारी को हो। केवल माँगी गई अभिलेखीय सूचना के स्पष्ट बिंदु दें। शुल्क, प्राधिकारी का पता और अनुपलब्ध विवरण न गढ़ें, ____ छोड़ें।" : b.kind === "RTI उत्तर" ? "\nसंलग्न RTI आवेदन के प्रत्येक बिंदु का अभिलेख आधारित उत्तर दें। अनुपलब्ध सूचना या कानूनी छूट स्वयं न गढ़ें।" : "";
+  const r = await model(SYS_DRAFT(b.profile) + rtiInstructions, false).generateContent({ contents: [{ role: "user", parts: parts(prompt, b.att) }] });
   let html = r.response.text().replace(/^```html?|```$/gm, "").trim();
   html = html.replace(/^\s*(<p>)?\s*\u092A\u094D\u0930\u0923\u093E\u092E[^<]*(<\/p>|<br>)?/, "");
   html = html.replace(/<p[^>]*>[^<]*(\u092A\u094D\u0930\u0923\u093E\u092E|\u0928\u092E\u0938\u094D\u0924\u0947)[\s\S]*?<\/p>/, "").replace(/^[^<]*(\u092A\u094D\u0930\u0923\u093E\u092E)[^<]*/, "");
