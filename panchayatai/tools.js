@@ -107,8 +107,14 @@
       }
       worker=await ocrWorker(progress);
       progress("Reading Hindi and English text…");
+      // Literal OCR only. Never caption, interpret, translate, correct or invent text.
+      // For photographs without actual writing, Tesseract sometimes returns
+      // low-confidence visual noise as characters; do not export that guess.
       const answer=await worker.recognize(prepared||image);
-      return (answer.data.text||"").normalize("NFC").trim();
+      const text=(answer.data?.text||"").normalize("NFC").trim();
+      const confidence=Number(answer.data?.confidence);
+      if(!text || (Number.isFinite(confidence) && confidence >= 0 && confidence < 25))return "";
+      return text;
     }finally{
       if(worker)await worker.terminate();
       if(prepared){prepared.width=0;prepared.height=0;}
@@ -244,6 +250,7 @@
       '<input id="pai-image-input" class="hidden" type="file" accept="image/jpeg,image/png,image/webp,image/bmp,image/gif">'+
       '<input id="pai-camera-input" class="hidden" type="file" accept="image/*" capture="environment">'+
       '<input id="pai-document-input" class="hidden" type="file" accept=".pdf,application/pdf">'+
+      '<p id="pai-literal-ocr-note" class="pai-status hidden">केवल फोटो में लिखे अक्षर/शब्द ज्यों के त्यों निकाले जाएँगे। फोटो का वर्णन, अर्थ, अनुवाद या अतिरिक्त जानकारी नहीं जोड़ी जाएगी।</p>'+
       '<label id="pai-force-ocr-wrap" class="hidden" style="margin:10px 0"><input type="checkbox" id="pai-force-ocr"> 📖 PDF में टेक्स्ट गलत आने पर सभी पृष्ठ Hindi OCR से पढ़ें (धीमा)</label>'+
       '<p id="pai-file-name" class="pai-filename hidden" role="status"></p>'+
       '<div class="pai-progress hidden" id="pai-file-progress"><div class="pai-progress-line"><b id="pai-file-label">Reading file</b><span id="pai-file-percent">0%</span><span id="pai-file-tick" class="pai-green-tick hidden">✓</span></div><div class="pai-progress-track" role="progressbar" aria-label="File read progress" aria-valuemin="0" aria-valuemax="100" id="pai-file-track"><span id="pai-file-fill"></span></div></div>'+
@@ -284,6 +291,7 @@
       find("pai-tool-title").textContent=type.icon+" "+type.title;
       find("pai-image-source").classList.toggle("hidden",type.type!=="image");
       find("pai-document-source").classList.toggle("hidden",type.type==="image");
+      find("pai-literal-ocr-note").classList.toggle("hidden",!["image-text","image-word"].includes(type.key));
       find("pai-document-input").accept=type.type==="pdf"?".pdf,application/pdf":".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
       find("pai-force-ocr-wrap").classList.toggle("hidden",type.type!=="pdf");
       find("pai-force-ocr").checked=false;
@@ -366,7 +374,7 @@
         if(task==="pdf-text"||task==="pdf-word"){text=await textFromPdf(source,onProgress,loadedBytes,find("pai-force-ocr").checked);ext=task==="pdf-word"?".docx":".txt";}
         if(task==="word-pdf"){blob=await wordToPdf(source,onProgress,loadedBytes);ext=".pdf";}
         if(!blob){
-          if(!text.trim())throw new Error("इस फ़ाइल में पढ़ने योग्य टेक्स्ट नहीं मिला। साफ फोटो या बेहतर स्कैन लगाएँ।");
+          if(!text.trim())throw new Error("फोटो/फ़ाइल में स्पष्ट पढ़ने योग्य अक्षर नहीं मिले। फोटो का अर्थ या अनुमान लगाकर टेक्स्ट नहीं बनाया जाएगा।");
           onProgress("फ़ाइल बनाई जा रही है…");
           blob=ext===".docx"?await makeWord(text):new Blob(["\uFEFF"+text],{type:"text/plain;charset=utf-8"});
         }
