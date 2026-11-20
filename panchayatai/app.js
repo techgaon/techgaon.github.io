@@ -443,7 +443,7 @@ function assistantHtml(message,index){
 }
 function chat(el) {
   if (needLogin("chat")) return;
-  S.chat = S.chat.length ? S.chat : (LS.get("chat_" + S.user.uid) || []);
+  S.chat = S.chat.length ? S.chat : (LS.get("chat_general_v1_" + S.user.uid) || []);
   el.innerHTML = `<div class="chat" id="chatBox"></div>`;
   const box = $("#chatBox");
   const paint = () => {
@@ -475,7 +475,7 @@ function chat(el) {
       S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
     } catch (e) { S.chat.push({ r: "a", error: true, t: "⚠️ " + e.message + (/सीमा|limit/i.test(e.message) ? "\n\n[Plus प्लान लें](#)" : "") }); }
     S.chatBusy = false;
-    LS.set("chat_" + S.user.uid, S.chat.slice(-40));
+    LS.set("chat_general_v1_" + S.user.uid, S.chat.slice(-40));
     if (document.contains(box)) { paint(); $("#send").disabled = false; }
     else if (S.view === "chat") render();
   };
