@@ -1,0 +1,95 @@
+name: Build Panchayat AI Launcher Fixed APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [panchayat-android-20261120]
+    paths:
+      - .github/workflows/panchayat-launch-fix.yml
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Recover existing Android project
+        shell: bash
+        run: |
+          cat android-build-transfer/part-* | base64 -d > /tmp/panchayat-transfer.zip
+          mkdir -p /tmp/panchayat-original
+          unzip -q /tmp/panchayat-transfer.zip -d /tmp/panchayat-original
+          unzip -q /tmp/panchayat-original/PanchayatAI-Android-source.zip
+          test -f panchayat-android/app/src/main/java/in/techgaon/panchayatai/MainActivity.java
+      - name: Fix explicit launcher activity package and update version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          build=Path("panchayat-android/app/build.gradle")
+          src=build.read_text(encoding="utf8")
+          assert "namespace 'in.techgaon.panchayatai'" in src
+          assert "applicationId 'in.techgaon.panchayatai'" in src
+          assert "versionCode 1" in src
+          src=src.replace("applicationId 'in.techgaon.panchayatai'","applicationId 'in.techgaon.panchayatai.fresh'")
+          src=src.replace("versionCode 1","versionCode 4")
+          src=src.replace("versionName '1.0.0'","versionName '1.0.3'")
+          build.write_text(src,encoding="utf8")
+          manifest=Path("panchayat-android/app/src/main/AndroidManifest.xml")
+          xml=manifest.read_text(encoding="utf8")
+          assert 'android:name=".MainActivity"' in xml
+          xml=xml.replace('android:name=".MainActivity"',
+                          'android:name="in.techgaon.panchayatai.MainActivity"')
+          # Explicit fully-qualified activity class avoids mismatching Java namespace
+          # with the .fresh applicationId in the compiled manifest.
+          xml=xml.replace('android:label="पंचायत AI"','android:label="पंचायत AI"')
+          token='   <intent-filter android:autoVerify="true">'
+          assert token in xml
+          xml=xml.replace(token,
+            '   <intent-filter>\n'
+            '    <action android:name="android.intent.action.VIEW"/>\n'
+            '    <category android:name="android.intent.category.DEFAULT"/>\n'
+            '    <category android:name="android.intent.category.BROWSABLE"/>\n'
+            '    <data android:scheme="panchayatai" android:host="open"/>\n'
+            '   </intent-filter>\n'+token,1)
+          manifest.write_text(xml,encoding="utf8")
+          main=Path("panchayat-android/app/src/main/java/in/techgaon/panchayatai/MainActivity.java")
+          code=main.read_text(encoding="utf8")
+          assert '"https".equals(uri.getScheme())' in code
+          code=code.replace('"https".equals(uri.getScheme())','uri != null && "https".equals(uri.getScheme())')
+          main.write_text(code,encoding="utf8")
+          PY
+      - name: Build signed-ready APK and lint
+        working-directory: panchayat-android
+        run: gradle --no-daemon assembleRelease lintRelease
+      - name: Verify compiled manifest launch class actually exists in APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          APK=panchayat-android/app/build/outputs/apk/release/app-release-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" > out/manifest-badging.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml > out/manifest-xmltree.txt
+          echo "Actual launcher found:"
+          grep "launchable-activity:" out/manifest-badging.txt || true
+          grep -F "name='in.techgaon.panchayatai.fresh'" out/manifest-badging.txt
+          grep -F "versionCode='4'" out/manifest-badging.txt
+          grep -F "launchable-activity: name='in.techgaon.panchayatai.MainActivity'" out/manifest-badging.txt
+          unzip -l "$APK" | grep -F "classes.dex"
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f -v 4 "$APK" out/PanchayatAI-v1.0.3-LauncherFix-unsigned.apk
+          sha256sum out/*apk > out/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PanchayatAI-v1.0.3-Launcher-Fix
+          path: out/*
+          retention-days: 30
