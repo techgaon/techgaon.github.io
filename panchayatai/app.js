@@ -4,6 +4,21 @@ const C = window.PAI_CONFIG, G = window.PAI_GEO;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const toast = m => { const t = $("#toast"); t.textContent = m; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2600); };
+// TWA Google OAuth may complete in external Chrome. Do not put access tokens in URLs.
+// Use a user-tapped Android intent to return to the installed Panchayat AI app.
+const PAI_RETURN_INTENT = "intent://techgaon.in/panchayatai/?auth_return=1#Intent;scheme=https;package=in.techgaon.panchayatai;S.browser_fallback_url=https%3A%2F%2Ftechgaon.in%2Fpanchayatai%2F%3Fauth_return%3D1;end";
+function showAndroidAppReturn() {
+  const old = document.getElementById("pai-return-app");
+  const standalone = !!window.matchMedia?.("(display-mode: standalone)")?.matches;
+  if (!S.user || !/Android/i.test(navigator.userAgent) || standalone) { old?.remove(); return; }
+  if (old) return;
+  const a = document.createElement("a");
+  a.id="pai-return-app";
+  a.href=PAI_RETURN_INTENT;
+  a.textContent="📱 पंचायत AI ऐप में वापस जाएँ";
+  a.style.cssText="position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1100;background:#13513a;color:white;border-radius:999px;padding:12px 18px;font:600 15px system-ui;text-decoration:none;box-shadow:0 6px 20px #0004;white-space:nowrap;max-width:96vw";
+  document.body.appendChild(a);
+}
 
 /* ---------- पद (भूमिकाएँ) ---------- */
 // scope: gp = एक GP, multigp = अधिकतम 20 GP, block, district, clerk = ब्लॉक/जनपद स्तर चुनें
@@ -257,6 +272,7 @@ function chrome() {
     link.classList.toggle("hidden", isAdmin() ? link.dataset.go !== "admin" : link.id === "adminLink");
   });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
+  showAndroidAppReturn();
 }
 function needLogin(next) {
   if (isAdmin()) { go("admin"); return true; }
@@ -320,6 +336,9 @@ function login(el) {
   $("#gLogin").onclick = async () => {
     if (!fbReady) return toast("पहले config.js में Firebase भरें");
     const pr = new firebase.auth.GoogleAuthProvider();
+    // Both the TWA and Chrome must be able to recover the same local session.
+    try { await S.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
+    catch(e) { console.warn("Auth persistence unavailable", e); }
     
     
     try {
