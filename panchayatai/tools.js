@@ -114,7 +114,7 @@
       if(prepared){prepared.width=0;prepared.height=0;}
     }
   }
-  async function textFromPdf(file,progress,preloaded) {
+  async function textFromPdf(file,progress,preloaded,forceOcr=false) {
     const pdfjs=await loadPdfjs();
     const data=new Uint8Array(preloaded || await file.arrayBuffer());
     const task=pdfjs.getDocument({data,cMapUrl:new URL("./vendor/cmaps/",document.baseURI).href,cMapPacked:true,standardFontDataUrl:new URL("./vendor/standard_fonts/",document.baseURI).href});
@@ -135,7 +135,7 @@
           if(item.hasEOL)text+="\n";
           if(Number.isFinite(y))oldY=y;
         }
-        if(text.replace(/\s/g,"").length<25) {
+        if(forceOcr||text.replace(/\s/g,"").length<25) {
           currentOcrPage=pageNum;
           if(!worker)worker=await ocrWorker((message,pct)=>progress(message,Number.isFinite(pct)?(currentOcrPage-1+pct/100)*100/doc.numPages:null));
           progress("स्कैन पृष्ठ "+pageNum+"/"+doc.numPages+" पर हिंदी OCR…");
@@ -244,6 +244,7 @@
       '<input id="pai-image-input" class="hidden" type="file" accept="image/jpeg,image/png,image/webp,image/bmp,image/gif">'+
       '<input id="pai-camera-input" class="hidden" type="file" accept="image/*" capture="environment">'+
       '<input id="pai-document-input" class="hidden" type="file" accept=".pdf,application/pdf">'+
+      '<label id="pai-force-ocr-wrap" class="hidden" style="margin:10px 0"><input type="checkbox" id="pai-force-ocr"> 📖 PDF में टेक्स्ट गलत आने पर सभी पृष्ठ Hindi OCR से पढ़ें (धीमा)</label>'+
       '<p id="pai-file-name" class="pai-filename hidden" role="status"></p>'+
       '<div class="pai-progress hidden" id="pai-file-progress"><div class="pai-progress-line"><b id="pai-file-label">Reading file</b><span id="pai-file-percent">0%</span><span id="pai-file-tick" class="pai-green-tick hidden">✓</span></div><div class="pai-progress-track" role="progressbar" aria-label="File read progress" aria-valuemin="0" aria-valuemax="100" id="pai-file-track"><span id="pai-file-fill"></span></div></div>'+
       '<button id="pai-convert" type="button" class="btn" disabled>Convert</button>'+
@@ -284,6 +285,8 @@
       find("pai-image-source").classList.toggle("hidden",type.type!=="image");
       find("pai-document-source").classList.toggle("hidden",type.type==="image");
       find("pai-document-input").accept=type.type==="pdf"?".pdf,application/pdf":".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      find("pai-force-ocr-wrap").classList.toggle("hidden",type.type!=="pdf");
+      find("pai-force-ocr").checked=false;
       el.querySelectorAll("[data-tool]").forEach(button=>{
         const active=button.dataset.tool===key;
         button.classList.toggle("active",active);
@@ -360,7 +363,7 @@
       try {
         if(task==="image-pdf"){blob=await imageToPdf(source,onProgress);ext=".pdf";}
         if(task==="image-text"||task==="image-word"){text=await readImage(source,onProgress);ext=task==="image-word"?".docx":".txt";}
-        if(task==="pdf-text"||task==="pdf-word"){text=await textFromPdf(source,onProgress,loadedBytes);ext=task==="pdf-word"?".docx":".txt";}
+        if(task==="pdf-text"||task==="pdf-word"){text=await textFromPdf(source,onProgress,loadedBytes,find("pai-force-ocr").checked);ext=task==="pdf-word"?".docx":".txt";}
         if(task==="word-pdf"){blob=await wordToPdf(source,onProgress,loadedBytes);ext=".pdf";}
         if(!blob){
           if(!text.trim())throw new Error("इस फ़ाइल में पढ़ने योग्य टेक्स्ट नहीं मिला। साफ फोटो या बेहतर स्कैन लगाएँ।");
