@@ -1,4 +1,4 @@
-const V="pai-v4",CORE=["./","index.html","app.css","app.js","tools.js","tools.css","estimate.js","estimate.css","config.js","data/geo.js","data/catalog.json","icon.svg"];
+const V="pai-v5",CORE=["./","index.html","app.css","app.js","tools.js","tools.css","estimate.js","estimate.css","config.js","data/geo.js","icon.svg"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x))))));
 self.addEventListener("fetch",e=>{const u=new URL(e.request.url);if(e.request.method!=="GET"||u.origin!==location.origin)return;

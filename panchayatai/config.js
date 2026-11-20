@@ -19,9 +19,6 @@ window.PAI_CONFIG = {
   geminiModel: "gemini-3.5-flash-lite",
   recaptchaSiteKey: "6Lcmdw8uAAAAALp9S2hlQaEAiLe72Att_nX7pq4G", // App Check (public site key)
 
-  // मूल GO/नियम PDF कहाँ रखी हैं. फ़ाइल नाम: <ID>.pdf
-  pdfBase: "https://panchayat-ai-f00d5.web.app/go/",
-
   // UPI भुगतान (FoodGaon की तरह केवल UPI)
   upi: { vpa: "REPLACE_ME@upi", payeeName: "TechGaon AI Services" },
   plans: {

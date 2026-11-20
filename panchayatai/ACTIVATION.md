@@ -13,19 +13,6 @@ Firebase project: `petpyaar-a3ea6`. Use its existing web app; do not create or r
 
 No API secrets are requested in chat, browser local storage, or source files.
 
-## Data and validation
+## Reference database status
 
-- The district importer reads the official UP Panchayati Raj PB3 report. It retains district/block/GP names and GP LGD codes, retrieval dates and source dates. It stores no official phone numbers or personnel records. Conflicting LGD codes are blanked and marked for review.
-- `Panchayat verified-source Hindi OCR` reads only public government source documents whose SHA-256 matches the original manifest. Missing sources, changed files and unreadable pages remain unresolved; coverage is measured, never assumed.
-- Source search rejects legacy-font text whose encoding is visibly corrupted. Such pages are added to the OCR queue rather than being supplied to the AI as reliable text.
-- Cited-page export verifies original-file checksums and exact passage positions. It fails visibly if the original PDF or a highlight position cannot be verified. Only cited original pages are included; full master collections are not exposed as download buttons.
-- The current static host does not store the complete multi-GB original collection. Some references can be read as text but cannot yet be exported; complete export coverage needs suitable object storage and a source-file migration. The existing small verified originals remain available.
-
-## Verification completed in this change
-
-- Source catalog/role behavior checks and JavaScript syntax checks.
-- Mixed text + scanned PDF reading, selected-page bounds and PDF cleanup tests.
-- Rejection of invented and missing AI citations; HTML escaping; English query case normalization.
-- Official Haidargarh seed records: Kamela 51946, Khanpur 51948, Sandva 51969.
-
-Live model responses, cross-account database isolation, Google account completion and full-corpus OCR coverage require the activation/data jobs above and must not be described as already verified.
+The old bundled Acts, Rules, GO, Order PDFs and corpus were disconnected and removed from the published branch on 20 November 2026. AI answers general questions using its model and optional live Google Search; it does not quote or rely on old document indices. Future original PDFs must be added explicitly in `reference-pdfs/` and listed in `data/verified-pdfs.json` using exact titles or official numbers. Nothing is auto-imported from the removed collection.

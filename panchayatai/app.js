@@ -50,7 +50,7 @@ const EXTRA_DRAFTS = {
 const draftsFor = r => BASE_DRAFTS.concat((EXTRA_DRAFTS[r] || []).map(([k,e,n,d]) => ({k,e,n,d})));
 
 /* ---------- स्थिति ---------- */
-const S = { user: null, profile: null, view: "home", chat: [], att: [], catalog: [], db: null, auth: null };
+const S = { user: null, profile: null, view: "home", chat: [], att: [], referenceDocs: [], db: null, auth: null };
 const LS = { get: k => { try { return JSON.parse(localStorage.getItem("pai_" + k)); } catch { return null; } },
              set: (k, v) => { try { localStorage.setItem("pai_" + k, JSON.stringify(v)); } catch {} } };
 
@@ -107,59 +107,54 @@ async function api(path, body) {
   catch (e) { console.error(e); throw new Error("AI से उत्तर नहीं मिला: " + (e.message || "").slice(0, 120)); }
 }
 
-/* ---------- GO/नियम कैटलॉग (कनेक्टेड फ़ोल्डर की PDF से बना डेटाबेस) ---------- */
-fetch("data/catalog.json").then(r => r.json()).then(c => { S.catalog = c; }).catch(() => {});
-const norm = s => (s || "").toLowerCase().replace(/[।,.\-()/:;'"“”]/g, " ");
-function searchCatalog(q, n = 6) {
-  const words = norm(q).split(/\s+/).filter(w => w.length > 1);
-  if (!words.length) return [];
-  return S.catalog.map(d => {
-    const t = norm(d.title + " " + d.topicName + " " + d.number), x = norm(d.text || "");
-    let s = 0; for (const w of words) { if (t.includes(w)) s += 3; if (x.includes(w)) s += 1; }
-    return [s, d];
-  }).filter(a => a[0] > 2).sort((a, b) => b[0] - a[0]).slice(0, n).map(a => a[1]);
+/* Curated original PDFs only: owner-managed list starts empty */
+const sourcePath = doc => {
+  const name=String(doc&&doc.file||"");
+  if(!/^[^\\/]+\.pdf$/i.test(name)||name.includes(".."))return null;
+  return "/panchayatai/reference-pdfs/"+encodeURIComponent(name);
+};
+fetch("data/verified-pdfs.json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).then(docs=>{
+  S.referenceDocs=Array.isArray(docs)?docs.filter(d=>d&&typeof d.id==="string"&&typeof d.title==="string"&&sourcePath(d)).slice(0,500):[];
+}).catch(()=>{S.referenceDocs=[];});
+const normRef=value=>String(value||"").normalize("NFKC").toLocaleLowerCase().replace(/\s+/g," ").trim();
+function exactSourceMatches(question){
+  const q=normRef(question);if(q.length<5)return [];
+  return S.referenceDocs.filter(doc=>{
+    const phrases=[doc.title,...(Array.isArray(doc.exactPhrases)?doc.exactPhrases:[])].filter(x=>typeof x==="string"&&normRef(x).length>=12);
+    if(phrases.some(x=>q.includes(normRef(x))))return true;
+    const number=normRef(doc.officialNumber||"");
+    return number.length>=5&&q.split(/[^\p{L}\p{N}./-]+/u).includes(number);
+  }).slice(0,3);
 }
-
-/* ---------- PDF फ़ुटर (हर पेज पर: बाएँ TechGaon AI Services, दाएँ PANCHAYT AI — दोनों हाइपरलिंक) ---------- */
+async function availableOriginals(question){
+  return (await Promise.all(exactSourceMatches(question).map(async doc=>{
+    try{const response=await fetch(sourcePath(doc),{method:"HEAD",cache:"no-store"});
+      return response.ok&&/application\/pdf/i.test(response.headers.get("content-type")||"")?doc:null;
+    }catch{return null;}
+  }))).filter(Boolean);
+}
+/* PDF footer retained for user-created letters */
 async function stampFooter(bytes) {
   const { prepareGoPdf } = await import("./go-pdf.js?v=20261120-answer1");
   return (await prepareGoPdf(bytes)).bytes;
 }
-function saveBlob(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
-const activeGoDownloads = new Set();
-async function downloadGO(id, messageIndex = -1) {
-  if (activeGoDownloads.has(id)) return;
-  activeGoDownloads.add(id);
-  const doc = S.catalog.find(item => item.id === id);
-  const message = S.chat[messageIndex];
-  const previousQuestion = message?.question || (messageIndex > 0 ? S.chat.slice(0,messageIndex).reverse().find(item => item.r === "u")?.t : "") || "";
-  const evidence = message?.r === "a" ? { question: previousQuestion, answer: message.t, quotes: (message.sources || []).find(source => source.id === id)?.quotes || [] } : {};
-  const buttons = [...document.querySelectorAll('[data-go-download]')].filter(button => button.dataset.goDownload === id);
-  const progress = text => { buttons.forEach(button => { button.disabled = true; button.textContent = text; }); toast(text); };
-  progress("Preparing GO…");
-  try {
-    let bytes;
-    const urls = ["/panchayatai/originals/" + encodeURIComponent(id) + ".pdf", C.pdfBase + encodeURIComponent(id) + ".pdf"];
-    for (const url of [...new Set(urls)]) {
-      try {
-        const response = await fetch(url);
-        if (!response.ok || /text\/html/i.test(response.headers.get("content-type") || "")) continue;
-        const candidate = await response.arrayBuffer();
-        if (new TextDecoder("ascii").decode(candidate.slice(0,1024)).includes("%PDF-")) { bytes = candidate; break; }
-      } catch {}
-    }
-    if (!bytes) throw new Error("The source PDF is not available yet");
-    const { prepareGoPdf } = await import("./go-pdf.js?v=20261120-answer1");
-    const result = await prepareGoPdf(bytes,evidence,progress);
-    saveBlob(new Blob([result.bytes],{type:"application/pdf"}),id + " " + (doc?.title || "GO").slice(0,60) + ".pdf");
-    toast(evidence.question && !result.highlighted ? "GO downloaded. No reliable highlight match was found." : "GO downloaded" + (result.highlighted ? " with highlighted passages" : ""));
-  } catch(error) { toast("Could not download GO: " + (error.message || "").slice(0,140)); }
-  finally { activeGoDownloads.delete(id); buttons.forEach(button => { button.disabled = false; button.textContent = "Download GO"; }); }
+function saveBlob(blob,name){const a=document.createElement("a"),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+const activeOriginalDownloads=new Set();
+async function downloadOriginalPDF(id){
+  if(activeOriginalDownloads.has(id))return;
+  const doc=S.referenceDocs.find(d=>d.id===id);if(!doc||!sourcePath(doc))return;
+  activeOriginalDownloads.add(id);
+  try{
+    const response=await fetch(sourcePath(doc),{cache:"no-store"});
+    if(!response.ok)throw Error("Original PDF is unavailable");
+    const bytes=await response.arrayBuffer();
+    if(!new TextDecoder("ascii").decode(bytes.slice(0,8)).startsWith("%PDF-"))throw Error("Not a valid original PDF");
+    saveBlob(new Blob([bytes],{type:"application/pdf"}),doc.file);
+    toast("Original PDF downloaded");
+  }catch(e){toast("Could not download PDF: "+(e.message||"Unknown error"));}
+  finally{activeOriginalDownloads.delete(id);}
 }
-async function downloadAll(ids) { for (const id of ids) await downloadGO(id); }
-
-window.PAI = { downloadGO, downloadAll };
-
+window.PAI={ downloadOriginalPDF };
 /* ---------- राउटिंग ---------- */
 function go(v) { if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
 document.addEventListener("click", e => { const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); go(a.dataset.go); } });
@@ -201,7 +196,7 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB }[S.view] || home;
+  const V = { home, login, details, profile, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB }[S.view] || home;
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
 }
@@ -214,15 +209,14 @@ function home(el) {
   const p = S.profile;
   el.innerHTML = `
   <div class="card hero"><h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI — PANCHAYT AI"}</h1>
-   <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "AI assistant for Panchayat officials — Pradhan, Secretary, ADO, BDO, DPRO & clerks"}</p></div>
+   <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी और English में सामान्य AI सहायता, पत्र और उपयोगी Tools"}</p></div>
   ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} Login with Google</button></div></div>` : ""}
   <div class="home-options">
-   <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>चैट करें और Act, GO सहित उत्तर पाएँ</small></button>
+   <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>हर विषय पर सामान्य AI सहायता पाएँ</small></button>
     <button class="tile ai-tile" data-go="tools"><span class="e">🧰</span><b>AI Tools</b><small>Image, PDF और Word के 6 Conversion Tools</small></button>
    <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
    <div class="grid draft-grid">
-    <button class="tile" data-go="library"><span class="e">📚</span><b>GO संग्रह</b></button>
     <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
    </div>
    <div class="grid draft-grid">
@@ -232,7 +226,7 @@ function home(el) {
    <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>For more features and easy work</small></button>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
-   ${["सामुदायिक शौचालय की केयरटेकर को मानदेय कितना देना चाहिए?","15वें वित्त आयोग की टाइड धनराशि किन कार्यों पर खर्च होगी?","परिवार रजिस्टर में नाम जोड़ने की प्रक्रिया क्या है?","ग्राम सभा की खुली बैठक का कोरम कितना होता है?"]
+   ${["भारत में मानसून कैसे बनता है?","किसी दस्तावेज़ का सार कैसे लिखें?","ग्राम पंचायत के पत्र का प्रारूप बताएँ।","AI का उपयोग पढ़ाई में कैसे करें?"]
      .map(q => `<div class="lib-item"><a data-ask="${esc(q)}">❓ ${esc(q)}</a></div>`).join("")}
   </div>`;
   el.querySelectorAll("[data-draft]").forEach(t => t.onclick = () => { if (needLogin("draft")) return; S.draftType = t.dataset.draft; go("draftEdit"); });
@@ -425,53 +419,39 @@ function attachBar(onChange) {
 /* ---------- चैट ---------- */
 const CHAT_ROLE_TITLES = { pradhan: 'प्रधान', prashasak: 'प्रशासक', sahayak: 'पंचायत सहायक', gpa: 'सचिव', gva: 'सचिव', ado: 'ADO पंचायत', bdo: 'BDO', clerk: 'लिपिक', adpro: 'ADPRO', dpro: 'DPRO', ddo: 'DDO', resident: 'पंचायत निवासी' };
 const CHAT_ENGLISH_TITLES = { pradhan: 'Pradhan', prashasak: 'Administrator', sahayak: 'Panchayat Assistant', gpa: 'Secretary', gva: 'Secretary', ado: 'ADO Panchayat', bdo: 'BDO', clerk: 'Clerk', adpro: 'ADPRO', dpro: 'DPRO', ddo: 'DDO', resident: 'Panchayat Resident' };
-function cleanChatAnswer(value) {
-  return String(value || '').replace(/\*\*/g, '')
-    .replace(/^\s*प्रणाम[^\n.।]*(?:[.।]|\n|$)\s*/, '')
-    .replace(/(?:^|\n)\s*(?:#{1,6}\s*)?(?:आधार|Basis|References)\s*[:：][\s\S]*?(?=\n\s*\n|$)/gi, '')
-    .replace(/(^|\n)\s*(?:#{1,6}\s*)?(?:संक्षिप्त उत्तर|विवरण\s*(?:\/\s*विस्तृत जानकारी)?|विस्तृत जानकारी|Short answer|Details(?:\s*\/\s*possible answer)?)\s*[:：]\s*/gi, '$1')
-    .replace(/\[(?=[^\]]*(?:UP|REF|P2|EXT|S)-\d+)[A-Z0-9,\s-]+\]/g, '').trim();
+function cleanChatAnswer(value){return String(value||"").trim();}
+function chatParagraphs(text){const safe=esc(text).replace(/\*\*([^\n*]+)\*\*/g,"<strong>$1</strong>");return "<p>"+safe.replace(/\n\s*\n/g,"</p><p>").replace(/\n/g,"<br>")+"</p>";}
+function refsHtml(ids){
+  const docs=[...new Set(ids||[])].map(id=>S.referenceDocs.find(d=>d.id===id)).filter(Boolean);
+  if(!docs.length)return "";
+  return '<div class="refs original-downloads">'+docs.map(doc=>
+    '<div class="ref"><div><b>'+esc(doc.title)+'</b><small>Verified original PDF</small></div><button type="button" class="btn alt btn-sm" data-original="'+esc(doc.id)+'">⬇ Original PDF</button></div>'
+  ).join("")+"</div>";
 }
-function chatParagraphs(text) { return '<p>' + esc(text).replace(/\n\s*\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>'; }
-function nextQuestions(message) {
-  const defaults = message.language === 'en' ? ['Which documents are needed for this process?', 'Can you explain the relevant part of the applicable GO?'] : ['इस प्रक्रिया के लिए कौन-कौन से अभिलेख चाहिए?', 'लागू GO का संबंधित अंश समझाएँ।'];
-  return [...new Set([...(message.followups || []), ...defaults].filter(q => typeof q === 'string' && q.trim().length > 5).map(q => q.trim()))].slice(0,2);
+function assistantHtml(message,index){
+  const answer=cleanChatAnswer(message.t);
+  if(message.error)return chatParagraphs(answer);
+  const english=message.language==="en";
+  const web=(message.web||[]).filter(src=>/^https?:\/\//i.test(src.uri||"")).slice(0,5).map(src=>
+    '<a href="'+esc(src.uri)+'" target="_blank" rel="noopener noreferrer">'+esc(src.title||(english?"Web source":"वेब स्रोत"))+"</a>"
+  ).join(" · ");
+  const followups=(message.followups||[]).filter(q=>typeof q==="string"&&q.trim().length>5).slice(0,2);
+  return chatParagraphs(answer)+(web?'<p class="hint">'+web+"</p>":"")+refsHtml(message.originalIds||[])+
+    (followups.length?'<div class="followups">'+followups.map(q=>
+      '<button class="btn alt followup" data-followup="'+esc(q)+'" data-message-index="'+index+'">'+esc(q)+'</button>'
+    ).join("")+"</div>":"")+'<div class="btn-row"><button class="btn-sm btn alt" data-tod="'+index+'">📝 इससे पत्र बनाएँ</button></div>';
 }
-function assistantHtml(message, index) {
-  let answer = cleanChatAnswer(message.t), advice = cleanChatAnswer(message.roleAdvice || '');
-  if (message.error || /^⚠/.test(answer)) return chatParagraphs(answer);
-  const role = message.role || S.profile?.role || 'resident';
-  const english = message.language === 'en';
-  const title = english ? CHAT_ENGLISH_TITLES[role] || 'Panchayat Resident' : CHAT_ROLE_TITLES[role] || 'पंचायत निवासी';
-  const salutation = english ? title : (role === 'resident' ? 'जी' : ROLES[role]?.call || 'जी');
-  // Saved messages from the previous format are displayed in the same simplified style.
-  if (!message.formatVersion) {
-    const match = answer.match(/\n\s*(?:आपकी भूमिका[^\n]*|Your (?:side|role)[^\n]*)\n/i);
-    if (match) { advice = answer.slice(match.index + match[0].length).trim(); answer = answer.slice(0,match.index).trim(); }
-  }
-  answer = answer.replace(new RegExp('^' + salutation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[,।\\s]+'), '');
-  const roleHeading = english ? `Your role as ${title}` : `${title} के रूप में आपकी भूमिका`;
-  if (advice.startsWith(roleHeading)) advice = advice.slice(roleHeading.length).replace(/^\s*[:：]?\s*/, "");
-  advice = advice.split(/\n+/).map(line => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "")).join(" ").trim();
-  const web = (message.web || []).filter(source => /^https?:\/\//i.test(source.uri || '')).map(source => `<a href="${esc(source.uri)}" target="_blank" rel="noopener">${esc(source.title || (english ? 'Source' : 'स्रोत'))}</a>`).join(' · ');
-  return `<p class="chat-salutation">${esc(salutation)},</p>${chatParagraphs(answer)}${advice ? `<p class="role-heading"><b>${esc(roleHeading)}</b></p>${chatParagraphs(advice)}` : ''}${web ? `<p class="hint">${web}</p>` : ''}${refsHtml(message.refs || [], index)}<div class="followups">${nextQuestions(message).map(question => `<button class="btn alt followup" data-followup="${esc(question)}" data-message-index="${index}" ${S.chatBusy ? "disabled" : ""}>${esc(question)}</button>`).join('')}</div><div class="btn-row"><button class="btn-sm btn alt" data-tod="${index}">📝 इससे पत्र बनाएँ</button></div>`;
-}
-function refsHtml(ids, messageIndex = -1) {
-  const docs = [...new Set(ids)].map(id => S.catalog.find(doc => doc.id === id)).filter(Boolean);
-  if (!docs.length) return '';
-  return `<div class="refs go-downloads">${docs.map(doc => `<div class="ref"><div><b>${esc(doc.title)}</b><small>${esc(doc.number || '')} · ${esc(doc.date || '')}</small></div><button class="btn alt btn-sm" data-go-download="${esc(doc.id)}" onclick="PAI.downloadGO('${esc(doc.id)}',${messageIndex})">Download GO</button></div>`).join('')}</div>`;
-}
-
 function chat(el) {
   if (needLogin("chat")) return;
   S.chat = S.chat.length ? S.chat : (LS.get("chat_" + S.user.uid) || []);
   el.innerHTML = `<div class="chat" id="chatBox"></div>`;
   const box = $("#chatBox");
   const paint = () => {
-    box.innerHTML = (S.chat.length ? "" : `<div class="msg a">पंचायत से जुड़े नियम, शासनादेश या प्रक्रिया पर अपना प्रश्न लिखें।</div>`) +
+    box.innerHTML = (S.chat.length ? "" : `<div class="msg a">किसी भी विषय पर हिंदी या English में प्रश्न पूछें।</div>`) +
       S.chat.map((m,index) => '<div class="msg ' + (m.r === "u" ? "u" : "a") + '">' + (m.r === "u" ? esc(m.t) : assistantHtml(m,index)) + '</div>').join("");
 
     box.querySelectorAll("[data-tod]").forEach(b => b.onclick = () => { S.draftType = "patra"; S.draftSeed = S.chat[+b.dataset.tod].t; go("draftEdit"); });
+    box.querySelectorAll("[data-original]").forEach(b=>b.onclick=()=>window.PAI.downloadOriginalPDF(b.dataset.original));
     window.scrollTo(0, document.body.scrollHeight);
   };
   paint();
@@ -484,15 +464,15 @@ function chat(el) {
     if (S.chatBusy) return;
     const q = $("#q").value.trim(); if (!q && !S.att.length) return;
     S.chatBusy = true; $("#send").disabled = true;
-    const contextRefs = Number.isInteger(contextIndex) && contextIndex >= 0 ? (S.chat[contextIndex]?.refs || []).map(id => S.catalog.find(doc => doc.id === id)).filter(Boolean) : [];
-    const refsLocal = [...new Map([...contextRefs,...searchCatalog(q,6)].map(doc => [doc.id,doc])).values()].slice(0,8);
     S.chat.push({ r: "u", t: q || "(संलग्न फ़ाइल देखें)" }); $("#q").value = "";
     const att = S.att.splice(0); paint();
-    box.insertAdjacentHTML("beforeend", `<div class="msg a typing" id="typing">Thinking… searching GOs & rules 🔎</div>`);
+    box.insertAdjacentHTML("beforeend", `<div class="msg a typing" id="typing">Thinking…</div>`);
     try {
-      const r = await api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m => ({ r: m.r, t: m.t })),
-        refs: refsLocal.map(d => ({ id: d.id, title: d.title, type: d.type, number: d.number, date: d.date, topic: d.topicName, excerpt: (d.text || "").slice(0, 6000) })), att });
-      S.chat.push({ r: "a", t: r.text, refs: r.refs || [], web: r.web || [], formatVersion: 2, language: r.language, role: S.profile.role, roleAdvice: r.roleAdvice || "", followups: r.followups || [], sources: r.sources || [], question: q });
+      const [r, originals] = await Promise.all([
+        api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m=>({r:m.r,t:m.t})), att }),
+        availableOriginals(q)
+      ]);
+      S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
     } catch (e) { S.chat.push({ r: "a", error: true, t: "⚠️ " + e.message + (/सीमा|limit/i.test(e.message) ? "\n\n[Plus प्लान लें](#)" : "") }); }
     S.chatBusy = false;
     LS.set("chat_" + S.user.uid, S.chat.slice(-40));
@@ -588,7 +568,7 @@ function draftEdit(el) {
     const done = progress($("#mk"), "⏳ बन रहा है…");
     try {
       const r = await api("/draft", { kind: d.n, profile: S.profile, points: req, gp: (S.profile.gps || [])[0] || "", att: S.att.splice(0),
-        refs: searchCatalog(req, 5).map(x => ({ id: x.id, title: x.title, number: x.number, date: x.date, excerpt: (x.text || "").slice(0, 1500) })) });
+        refs: [] });
       done(true); showDraft(r.html, r.refs || [], d.n);
     } catch (e) { done(false); toast(e.message); }
   };
@@ -616,21 +596,6 @@ function history(el) {
   const h = LS.get("drafts") || [];
   el.innerHTML = `<h2>My Drafts</h2>` + (h.length ? h.map((x, i) => `<div class="lib-item"><a data-i="${i}"><b>${esc(x.kind)}</b></a><small>${new Date(x.at).toLocaleString("hi-IN")}</small></div>`).join("") : `<p class="hint">No saved drafts yet.</p>`) + `<div id="out"></div>`;
   el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind); });
-}
-
-/* ---------- GO पुस्तकालय ---------- */
-function library(el) {
-  const topics = [...new Map(S.catalog.map(d => [d.topic, d.topicName])).entries()].filter(t => t[1]).sort();
-  el.innerHTML = `<h2>📚 GO पुस्तकालय</h2><p class="hint">${S.catalog.length} original documents — Acts, Rules, GOs, Gazettes, court rulings.</p>
-   <input id="ls" placeholder="Search: सामुदायिक शौचालय, परिवार रजिस्टर, 15th FC…">
-   <select id="lt" style="margin-top:8px"><option value="">All topics</option>${topics.map(([k, n]) => `<option value="${k}">${k}. ${esc(n)}</option>`).join("")}</select>
-   <div id="lr" class="card" style="margin-top:10px"></div>`;
-  const draw = () => {
-    const q = $("#ls").value.trim(), t = $("#lt").value;
-    let list = q ? searchCatalog(q, 60) : S.catalog; if (t) list = list.filter(d => d.topic === t);
-    $("#lr").innerHTML = list.slice(0, 80).map(d => `<div class="lib-item ref"><div><b>${esc(d.title)}</b><small><span class="pill">${esc(d.type)}</span>${esc(d.date)} · ${esc(d.topicName)} · ${d.id}</small><small>${esc(d.use || "")}</small></div>${d.p ? `<button class="btn alt btn-sm" onclick="PAI.downloadGO('${d.id}')">⬇ PDF</button>` : ""}</div>`).join("") || `<p class="hint">Nothing found</p>`;
-  };
-  $("#ls").oninput = draw; $("#lt").onchange = draw; draw();
 }
 
 /* ---------- पंचायत न्यूज़ (Inshorts जैसी छोटी ख़बरें) ---------- */
@@ -840,7 +805,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
