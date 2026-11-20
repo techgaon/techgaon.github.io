@@ -12,7 +12,7 @@ const ROLES = {
   prashasak:{ n: "प्रशासक (ग्राम पंचायत)", call: "प्रशासक जी", scope: "gp" },
   gpa:      { n: "पंचायत सचिव (ग्राम पंचायत अधिकारी)", call: "सचिव जी", scope: "multigp" },
   sahayak:  { n: "पंचायत सहायक", call: "पंचायत सहायक जी", scope: "gp" },
-  gva:      { n: "ग्राम विकास अधिकारी (GVA)", call: "सचिव जी", scope: "multigp" },
+  gva:      { n: "ग्राम विकास अधिकारी (VDO)", call: "सचिव जी", scope: "multigp" },
   ado:      { n: "सहायक विकास अधिकारी (पंचायत)", call: "ADO पंचायत जी", scope: "block" },
   bdo:      { n: "खण्ड विकास अधिकारी (BDO)", call: "BDO साहब", scope: "block" },
   clerk:    { n: "विभागीय लिपिक", call: "बाबू जी", scope: "clerk" },
@@ -211,7 +211,7 @@ function home(el) {
    <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} Login with Google</button></div></div>` : ""}
   <div class="home-options">
     <div class="grid draft-grid home-feature-pair">
-      <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>Ask anything</small></button>
+      <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>UP के नियम व पंचायत कार्य</small></button>
       <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
     </div>
     <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
@@ -449,7 +449,7 @@ function chat(el) {
   el.innerHTML = `<div class="chat" id="chatBox"></div>`;
   const box = $("#chatBox");
   const paint = () => {
-    box.innerHTML = (S.chat.length ? "" : `<div class="msg a">किसी भी विषय पर हिंदी या English में प्रश्न पूछें।</div>`) +
+    box.innerHTML = (S.chat.length ? "" : `<div class="msg a">उत्तर प्रदेश के पंचायती राज अधिनियम, नियम, शासनादेश और विभागीय प्रक्रियाओं के बारे में पूछें।</div>`) +
       S.chat.map((m,index) => '<div class="msg ' + (m.r === "u" ? "u" : "a") + '">' + (m.r === "u" ? esc(m.t) : assistantHtml(m,index)) + '</div>').join("");
 
     box.querySelectorAll("[data-tod]").forEach(b => b.onclick = () => { S.draftType = "patra"; S.draftSeed = S.chat[+b.dataset.tod].t; go("draftEdit"); });
@@ -460,7 +460,7 @@ function chat(el) {
   const comp = document.createElement("div"); comp.className = "composer"; comp.id = "composerWrap";
   comp.appendChild(attachBar());
   const row = document.createElement("div"); row.className = "in";
-  row.innerHTML = `<textarea id="q" placeholder="Ask your question (Hindi or English)…" rows="1"></textarea><button class="btn" id="send">➤</button>`;
+  row.innerHTML = `<textarea id="q" placeholder="उत्तर प्रदेश के नियम, शासनादेश या पंचायत कार्य पूछें…" rows="1"></textarea><button class="btn" id="send">➤</button>`;
   comp.appendChild(row); document.body.appendChild(comp);
   const send = async (contextIndex = -1) => {
     if (S.chatBusy) return;
