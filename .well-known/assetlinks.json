@@ -11,5 +11,17 @@
         "A5:2A:86:67:0D:F3:D5:D0:4D:48:05:93:5B:0D:CC:63:3C:4F:48:09:FD:71:89:36:54:4E:67:AF:8F:49:79:81"
       ]
     }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.techgaon.panchayatai.fresh",
+      "sha256_cert_fingerprints": [
+        "A5:2A:86:67:0D:F3:D5:D0:4D:48:05:93:5B:0D:CC:63:3C:4F:48:09:FD:71:89:36:54:4E:67:AF:8F:49:79:81"
+      ]
+    }
   }
 ]
