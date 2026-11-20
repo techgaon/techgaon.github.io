@@ -22,11 +22,15 @@
     return libraryLoaders[src];
   }
   async function loadDocx() {
-    await loadScript("https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",()=>Boolean(window.docx&&window.docx.Packer));
+    const ready=()=>Boolean(window.docx&&window.docx.Packer);
+    try{await loadScript("https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",ready);}
+    catch(e){await loadScript("https://unpkg.com/docx@8.5.0/build/index.umd.js",ready);}
     return window.docx;
   }
   async function loadTesseract() {
-    await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",()=>Boolean(window.Tesseract&&window.Tesseract.createWorker));
+    const ready=()=>Boolean(window.Tesseract&&window.Tesseract.createWorker);
+    try{await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",ready);}
+    catch(e){await loadScript("https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js",ready);}
     return window.Tesseract;
   }
   async function loadPdfjs() {
@@ -62,8 +66,8 @@
     const options={
       workerPath:new URL("./vendor/worker.min.js",document.baseURI).href,
       corePath:new URL("./vendor/core/",document.baseURI).href,
-      langPath:"https://cdn.jsdelivr.net/gh/tesseract-ocr/tessdata_best@main",
-      gzip:false,
+      langPath:local,
+      gzip:true,
       logger:m=>{
         if(m && m.status==="recognizing text" && Number.isFinite(m.progress)){
           progress("Hindi OCR: "+Math.round(m.progress*100)+"%",m.progress*100);
@@ -72,11 +76,12 @@
     };
     let worker;
     try{
-      progress("Loading accurate Hindi OCR model…");
+      progress("स्थानीय Hindi/English OCR मॉडल लोड हो रहा है…");
       worker=await T.createWorker(["hin","eng"],1,options);
     }catch(e){
-      progress("Loading local Hindi OCR fallback…");
-      worker=await T.createWorker(["hin","eng"],1,{...options,langPath:local,gzip:true});
+      console.warn("Local OCR unavailable; using network fallback",e);
+      progress("वैकल्पिक Hindi OCR मॉडल लोड हो रहा है…");
+      worker=await T.createWorker(["hin","eng"],1,{...options,langPath:"https://cdn.jsdelivr.net/gh/tesseract-ocr/tessdata_best@main",gzip:false});
     }
     try{await worker.setParameters({preserve_interword_spaces:"1",user_defined_dpi:"300"});}
     catch(e){console.warn("OCR parameter not available",e);}
@@ -156,7 +161,7 @@
     }
   }
   async function imageToPdf(file,progress) {
-    if(!window.PDFLib)throw new Error("PDF लाइब्रेरी उपलब्ध नहीं है");
+    if(!window.PDFLib)await loadScript("https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js",()=>Boolean(window.PDFLib));
     const imageUrl=URL.createObjectURL(file);
     try {
       const img=await new Promise((resolve,reject)=>{
@@ -194,7 +199,8 @@
     return doc.body.innerHTML;
   }
   async function wordToPdf(file,progress,preloaded) {
-    if(!window.mammoth||!window.html2pdf)throw new Error("Word/PDF converter libraries are unavailable.");
+    if(!window.mammoth)await loadScript("https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js",()=>Boolean(window.mammoth));
+    if(!window.html2pdf)await loadScript("https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js",()=>Boolean(window.html2pdf));
     progress("Reading Word paragraphs, images and tables…");
     const result=await window.mammoth.convertToHtml({arrayBuffer:preloaded||await file.arrayBuffer()});
     if(!result.value.trim())throw Error("No readable content found in the DOCX file.");
