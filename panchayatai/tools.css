@@ -47,10 +47,7 @@
 .pai-tool-header,.pai-demo-flow *, .pai-tool-grid .pai-tool-tab,.pai-tool-panel,#pai-result:not(.hidden),.pai-tool-tab.active .pai-tool-emoji,.pai-status.pai-working:before{animation:none!important;transition:none!important}
 }
 
-/* Compact selector and truthful conversion progress */
-.pai-select{margin:0 0 10px}
-.pai-select label{margin:0 0 5px;font-weight:700;font-size:14px;color:var(--g)}
-.pai-select select{border-color:#bddbc9;min-height:46px;background:#fff}
+/* Compact conversion progress */
 .pai-tool-panel{animation:pai-rise .3s ease both}
 .pai-progress{margin:13px 0;padding:12px;border-radius:12px;border:1px solid #d3e7d9;background:#f7fbf8}
 .pai-progress-line{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:13px;margin-bottom:8px;color:#24563b}
@@ -64,4 +61,30 @@
 @keyframes pai-progress-loading{0%{transform:translateX(-105%)}100%{transform:translateX(320%)}}
 @media(prefers-reduced-motion:reduce){
 .pai-progress-track>span,.pai-green-tick{animation:none!important;transition:none!important}
+}
+
+/* Six animated choices, with conversion controls only after selection */
+.pai-tool-header{padding:18px 12px 14px;text-align:center}
+.pai-tool-header h2{font-size:21px;margin:0;color:var(--g)}
+.pai-demo-flow{gap:12px;margin:8px auto 10px}
+.pai-demo-flow span{font-size:30px}
+.pai-three-steps{gap:7px}
+.pai-three-steps span{padding:4px 10px;font-size:12px}
+.pai-tool-grid{gap:10px;margin-bottom:0}
+.pai-tool-tab{min-height:106px;padding:12px 8px;gap:9px;border-radius:14px}
+.pai-tool-tab b{font-size:14px;line-height:1.35}
+.pai-tool-emoji{font-size:29px}
+.pai-tool-panel{margin-top:14px;animation:pai-rise .33s ease both}
+.pai-work-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;color:var(--g)}
+.pai-work-top strong{font-size:17px}
+.pai-close-tool{background:transparent;color:var(--mut);border:1px solid var(--bd);border-radius:9px;cursor:pointer;font-size:17px;width:32px;height:32px;flex:none}
+.pai-close-tool:hover{background:var(--gl)}
+.pai-pickers{margin-bottom:12px}
+.pai-filename{margin:7px 0 12px;font-size:12px}
+.pai-status{margin:10px 0 0;min-height:0;font-size:13px}
+.pai-tool-panel .btn{min-height:41px}
+@media(max-width:380px){
+ .pai-tool-tab{min-height:100px}
+ .pai-tool-tab b{font-size:13px}
+ .pai-demo-flow{gap:8px}
 }

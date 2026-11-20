@@ -209,24 +209,31 @@
   }
   function mount(el) {
     let type=tasks[0],file=null,loadedBytes=null,serial=0,output=null,outName="",copiedText="",busy=false;
-    el.innerHTML='<div class="pai-select"><label for="pai-task-select">Conversion tool</label><select id="pai-task-select">'+tasks.map(t=>'<option value="'+t.key+'">'+t.title+'</option>').join("")+'</select></div>'+ 
-      '<section class="card pai-tool-panel"><h3 id="pai-tool-title">📷 Image to Text</h3>'+
-      '<p id="pai-tool-note" class="hint">फोटो से हिंदी/English टेक्स्ट निकालें</p>'+
-      '<div id="pai-image-source" class="pai-pickers"><button class="btn alt" type="button" id="pai-gallery">🖼️ Gallery / Files</button><button class="btn alt" type="button" id="pai-camera">📸 Camera से फोटो</button></div>'+
-      '<div id="pai-document-source" class="pai-pickers hidden"><button class="btn alt" type="button" id="pai-pick-document">📁 फ़ाइल चुनें</button></div>'+
-      '<input id="pai-image-input" class="hidden" type="file" accept="image/*">'+
+    el.innerHTML=
+      '<section class="card pai-tool-header"><h2>🧰 AI Tools</h2>'+
+      '<div class="pai-demo-flow" aria-hidden="true"><span>📸</span><b>→</b><span>✨</span><b>→</b><span>📄</span></div>'+
+      '<div class="pai-three-steps"><span>① Select</span><span>② Convert</span><span>③ Download</span></div></section>'+
+      '<div class="pai-tool-grid" aria-label="Conversion tools">'+tasks.map((t,i)=>
+        '<button class="pai-tool-tab" type="button" data-tool="'+t.key+'" style="--step:'+i+'" aria-expanded="false" aria-controls="pai-work-panel">'+
+        '<span class="pai-tool-emoji" aria-hidden="true">'+t.icon+'</span><b>'+t.title+'</b></button>'
+      ).join("")+'</div>'+
+      '<section class="card pai-tool-panel hidden" id="pai-work-panel">'+
+      '<div class="pai-work-top"><strong id="pai-tool-title"></strong><button class="pai-close-tool" id="pai-close-tool" type="button" aria-label="Close tool">✕</button></div>'+
+      '<div id="pai-image-source" class="pai-pickers"><button class="btn alt" type="button" id="pai-gallery">🖼️ Gallery</button><button class="btn alt" type="button" id="pai-camera">📸 Camera</button></div>'+
+      '<div id="pai-document-source" class="pai-pickers hidden"><button class="btn alt" type="button" id="pai-pick-document">📁 Choose File</button></div>'+
+      '<input id="pai-image-input" class="hidden" type="file" accept="image/jpeg,image/png,image/webp,image/bmp,image/gif">'+
       '<input id="pai-camera-input" class="hidden" type="file" accept="image/*" capture="environment">'+
       '<input id="pai-document-input" class="hidden" type="file" accept=".pdf,application/pdf">'+
-      '<p id="pai-file-name" class="pai-filename" role="status">अभी कोई फ़ाइल नहीं चुनी गई।</p>'+
+      '<p id="pai-file-name" class="pai-filename hidden" role="status"></p>'+
       '<div class="pai-progress hidden" id="pai-file-progress"><div class="pai-progress-line"><b id="pai-file-label">Reading file</b><span id="pai-file-percent">0%</span><span id="pai-file-tick" class="pai-green-tick hidden">✓</span></div><div class="pai-progress-track" role="progressbar" aria-label="File read progress" aria-valuemin="0" aria-valuemax="100" id="pai-file-track"><span id="pai-file-fill"></span></div></div>'+
-      '<button id="pai-convert" type="button" class="btn" disabled>Convert करें</button>'+
+      '<button id="pai-convert" type="button" class="btn" disabled>Convert</button>'+
       '<div class="pai-progress hidden" id="pai-conversion-progress"><div class="pai-progress-line"><b id="pai-conversion-label">Converting</b><span id="pai-conversion-percent">Working…</span><span id="pai-conversion-tick" class="pai-green-tick hidden">✓</span></div><div class="pai-progress-track" role="progressbar" aria-label="Conversion progress" aria-valuemin="0" aria-valuemax="100" id="pai-conversion-track"><span id="pai-conversion-fill"></span></div></div>'+
-      '<p id="pai-tool-status" class="pai-status" role="status" aria-live="polite"></p>'+
-      '<div id="pai-result" class="hidden"><div class="pai-result-actions"><button id="pai-download" type="button" class="btn">⬇️ Download</button><button id="pai-copy" type="button" class="btn alt hidden">📋 टेक्स्ट Copy</button></div><pre id="pai-text-preview" class="pai-text-preview hidden"></pre></div>'+
+      '<p id="pai-tool-status" class="pai-status hidden" role="status" aria-live="polite"></p>'+
+      '<div id="pai-result" class="hidden"><div class="pai-result-actions"><button id="pai-download" type="button" class="btn">⬇️ Download</button><button id="pai-copy" type="button" class="btn alt hidden">📋 Copy</button></div><pre id="pai-text-preview" class="pai-text-preview hidden"></pre></div>'+
       '</section>';
     const find=id=>el.querySelector("#"+id);
     const filenameEl=find("pai-file-name"),status=find("pai-tool-status"),convert=find("pai-convert"),result=find("pai-result"),download=find("pai-download"),copy=find("pai-copy"),preview=find("pai-text-preview");
-    const setStatus=s=>{status.textContent=s;};
+    const setStatus=s=>{status.textContent=s;status.classList.toggle("hidden",!s);};
     function progressBar(kind,pct,label,finished=false){
       const card=find("pai-"+kind+"-progress"),track=find("pai-"+kind+"-track");
       card.classList.remove("hidden");
@@ -241,18 +248,47 @@
       find("pai-"+kind+"-tick").classList.toggle("hidden",!finished);
     }
     function clearBars(){for(const k of ["file","conversion"])find("pai-"+k+"-progress").classList.add("hidden");}
-    function chooseTask(key) {
+    function chooseTask(key){
       if(busy)return;
+      const panel=find("pai-work-panel");
+      if(!panel.classList.contains("hidden")&&type.key===key){
+        closeTool();
+        return;
+      }
       type=tasks.find(t=>t.key===key)||tasks[0];
-      serial++;file=null;loadedBytes=null;output=null;copiedText="";clearBars();filenameEl.textContent="अभी कोई फ़ाइल नहीं चुनी गई।";
+      serial++;file=null;loadedBytes=null;output=null;copiedText="";
+      clearBars();
+      filenameEl.textContent="";
+      filenameEl.classList.add("hidden");
       find("pai-tool-title").textContent=type.icon+" "+type.title;
-      find("pai-tool-note").textContent=type.note;
       find("pai-image-source").classList.toggle("hidden",type.type!=="image");
       find("pai-document-source").classList.toggle("hidden",type.type==="image");
       find("pai-document-input").accept=type.type==="pdf"?".pdf,application/pdf":".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      find("pai-task-select").value=key;
-      find("pai-image-input").value="";find("pai-camera-input").value="";find("pai-document-input").value="";
-      convert.disabled=true;result.classList.add("hidden");setStatus("");
+      el.querySelectorAll("[data-tool]").forEach(button=>{
+        const active=button.dataset.tool===key;
+        button.classList.toggle("active",active);
+        button.setAttribute("aria-expanded",String(active));
+      });
+      find("pai-image-input").value="";
+      find("pai-camera-input").value="";
+      find("pai-document-input").value="";
+      convert.disabled=true;
+      result.classList.add("hidden");
+      setStatus("");
+      panel.classList.remove("hidden");
+    }
+    function closeTool(){
+      if(busy)return;
+      serial++;file=null;loadedBytes=null;output=null;copiedText="";
+      clearBars();
+      convert.disabled=true;result.classList.add("hidden");
+      filenameEl.classList.add("hidden");filenameEl.textContent="";
+      setStatus("");
+      find("pai-work-panel").classList.add("hidden");
+      el.querySelectorAll("[data-tool]").forEach(button=>{
+        button.classList.remove("active");
+        button.setAttribute("aria-expanded","false");
+      });
     }
     function chooseFile(f) {
       if(!f||busy)return;
@@ -266,6 +302,7 @@
       file=null;loadedBytes=null;output=null;result.classList.add("hidden");convert.disabled=true;
       find("pai-conversion-progress").classList.add("hidden");
       filenameEl.textContent=f.name+" ("+(f.size/1048576).toFixed(2)+" MB)";
+      filenameEl.classList.remove("hidden");
       progressBar("file",0,"Reading file");setStatus("फ़ाइल पढ़ी जा रही है…");
       const reader=new FileReader();
       reader.onprogress=e=>{
@@ -280,7 +317,8 @@
       reader.onerror=()=>{if(id!==serial)return;progressBar("file",null,"File read failed");setStatus("❌ फ़ाइल पढ़ने में त्रुटि।");};
       reader.readAsArrayBuffer(f);
     }
-    find("pai-task-select").onchange=e=>chooseTask(e.target.value);
+    el.querySelectorAll("[data-tool]").forEach(button=>button.onclick=()=>chooseTask(button.dataset.tool));
+    find("pai-close-tool").onclick=closeTool;
     find("pai-gallery").onclick=()=>find("pai-image-input").click();
     find("pai-camera").onclick=()=>find("pai-camera-input").click();
     find("pai-pick-document").onclick=()=>find("pai-document-input").click();
