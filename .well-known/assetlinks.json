@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "in.techgaon.panchayatai",
       "sha256_cert_fingerprints": [
-        "E1:06:53:E1:3C:74:28:13:46:E4:23:FC:C2:24:B4:51:00:3B:59:6D:BB:B6:A7:AF:52:B8:44:5A:E8:1C:4F:E1"
+        "E1:06:53:E1:3C:74:28:13:46:E4:23:FC:C2:24:B4:51:00:3B:59:6D:BB:B6:A7:AF:52:B8:44:5A:E8:1C:4F:E1",
+        "A5:2A:86:67:0D:F3:D5:D0:4D:48:05:93:5B:0D:CC:63:3C:4F:48:09:FD:71:89:36:54:4E:67:AF:8F:49:79:81"
       ]
     }
   }
