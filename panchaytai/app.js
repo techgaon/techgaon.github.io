@@ -69,7 +69,7 @@ async function useQuota(kind) {
   }
   const day = Math.floor(Date.now() / 864e5), plus = isPlus();
   const lim = plus ? 200 : C.plans.free[kind === "chat" ? "dailyChats" : "dailyDrafts"];
-  const msg = plus ? "आज की उचित उपयोग सीमा पूरी हुई" : `Today's free limit (${lim}) is over — get Plus (₹49/month) / आज की निःशुल्क सीमा पूरी हुई`;
+  const msg = plus ? "आज की उचित उपयोग सीमा पूरी हुई" : `Today's free limit (${lim}) is over — Go Plus / आज की निःशुल्क सीमा पूरी हुई`;
   if (!S.db || !S.user || S.user.uid === "demo") {
     let u = LS.get("usage") || {}; if (u.day !== day) u = { day, chat: 0, draft: 0 };
     if (u[kind] >= lim) throw new Error(msg); u[kind]++; LS.set("usage", u); return;
@@ -725,7 +725,7 @@ async function adminUsers(panel) {
 }
 async function adminPayments(panel) {
   const payments = await S.db.collection('paiPayments').where('status','==','pending').limit(100).get();
-  panel.innerHTML = payments.docs.map(d => { const p = d.data(); return `<div class="card"><b>${esc(p.email)}</b><p>${esc(p.planId)} · ${money(p.amount)} · UTR ${esc(p.utr)}</p><p>Coupon: ${esc(p.coupon || 'None')}</p><button class="btn" data-approve="${d.id}">Verify and approve</button> <button class="btn alt" data-reject="${d.id}">Reject</button><p class="payment-message" role="status"></p></div>`; }).join('') || '<div class="card">No pending payments</div>';
+  panel.innerHTML = '<p class="hint">Verify the amount and UTR in your bank or UPI app before approving a payment.</p>' + (payments.docs.map(d => { const p = d.data(); return `<div class="card"><b>${esc(p.email)}</b><p>${esc(p.planId)} · ${money(p.amount)} · UTR ${esc(p.utr)}</p><p>Coupon: ${esc(p.coupon || 'None')}</p><button class="btn" data-approve="${d.id}">Verify and approve</button> <button class="btn alt" data-reject="${d.id}">Reject</button><p class="payment-message" role="status"></p></div>`; }).join('') || '<div class="card">No pending payments</div>');
   panel.querySelectorAll('[data-approve],[data-reject]').forEach(b => b.onclick = async () => {
     const id = b.dataset.approve || b.dataset.reject, approve = !!b.dataset.approve; b.disabled = true;
     try {
