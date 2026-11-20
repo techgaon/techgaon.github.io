@@ -752,6 +752,12 @@ async function adminPayments(panel) {
   });
 }
 
-if (location.hash === '#admin') S.view = 'admin';
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin'];
+const initialView = location.hash.slice(1);
+if (publicViews.includes(initialView)) S.view = initialView;
+window.addEventListener('hashchange', () => {
+  const view = location.hash.slice(1) || 'home';
+  if (publicViews.includes(view) && view !== S.view) go(view);
+});
 render();
 })();
