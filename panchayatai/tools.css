@@ -20,3 +20,29 @@
 .pai-printdoc img{max-width:100%;height:auto}.pai-printdoc tr,.pai-printdoc img{break-inside:avoid}
 @media(min-width:650px){.pai-tool-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:380px){.pai-pickers{display:block}.pai-pickers .btn{width:100%;margin-bottom:8px}}
+
+/* Soft animated first-open experience; no distracting perpetual motion */
+.pai-tool-header{overflow:hidden;animation:pai-rise .48s ease-out both}
+.pai-demo-flow{display:flex;align-items:center;justify-content:center;gap:15px;margin:12px auto}
+.pai-demo-flow span{font-size:31px;display:inline-grid;place-items:center;animation:pai-pop .65s cubic-bezier(.18,.9,.32,1.25) both}
+.pai-demo-flow span:nth-of-type(2){animation-delay:.2s}
+.pai-demo-flow span:nth-of-type(3){animation-delay:.4s}
+.pai-demo-flow b{font-size:23px;color:var(--g);opacity:.7;animation:pai-arrow .9s ease both;animation-delay:.24s}
+.pai-three-steps{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.pai-three-steps span{border-radius:999px;background:var(--gl);color:var(--g);font-size:12px;font-weight:600;padding:5px 9px}
+.pai-tool-grid .pai-tool-tab{animation:pai-rise .47s ease-out both;animation-delay:calc(var(--step)*75ms)}
+.pai-tool-tab{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
+.pai-tool-tab:hover,.pai-tool-tab:focus-visible{transform:translateY(-3px);box-shadow:0 8px 20px #0f51321b}
+.pai-tool-tab:active{transform:scale(.98)}
+.pai-tool-tab.active .pai-tool-emoji{animation:pai-active .38s ease}
+.pai-tool-panel{animation:pai-rise .45s ease-out both;animation-delay:.25s}
+#pai-result:not(.hidden){animation:pai-rise .4s ease-out both}
+.pai-status.pai-working:before{content:"";display:inline-block;vertical-align:-3px;width:13px;height:13px;margin-right:7px;border:2px solid #c2dbcb;border-top-color:var(--g);border-radius:50%;animation:pai-spin .65s linear infinite}
+@keyframes pai-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pai-pop{from{opacity:0;transform:scale(.45) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes pai-arrow{from{opacity:0;transform:translateX(-7px)}to{opacity:.7;transform:translateX(0)}}
+@keyframes pai-active{0%{transform:scale(.8)}65%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes pai-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+.pai-tool-header,.pai-demo-flow *, .pai-tool-grid .pai-tool-tab,.pai-tool-panel,#pai-result:not(.hidden),.pai-tool-tab.active .pai-tool-emoji,.pai-status.pai-working:before{animation:none!important;transition:none!important}
+}

@@ -176,9 +176,9 @@
   }
   function mount(el) {
     let type=tasks[0],file=null,output=null,outName="",copiedText="",busy=false;
-    el.innerHTML='<section class="card pai-tool-header"><h2>🧰 AI Tools</h2><p>फोटो, PDF और Word की फ़ाइलें अपने फोन या कंप्यूटर पर बदलें। OCR हिंदी और English दोनों पढ़ता है।</p></section>'+
+    el.innerHTML='<section class="card pai-tool-header"><h2>🧰 AI Tools</h2><p>फोटो, PDF और Word की फ़ाइलें बस 3 आसान स्टेप में बदलें।</p><div class="pai-demo-flow" aria-hidden="true"><span>📸</span><b>→</b><span>✨</span><b>→</b><span>📄</span></div><div class="pai-three-steps"><span>① फ़ाइल चुनें</span><span>② Convert करें</span><span>③ Download करें</span></div></section>'+
       '<div class="pai-tool-grid">'+tasks.map(t=>
-        '<button class="pai-tool-tab'+(t.key===type.key?' active':'')+'" type="button" data-tool="'+t.key+'"><span class="pai-tool-emoji">'+t.icon+'</span><b>'+t.title+'</b><small>'+t.note+'</small></button>'
+        '<button class="pai-tool-tab'+(t.key===type.key?' active':'')+'" type="button" style="--step:'+tasks.indexOf(t)+'" data-tool="'+t.key+'"><span class="pai-tool-emoji">'+t.icon+'</span><b>'+t.title+'</b><small>'+t.note+'</small></button>'
       ).join("")+'</div>'+
       '<section class="card pai-tool-panel"><h3 id="pai-tool-title">📷 Image to Text</h3>'+
       '<p id="pai-tool-note" class="hint">फोटो से हिंदी/English टेक्स्ट निकालें</p>'+
@@ -191,7 +191,7 @@
       '<button id="pai-convert" type="button" class="btn" disabled>Convert करें</button>'+
       '<p id="pai-tool-status" class="pai-status" role="status" aria-live="polite"></p>'+
       '<div id="pai-result" class="hidden"><div class="pai-result-actions"><button id="pai-download" type="button" class="btn">⬇️ Download</button><button id="pai-copy" type="button" class="btn alt hidden">📋 टेक्स्ट Copy</button></div><pre id="pai-text-preview" class="pai-text-preview hidden"></pre></div>'+
-      '</section><p class="hint">निजता: Conversion इस ब्राउज़र में होता है; फ़ाइल हमारी वेबसाइट पर अपलोड नहीं होती। पहली बार OCR के लिए इंटरनेट चाहिए। स्कैन/हस्तलिखित सामग्री में त्रुटियाँ हो सकती हैं; Word से PDF में जटिल लेआउट बदल सकता है।</p>';
+      '</section>';
     const find=id=>el.querySelector("#"+id);
     const filenameEl=find("pai-file-name"),status=find("pai-tool-status"),convert=find("pai-convert"),result=find("pai-result"),download=find("pai-download"),copy=find("pai-copy"),preview=find("pai-text-preview");
     const setStatus=s=>{status.textContent=s;};
@@ -227,7 +227,7 @@
     ["pai-image-input","pai-camera-input","pai-document-input"].forEach(id=>find(id).addEventListener("change",e=>chooseFile(e.target.files[0])));
     convert.onclick=async()=>{
       if(!file||busy)return;
-      busy=true;convert.disabled=true;result.classList.add("hidden");
+      busy=true;convert.disabled=true;result.classList.add("hidden");status.classList.add("pai-working");
       const task=type.key,source=file,stem=filename(source);
       let text="",blob=null,ext="";
       try {
@@ -247,7 +247,7 @@
         if(text)preview.textContent=text.slice(0,20000)+(text.length>20000?"\n\n…आगे का टेक्स्ट डाउनलोड की गई फ़ाइल में है।":"");
         setStatus("✅ तैयार: "+outName+" — Download पर क्लिक करें।");
       }catch(e){output=null;setStatus("❌ "+reportError(e));console.error("Panchayat conversion failed",e);}
-      finally {busy=false;convert.disabled=!file;}
+      finally {busy=false;convert.disabled=!file;status.classList.remove("pai-working");}
     };
     download.onclick=()=>{
       if(!output)return;

@@ -201,12 +201,13 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin, rti, tools: aiTools }[S.view] || home;
+  const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB }[S.view] || home;
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
 }
 
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
+function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
 
 /* ---------- होम ---------- */
 function home(el) {
@@ -226,8 +227,9 @@ function home(el) {
    </div>
    <div class="grid draft-grid">
     <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
-    <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>For more features and easy work</small></button>
+    <button class="tile" data-go="estimate"><span class="e">📐</span><b>Estimate & MB Calculator</b><small>माप, ईंट, सीमेंट, गिट्टी व MB</small></button>
    </div>
+   <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>For more features and easy work</small></button>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
    ${["सामुदायिक शौचालय की केयरटेकर को मानदेय कितना देना चाहिए?","15वें वित्त आयोग की टाइड धनराशि किन कार्यों पर खर्च होगी?","परिवार रजिस्टर में नाम जोड़ने की प्रक्रिया क्या है?","ग्राम सभा की खुली बैठक का कोरम कितना होता है?"]
@@ -838,7 +840,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin', 'rti', 'tools'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
