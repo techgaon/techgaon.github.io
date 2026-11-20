@@ -1,0 +1,71 @@
+name: Diagnose Panchayat AI startup in Android emulator
+on:
+  workflow_dispatch:
+  push:
+    branches: [panchayat-android-20261120]
+    paths: [.github/workflows/panchayat-launch-diagnostic.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;36.0.0'
+      - name: Retrieve prior 1.0.2 APK for comparison
+        uses: actions/download-artifact@v4
+        with:
+          name: PanchayatAI-v1.0.2-Installable-Builds
+          run-id: 44793989156
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: old
+      - name: Temporarily test-sign the old APK for emulator
+        shell: bash
+        run: |
+          mkdir -p logs
+          keytool -genkeypair -noprompt -alias smoke \
+            -keystore /tmp/smoke-key.p12 -storetype PKCS12 \
+            -storepass smokeonly -keypass smokeonly \
+            -keyalg RSA -keysize 2048 -validity 7 \
+            -dname 'CN=Temporary CI Testing'
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
+            --ks /tmp/smoke-key.p12 --ks-type PKCS12 --ks-key-alias smoke \
+            --ks-pass pass:smokeonly \
+            --out /tmp/panchayat-old-smoke.apk \
+            old/PanchayatAI-v1.0.2-Fresh-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging /tmp/panchayat-old-smoke.apk | grep -E '^package:|launchable-activity:'
+      - name: Boot emulator and inspect actual launch
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-boot-timeout: 600
+          script: |
+            set -euo pipefail
+            adb install -r /tmp/panchayat-old-smoke.apk
+            adb logcat -c
+            adb shell am start -W -n in.techgaon.panchayatai.fresh/in.techgaon.panchayatai.MainActivity | tee logs/am-start.txt
+            sleep 8
+            adb logcat -d -v time > logs/logcat.txt
+            adb shell dumpsys activity activities > logs/activities.txt
+            grep -E -A16 'FATAL EXCEPTION|ClassNotFoundException|ActivityNotFoundException|AndroidRuntime|TWALauncherActivity' logs/logcat.txt | tail -100 > logs/errors-summary.txt || true
+            cat logs/errors-summary.txt
+            echo '======== ACTIVE TASKS ========='
+            grep -E 'topResumedActivity|mResumedActivity|Hist #0|ActivityRecord' logs/activities.txt | head -24 || true
+      - name: Save diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PanchayatAI-Android-Launch-Logcat
+          path: logs/*
+          retention-days: 3
