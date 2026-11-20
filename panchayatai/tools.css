@@ -1,0 +1,22 @@
+/* Panchayat AI conversion tools */
+.pai-tool-header h2{margin:0 0 6px;font-size:22px;color:var(--g)}
+.pai-tool-header p{margin:0}
+.pai-tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.pai-tool-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:15px 8px;min-height:120px;background:#fff;border:1.5px solid var(--bd);border-radius:14px;font:inherit;color:var(--ink);cursor:pointer;text-align:center}
+.pai-tool-tab.active{border-color:var(--g);background:#e8f5ee;box-shadow:0 0 0 1px var(--g)}
+.pai-tool-tab b{font-size:15px}.pai-tool-tab small{font-size:12px;font-weight:400;color:var(--mut);line-height:1.4}
+.pai-tool-emoji{font-size:29px;line-height:1.1}
+.pai-tool-panel h3{margin:0 0 4px;font-size:19px}
+.pai-tool-panel .hint{margin:0 0 14px}
+.pai-pickers{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:15px}
+.pai-pickers .btn{flex:1;white-space:normal;min-width:130px;padding:11px}
+.pai-filename{font-size:13px;color:var(--ink);overflow-wrap:anywhere;margin:12px 0}
+.pai-status{font-size:14px;min-height:24px;overflow-wrap:anywhere;margin:12px 0}
+.pai-result-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.pai-text-preview{white-space:pre-wrap;overflow-wrap:anywhere;max-height:350px;overflow:auto;padding:12px;background:#f7f9f7;border:1px solid var(--bd);border-radius:10px;font:14px/1.7 "Noto Sans Devanagari",sans-serif}
+.pai-printdoc{position:absolute;left:-10000px;top:0;width:794px;max-width:none;padding:28px 40px;color:#111;background:white;font:16px/1.55 "Noto Sans Devanagari",Arial,sans-serif}
+.pai-printdoc p{margin:0 0 10px}.pai-printdoc h1,.pai-printdoc h2,.pai-printdoc h3{line-height:1.4;margin:14px 0 8px}
+.pai-printdoc table{width:100%;border-collapse:collapse;table-layout:auto}.pai-printdoc td,.pai-printdoc th{border:1px solid #aaa;padding:6px;vertical-align:top}
+.pai-printdoc img{max-width:100%;height:auto}.pai-printdoc tr,.pai-printdoc img{break-inside:avoid}
+@media(min-width:650px){.pai-tool-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:380px){.pai-pickers{display:block}.pai-pickers .btn{width:100%;margin-bottom:8px}}

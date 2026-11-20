@@ -201,10 +201,12 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin, rti }[S.view] || home;
+  const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin, rti, tools: aiTools }[S.view] || home;
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
 }
+
+function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 
 /* ---------- होम ---------- */
 function home(el) {
@@ -216,6 +218,7 @@ function home(el) {
    <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} Login with Google</button></div></div>` : ""}
   <div class="home-options">
    <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>चैट करें और Act, GO सहित उत्तर पाएँ</small></button>
+    <button class="tile ai-tile" data-go="tools"><span class="e">🧰</span><b>AI Tools</b><small>Image, PDF और Word के 6 Conversion Tools</small></button>
    <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
    <div class="grid draft-grid">
     <button class="tile" data-go="library"><span class="e">📚</span><b>GO संग्रह</b></button>
@@ -835,7 +838,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin', 'rti'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'library', 'plans', 'history', 'admin', 'rti', 'tools'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
