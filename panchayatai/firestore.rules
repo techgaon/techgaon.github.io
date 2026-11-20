@@ -10,22 +10,32 @@ service cloud.firestore {
       return signedIn() && (!exists(/databases/$(db)/documents/users/$(request.auth.uid))
         || get(/databases/$(db)/documents/users/$(request.auth.uid)).data.get('blocked', false) == false);
     }
-    function today() { return int(request.time.toMillis() / 86400000); }
+    function today() { return int((request.time.toMillis() + 19800000) / 86400000); }
     function plusUser() {
       return resource != null && ('plan' in resource.data)
         && resource.data.plan.until > request.time.toMillis();
+    }
+    // Server-side limits configured by the authenticated administrator.
+    function effectiveLimit(kind) {
+      let path = /databases/$(db)/documents/paiSettings/public;
+      let settings = exists(path) ? get(path).data : {};
+      let paid = plusUser();
+      let field = kind == 'chat' ? (paid ? 'plusDailyChats' : 'freeDailyChats')
+                                 : (paid ? 'plusDailyDrafts' : 'freeDailyDrafts');
+      let fallback = paid ? 200 : (kind == 'chat' ? 10 : 3);
+      let configured = settings.get(field, fallback);
+      return configured is int && configured >= 0 && configured <= 1000
+        ? configured : fallback;
     }
     function usageOk() {
       let n = request.resource.data.usage;
       let o = (resource != null && ('usage' in resource.data) && resource.data.usage.day == today())
         ? resource.data.usage : {'chat': 0, 'draft': 0};
-      let cl = plusUser() ? 200 : 10;
-      let dl = plusUser() ? 200 : 3;
       return n.keys().hasOnly(['day', 'chat', 'draft'])
         && n.day == today() && n.chat is int && n.draft is int
         && n.chat >= o.chat && n.draft >= o.draft
         && n.chat - o.chat + n.draft - o.draft == 1
-        && n.chat <= cl && n.draft <= dl;
+        && n.chat <= effectiveLimit('chat') && n.draft <= effectiveLimit('draft');
     }
     function usageChanged() {
       return resource == null ? ('usage' in request.resource.data)

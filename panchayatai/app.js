@@ -12,7 +12,7 @@ const ROLES = {
   prashasak:{ n: "प्रशासक (ग्राम पंचायत)", call: "प्रशासक जी", scope: "gp" },
   gpa:      { n: "पंचायत सचिव (ग्राम पंचायत अधिकारी)", call: "सचिव जी", scope: "multigp" },
   sahayak:  { n: "पंचायत सहायक", call: "पंचायत सहायक जी", scope: "gp" },
-  gva:      { n: "ग्राम विकास अधिकारी (VDO)", call: "सचिव जी", scope: "multigp" },
+  gva:      { n: "पंचायत सचिव (ग्राम विकास अधिकारी)", call: "सचिव जी", scope: "multigp" },
   ado:      { n: "सहायक विकास अधिकारी (पंचायत)", call: "ADO पंचायत जी", scope: "block" },
   bdo:      { n: "खण्ड विकास अधिकारी (BDO)", call: "BDO साहब", scope: "block" },
   clerk:    { n: "विभागीय लिपिक", call: "बाबू जी", scope: "clerk" },
@@ -66,30 +66,68 @@ try {
 
 async function idToken() { return S.auth && S.auth.currentUser ? S.auth.currentUser.getIdToken() : ""; }
 // निःशुल्क सीमा (प्रतिदिन) — Firestore (सर्वर) पर गिनती; नियम (firestore.rules) सीमा से ऊपर लिखने नहीं देते
-async function useQuota(kind) {
-  if (S.blocked) throw new Error("Your account is blocked");
-  if (S.db && S.user) {
-    const account = (await S.db.collection("users").doc(S.user.uid).get()).data() || {};
-    if (account.blocked) throw new Error("Your account is blocked");
-    if (S.profile) S.profile.plan = account.plan || null;
-  }
-  const day = Math.floor(Date.now() / 864e5), plus = isPlus();
-  const lim = plus ? 200 : C.plans.free[kind === "chat" ? "dailyChats" : "dailyDrafts"];
-  const msg = plus ? "आज की उचित उपयोग सीमा पूरी हुई" : `Today's free limit (${lim}) is over — Plus / आज की निःशुल्क सीमा पूरी हुई`;
-  if (!S.db || !S.user || S.user.uid === "demo") {
-    let u = LS.get("usage") || {}; if (u.day !== day) u = { day, chat: 0, draft: 0 };
-    if (u[kind] >= lim) throw new Error(msg); u[kind]++; LS.set("usage", u); return;
-  }
-  const ref = S.db.collection("users").doc(S.user.uid);
-  try {
-    await S.db.runTransaction(async tx => {
-      const d = (await tx.get(ref)).data() || {};
-      let u = d.usage && d.usage.day === day ? d.usage : { day, chat: 0, draft: 0 };
-      if ((u[kind] || 0) >= lim) throw new Error("LIMIT");
-      u = Object.assign({ chat: 0, draft: 0 }, u, { [kind]: (u[kind] || 0) + 1 });
-      tx.set(ref, { usage: u }, { merge: true });
-    });
-  } catch (e) { throw new Error(e.message === "LIMIT" || /permission/i.test(e.message) ? msg : "Network error — please retry"); }
+function dailyLimitError(kind,limit,plus){
+ const e=new Error(plus?"आज की Plus सीमा ("+limit+") पूरी हो गई है।":"आज की निःशुल्क "+(kind==="chat"?"Chat":"पत्र/नोटिस")+" सीमा ("+limit+") पूरी हो गई है।");
+ e.code=plus?"PLUS_LIMIT":"FREE_LIMIT";e.quotaKind=kind;e.limit=limit;
+ return e;
+}
+const isDailyLimitError=e=>e&&(e.code==="FREE_LIMIT"||e.code==="PLUS_LIMIT");
+function showUpgrade(kind,limit,plus=false){
+ const modal=$("#upgradeModal");if(!modal)return;
+ $("#upgradeTitle").textContent=plus?"Today's limit reached":"Upgrade to Plus";
+ $("#upgradeMessage").textContent=plus?"आज की Plus सीमा ("+limit+") पूरी हो गई है। अगले दिन फिर उपयोग करें।":
+   "आज "+(kind==="chat"?"AI Chat":"पत्र / नोटिस")+" के "+limit+" निःशुल्क उपयोग पूरे हो गए हैं। अधिक उपयोग के लिए Plus चुनें।";
+ $("#upgradeNow").classList.toggle("hidden",plus);
+ modal.classList.remove("hidden");$("#upgradeLater").focus();
+}
+function initUpgradeModal(){
+ const modal=$("#upgradeModal");if(!modal)return;
+ $("#upgradeLater").onclick=()=>modal.classList.add("hidden");
+ $("#upgradeNow").onclick=()=>{modal.classList.add("hidden");go("plans");};
+ modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.add("hidden");});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.classList.add("hidden");});
+}
+initUpgradeModal();
+function effectiveDailyLimit(settings,kind,plus){
+ const key=(plus?"plus":"free")+"Daily"+(kind==="chat"?"Chats":"Drafts");
+ const defaultValue=plus?200:C.plans.free[kind==="chat"?"dailyChats":"dailyDrafts"];
+ return Number.isInteger(settings?.[key])&&settings[key]>=0&&settings[key]<=1000?settings[key]:defaultValue;
+}
+async function useQuota(kind){
+ if(S.blocked)throw new Error("Account is blocked");
+ if(S.db&&S.user){
+  const account=(await S.db.collection("users").doc(S.user.uid).get()).data()||{};
+  if(account.blocked)throw new Error("Account is blocked");
+  if(S.profile)S.profile.plan=account.plan||null;
+ }
+ let settings=liveSettings;
+ if(!settings&&S.db){
+  try{settings=(await settingsRef().get()).data()||{};}catch(e){settings={};}
+ }
+ const plus=!!isPlus(),limit=effectiveDailyLimit(settings,kind,plus);
+ const day=Math.floor((Date.now()+19800000)/864e5);
+ if(!S.db||!S.user||S.user.uid==="demo"){
+  let u=LS.get("usage")||{};
+  if(u.day!==day)u={day,chat:0,draft:0};
+  if((u[kind]||0)>=limit)throw dailyLimitError(kind,limit,plus);
+  u[kind]=(u[kind]||0)+1;LS.set("usage",u);return;
+ }
+ const ref=S.db.collection("users").doc(S.user.uid);
+ try{
+  await S.db.runTransaction(async tx=>{
+   const previous=(await tx.get(ref)).data()||{};
+   const u=previous.usage&&previous.usage.day===day?previous.usage:{day,chat:0,draft:0};
+   if((u[kind]||0)>=limit)throw dailyLimitError(kind,limit,plus);
+   const next={day,chat:u.chat||0,draft:u.draft||0};
+   next[kind]++;
+   tx.set(ref,{usage:next},{merge:true});
+  });
+ }catch(e){
+  if(isDailyLimitError(e))throw e;
+  if(/permission[- ]denied|missing or insufficient permissions/i.test((e.code||"")+" "+(e.message||"")))
+   throw new Error("Firebase Security Rules की नई Limit अभी प्रकाशित नहीं हुई है। Admin को Firestore Rules Publish करने होंगे।");
+  throw new Error("Network error — please retry.");
+ }
 }
 const aiReady = () => window.PAI_AI ? Promise.resolve() : new Promise((resolve, reject) => {
   const ready = () => { clearTimeout(timer); resolve(); };
@@ -103,8 +141,8 @@ async function api(path, body) {
     return { ok: true };
   }
   if (!isPlus() && body.att) body.att = body.att.slice(0, 1);
-  await useQuota(path === "/chat" ? "chat" : "draft");
   await aiReady();
+  await useQuota(path === "/chat" ? "chat" : "draft");
   try { return await (path === "/chat" ? window.PAI_AI.chat(body) : window.PAI_AI.draft(body)); }
   catch (e) { console.error(e); throw new Error("AI से उत्तर नहीं मिला: " + (e.message || "").slice(0, 120)); }
 }
@@ -152,8 +190,47 @@ async function downloadOriginalPDF(id){
   finally{activeOriginalDownloads.delete(id);}
 }
 window.PAI={ downloadOriginalPDF };
+
+/* Browser speech input, using hi-IN for Devanagari. */
+let activeSpeech=null;
+function stopSpeech(){
+  if(activeSpeech){const r=activeSpeech;activeSpeech=null;try{r.abort();}catch(e){}}
+}
+function attachHindiSpeech(input,button,status){
+  const Engine=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const setStatus=message=>{status.textContent=message;status.classList.toggle("hidden",!message);};
+  button.onclick=()=>{
+    if(activeSpeech){stopSpeech();button.classList.remove("listening");button.setAttribute("aria-pressed","false");setStatus("माइक बंद है।");return;}
+    if(!Engine){setStatus("हिंदी Voice Typing के लिए Chrome जैसे समर्थित ब्राउज़र में खोलें।");return;}
+    if(!window.isSecureContext){setStatus("माइक के लिए सुरक्षित HTTPS कनेक्शन आवश्यक है।");return;}
+    const rec=new Engine();
+    rec.lang="hi-IN";rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
+    const oldText=input.value.trimEnd();
+    let transcript="",error="";
+    activeSpeech=rec;button.classList.add("listening");button.setAttribute("aria-pressed","true");
+    setStatus("हिंदी में बोलिए…");
+    rec.onresult=event=>{
+      transcript=Array.from(event.results).map(r=>r[0]?.transcript||"").join(" ").trim();
+      input.value=(oldText?oldText+" ":"")+transcript;
+      input.dispatchEvent(new Event("input",{bubbles:true}));
+      setStatus("बोली गई बात लिख रहा है…");
+    };
+    rec.onerror=e=>{
+      error=e.error||"unknown";
+      const messages={"not-allowed":"माइक की अनुमति दें।","service-not-allowed":"Voice Typing सेवा उपलब्ध नहीं है।","no-speech":"आवाज़ नहीं सुनी गई। फिर कोशिश करें।","audio-capture":"माइक उपलब्ध नहीं है।","network":"Speech सेवा से कनेक्शन नहीं हुआ।","language-not-supported":"इस ब्राउज़र में हिंदी समर्थित नहीं है।"};
+      setStatus(messages[error]||"Voice Typing में समस्या आई। दोबारा कोशिश करें।");
+    };
+    rec.onend=()=>{
+      if(activeSpeech===rec)activeSpeech=null;
+      button.classList.remove("listening");button.setAttribute("aria-pressed","false");
+      if(!error)setStatus(transcript?"✓ टेक्स्ट की जाँच करके भेजें।":"फिर बोलने के लिए माइक दबाएँ।");
+    };
+    try{rec.start();}catch(e){activeSpeech=null;button.classList.remove("listening");button.setAttribute("aria-pressed","false");setStatus("माइक शुरू नहीं हो सका।");}
+  };
+}
+
 /* ---------- राउटिंग ---------- */
-function go(v) { if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
+function go(v) { stopSpeech(); if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
 document.addEventListener("click", e => { const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); go(a.dataset.go); } });
 const closeDrawer = () => { $("#drawer").classList.remove("open"); $("#scrim").classList.remove("show"); };
 $("#menuBtn").onclick = () => { $("#drawer").classList.add("open"); $("#scrim").classList.add("show"); };
@@ -194,6 +271,7 @@ function render() {
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
   const V = { home, login, details, profile, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB }[S.view] || home;
+  stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
 }
@@ -205,7 +283,7 @@ function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) w
 function home(el) {
   const p = S.profile;
   el.innerHTML = `
-  <div class="card hero"><h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI — PANCHAYT AI"}</h1>
+  <div class="card hero"><h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI"}</h1>
    <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी और English में सामान्य AI सहायता, पत्र और उपयोगी Tools"}</p></div>
   ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} Login with Google</button></div></div>` : ""}
@@ -234,7 +312,7 @@ function home(el) {
 
 /* ---------- लॉगिन: Continue with Google ---------- */
 function login(el) {
-  el.innerHTML = `<div class="welcome"><div class="logo">पं</div><h2>Login to पंचायत AI</h2>
+  el.innerHTML = `<div class="welcome"><img src="icon.svg" class="logo welcome-logo" alt="पं AI"><h2>Login to पंचायत AI</h2>
    <p class="hint">One tap with your Google account</p>
    <button class="gbtn" id="gLogin"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg> Continue with Google</button>
    ${fbReady ? "" : `<p class="hint">⚙️ Firebase कॉन्फ़िग अभी नहीं भरा गया (config.js)। <a id="demo">Try demo mode</a></p>`}
@@ -281,9 +359,14 @@ async function afterLogin() {
   S.profile.sign = ROLES[S.profile.role].n;
   S.blocked = S.profile.blocked === true;
   if (needsDefaults && !S.blocked) await saveProfile();
-  const next = S.after || "home";
-  S.after = null;
-  go(next);
+  const scope=ROLES[S.profile.role]?.scope||"gp";
+  const completed=S.profile.profileComplete===true||
+    (Boolean(previous)&&!needsDefaults&&Boolean(previous.phone)&&Boolean(previous.district)&&
+      (scope==="district"||Boolean(previous.block)));
+  S.needsProfileSetup=!completed;
+  const next=S.after||"home";
+  if(!completed&&!S.blocked){S.after=next;go("profile");}
+  else{S.after=null;go(next);}
 }
 if (S.auth) S.auth.onAuthStateChanged(async u => {
   if (S.userWatch) S.userWatch();
@@ -336,7 +419,10 @@ async function loadDistrict(d) {
 function profile(el) {
   if (!S.user) return go("login");
   const p = S.profile || { role: "resident" };
+  const onboarding=S.needsProfileSetup?
+    '<section class="profile-onboarding"><h3>अपनी Profile पूरी करें</h3><p>यदि आप नीचे दिए गए किसी पद पर हैं, तो अपना पद और कार्यक्षेत्र चुनकर Profile पूरी करें।</p><div class="onboard-roles">'+Object.values(ROLES).map(r=>'<span>'+esc(r.n)+'</span>').join("")+'</div></section>':"";
   el.innerHTML = `<div class="card"><h2 style="margin-top:0">Your profile</h2>
+   ${onboarding}
    <p class="hint">अगर आप विभागीय अधिकारी, कर्मचारी या प्रधान हैं तो अपनी प्रोफ़ाइल पूरी करें और अपने काम — पत्र, स्पष्टीकरण आदि — 1 मिनट में निपटाएँ।</p>
    <label>Your post</label><select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
@@ -386,7 +472,8 @@ function profile(el) {
     if (role !== "resident" && (scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
     Object.assign(S.profile, { role, state: "उत्तर प्रदेश", district: st.district, tehsil: scope.includes("gp") ? st.tehsil : "", block: scope === "district" ? "" : st.block,
       gps: scope.includes("gp") ? st.gps : [], clerkLevel: role === "clerk" ? st.clerkLevel : "",
-      designation: role === "other_staff" ? st.designation : "", sign: role === "other_staff" && st.designation ? st.designation : ROLES[role].n });
+      designation: role === "other_staff" ? st.designation : "", sign: role === "other_staff" && st.designation ? st.designation : ROLES[role].n, profileComplete: true });
+    S.needsProfileSetup=false;
     saveProfile(); toast("Profile saved ✔"); const n = S.after || "home"; S.after = null; go(n);
   };
 }
@@ -460,8 +547,10 @@ function chat(el) {
   const comp = document.createElement("div"); comp.className = "composer"; comp.id = "composerWrap";
   comp.appendChild(attachBar());
   const row = document.createElement("div"); row.className = "in";
-  row.innerHTML = `<textarea id="q" placeholder="उत्तर प्रदेश के नियम, शासनादेश या पंचायत कार्य पूछें…" rows="1"></textarea><button class="btn" id="send">➤</button>`;
-  comp.appendChild(row); document.body.appendChild(comp);
+  row.innerHTML = `<button id="voiceMic" class="voice-mic" type="button" aria-label="हिंदी बोलकर लिखें" aria-pressed="false" title="हिंदी बोलकर लिखें"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"></path></svg></button><textarea id="q" placeholder="लिखें या माइक से हिंदी बोलें…" rows="1"></textarea><button class="btn" id="send">➤</button>`;
+  comp.appendChild(row);
+  const voiceStatus=document.createElement("div");voiceStatus.id="voiceStatus";voiceStatus.className="voice-status hidden";voiceStatus.setAttribute("role","status");voiceStatus.setAttribute("aria-live","polite");comp.appendChild(voiceStatus);document.body.appendChild(comp);
+  attachHindiSpeech($("#q"),$("#voiceMic"),voiceStatus);
   const send = async (contextIndex = -1) => {
     if (S.chatBusy) return;
     const q = $("#q").value.trim(); if (!q && !S.att.length) return;
@@ -475,7 +564,7 @@ function chat(el) {
         availableOriginals(q)
       ]);
       S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
-    } catch (e) { S.chat.push({ r: "a", error: true, t: "⚠️ " + e.message + (/सीमा|limit/i.test(e.message) ? "\n\n[Plus प्लान लें](#)" : "") }); }
+    } catch (e) { if(isDailyLimitError(e))showUpgrade(e.quotaKind,e.limit,e.code==="PLUS_LIMIT");S.chat.push({r:"a",error:true,t:isDailyLimitError(e)?e.message:"⚠️ "+e.message}); }
     S.chatBusy = false;
     LS.set("chat_general_v1_" + S.user.uid, S.chat.slice(-40));
     if (document.contains(box)) { paint(); $("#send").disabled = false; }
@@ -493,53 +582,29 @@ function draft(el) {
   el.innerHTML = `<h2>What shall we draft, ${esc(callName())}?</h2><div class="grid">${draftsFor(S.profile.role).map(d => `<div class="tile" data-k="${d.k}"><span class="e">${d.e}</span>${d.n}<small>${d.d}</small></div>`).join("")}</div>`;
   el.querySelectorAll("[data-k]").forEach(t => t.onclick = () => { S.draftType = t.dataset.k; go("draftEdit"); });
 }
-/* पद के अनुसार उदाहरण — "मेरी तरफ़ से" लिखने की शैली */
-const SACHIV = ["gpa", "gva"], BLOCKO = ["ado", "bdo"], DISTO = ["dpro", "adpro", "ddo"];
-function examples(k, role) {
-  if (k === "rtiApplication") return ["सूचना का अधिकार अधिनियम, 2005 के अंतर्गत ग्राम पंचायत के वर्ष 2025-26 के निर्माण कार्यों और भुगतान अभिलेखों की प्रमाणित प्रतियाँ माँगने हेतु आवेदन बनाएँ"];
-  if (k === "rtiReply") return ["प्राप्त RTI आवेदन के प्रत्येक बिंदु का उपलब्ध अभिलेखों के आधार पर उत्तर बनाएँ — आवेदन संलग्न है, अनुपलब्ध तथ्य खाली छोड़ें"];
-  const R = x => x.includes(role);
-  const E = {
-    patra: R(SACHIV) ? ["ADO पंचायत को 2 दिन के आकस्मिक अवकाश (CL) के लिए पत्र बनाएँ", "BDO को ग्राम पंचायत कमेला में सामुदायिक शौचालय की मरम्मत हेतु धनराशि माँगने का पत्र"]
-      : R(["pradhan", "prashasak"]) ? ["BDO को ग्राम पंचायत में हैंडपंप रिबोर हेतु प्रस्ताव भेजने का पत्र बनाएँ", "सचिव जी को ग्राम सभा की खुली बैठक बुलाने हेतु पत्र"]
-      : R(BLOCKO) ? ["सभी ग्राम पंचायत अधिकारियों को GPDP eGramSwaraj पर अपलोड करने हेतु पत्र बनाएँ", "DPRO को ब्लॉक की ODF प्लस प्रगति रिपोर्ट भेजने का पत्र"]
-      : R(DISTO) ? ["सभी ADO पंचायत को परिवार रजिस्टर अद्यतन कराने हेतु पत्र बनाएँ", "निदेशक पंचायती राज को जनपद की 15वें वित्त आयोग व्यय प्रगति भेजने का पत्र"]
-      : role === "clerk" ? ["BDO की ओर से सभी सचिवों को मासिक बैठक की सूचना का पत्र बनाएँ"]
-      : role === "sahayak" ? ["सचिव जी को 2 दिन के अवकाश हेतु प्रार्थना पत्र बनाएँ"]
-      : ["प्रधान जी को मेरी गली में नाली निर्माण हेतु प्रार्थना पत्र बनाएँ"],
-    spasht: ["मुझे जारी इस नोटिस के आधार पर स्पष्टीकरण बनाएँ (नोटिस की फ़ोटो/PDF लगाएँ)",
-      R(SACHIV) ? "बैठक में अनुपस्थित रहने पर BDO के कारण बताओ नोटिस का स्पष्टीकरण — उस दिन मैं तहसील दिवस में था" : "जाँच में बताई गई कमी पर अपना पक्ष रखते हुए स्पष्टीकरण बनाएँ"],
-    notice: R(SACHIV) ? ["सामुदायिक शौचालय की केयरटेकर को लगातार अनुपस्थित रहने पर नोटिस बनाएँ", "ग्राम सभा की भूमि पर अतिक्रमण हटाने हेतु नोटिस"]
-      : R(["pradhan", "prashasak"]) ? ["ग्राम सभा की भूमि पर अतिक्रमण हटाने हेतु 7 दिन का नोटिस बनाएँ"]
-      : R(BLOCKO) ? ["ग्राम पंचायत अधिकारी को समीक्षा बैठक में अनुपस्थित रहने पर कारण बताओ नोटिस बनाएँ"]
-      : R(DISTO) ? ["ग्राम पंचायत अधिकारी को कार्य में लापरवाही पर 3 दिन में स्पष्टीकरण देने हेतु नोटिस बनाएँ"]
-      : ["नोटिस किसे, किस विषय पर और कितने दिन में उत्तर — लिखें"],
-    aadesh: R(BLOCKO) ? ["ग्राम पंचायत अधिकारी रमेश को ग्राम पंचायत कमेला का अतिरिक्त प्रभार देने का कार्यालय आदेश बनाएँ"]
-      : R(DISTO) ? ["ग्राम पंचायत अधिकारियों के क्लस्टर पुनर्गठन का कार्यालय आदेश बनाएँ"]
-      : R(SACHIV) ? ["ग्राम पंचायत में सफाईकर्मियों की वार्डवार ड्यूटी निर्धारण का आदेश बनाएँ"]
-      : ["आदेश किस विषय पर और किसके लिए — लिखें"]
+/* Short, selectable examples for drafting: one Hindi + two Roman Hindi. */
+function examples(k,role){
+  const e={
+    patra:["अवकाश हेतु खण्ड विकास अधिकारी को पत्र बनाएं","BDO ko patra","chhutti patra"],
+    spasht:["नोटिस का स्पष्टीकरण तैयार करें","notice ka jawab","mera paksh"],
+    notice:["कारण बताओ नोटिस तैयार करें","notice bana do","jawab mango"],
+    aadesh:["कार्यालय आदेश तैयार करें","aadesh banao","office order"],
+    rtiApplication:["सूचना हेतु RTI आवेदन बनाएं","RTI aavedan","suchna mango"],
+    rtiReply:["प्राप्त RTI आवेदन का उत्तर बनाएं","RTI ka jawab","suchna ka uttar"],
+    rti:["RTI का बिंदुवार उत्तर तैयार करें","RTI ka jawab","suchna ka uttar"],
+    prastav:["ग्राम पंचायत का प्रस्ताव बनाएं","prastav banao","nali prastav"],
+    karyavahi:["ग्राम सभा की बैठक कार्यवाही बनाएं","sabha karyawahi","baithak note"],
+    uc:["उपयोगिता प्रमाण पत्र तैयार करें","UC banao","vyay ka UC"],
+    aakhya:["स्थलीय जाँच आख्या तैयार करें","jaanch aakhya","report banao"],
+    praman:["परिवार रजिस्टर प्रमाण पत्र बनाएं","praman patra","nodayuz banao"],
+    samiksha:["मासिक समीक्षा रिपोर्ट बनाएं","samiksha report","meeting note"],
+    tippani:["पत्रावली पर टिप्पणी तैयार करें","tippani likho","file note"],
+    anusmarak:["अनुस्मारक पत्र तैयार करें","anusmarak banao","reminder patra"],
+    chetavni:["कर्मचारी को चेतावनी पत्र बनाएं","chetavni patra","warning notice"],
+    prarthna:["अवकाश हेतु प्रार्थना पत्र बनाएं","prarthna patra","chhutti patra"],
+    shikayat:["नाली निर्माण की शिकायत लिखें","shikayat patra","BDO shikayat"]
   };
-
-  const X = {
-    prastav: R(["pradhan", "prashasak"]) ? ["ग्राम सभा की भूमि पर खेल मैदान बनाने हेतु प्रस्ताव बनाएँ", "15वें वित्त आयोग से गाँव की 3 गलियों में इंटरलॉकिंग का प्रस्ताव"]
-      : ["GPDP 2027-28 में पंचायत भवन मरम्मत, नाली और सोलर लाइट शामिल करने का प्रस्ताव बनाएँ", "सामुदायिक शौचालय की केयरटेकर के चयन का प्रस्ताव"],
-    karyavahi: ["आज की ग्राम सभा खुली बैठक की कार्यवाही — 112 सदस्य उपस्थित, 4 प्रस्ताव पारित (नाली, हैंडपंप, पेंशन सत्यापन, सफाई)", "ग्राम पंचायत की मासिक बैठक की कार्यवाही बनाएँ — विषय: वित्तीय वर्ष की प्रगति समीक्षा"],
-    uc: ["15वें वित्त आयोग की टाइड धनराशि ₹4,50,000 के व्यय का उपयोगिता प्रमाण पत्र बनाएँ", "सामुदायिक शौचालय रखरखाव मद का उपयोगिता प्रमाण पत्र"],
-    rti: role === "resident" ? ["ग्राम पंचायत में पिछले 2 वर्ष के 15वें वित्त आयोग के व्यय का विवरण माँगने हेतु RTI आवेदन बनाएँ"]
-      : ["RTI आवेदन का उत्तर बनाएँ — माँगी गई सूचना: वर्ष 2025-26 में हुए निर्माण कार्यों की सूची (आवेदन संलग्न करें)", "तृतीय पक्ष से जुड़ी सूचना होने के कारण धारा 11 के अंतर्गत सूचना देने से पहले नोटिस का उत्तर"],
-    aakhya: R(SACHIV) ? ["प्रधानमंत्री आवास (ग्रामीण) पात्रता का स्थलीय सत्यापन आख्या — लाभार्थी रामकली, कच्चा मकान, कोई पक्का मकान नहीं", "वृद्धावस्था पेंशन आवेदन की सत्यापन आख्या"]
-      : ["IGRS शिकायत (नाली निर्माण में अनियमितता) की स्थलीय जाँच आख्या बनाएँ", "शिकायत की जाँच आख्या — मौके पर कार्य पूर्ण पाया गया, माप पुस्तिका से मिलान सही"],
-    praman: ["ग्राम कमेला निवासी श्री रामू पुत्र श्री श्यामलाल का परिवार रजिस्टर नकल प्रमाण पत्र बनाएँ", "ठेकेदार के अंतिम भुगतान हेतु नो-ड्यूज़ प्रमाण पत्र"],
-    samiksha: ["ब्लॉक स्तरीय मासिक समीक्षा बैठक का कार्यवृत्त — विषय: ODF प्लस, परिवार रजिस्टर डिजिटलीकरण, 15वाँ वित्त व्यय", "जनपद स्तरीय समीक्षा में कम प्रगति वाली ग्राम पंचायतों के लिए निर्देश सहित कार्यवृत्त"],
-    tippani: ["ग्राम पंचायत अधिकारी के अवकाश प्रार्थना पत्र पर स्वीकृति हेतु पत्रावली पर टिप्पणी बनाएँ", "ठेकेदार के भुगतान प्रस्ताव पर टिप्पणी — अभिलेख पूर्ण, स्वीकृति हेतु प्रस्तुत"],
-    anusmarak: ["सभी ग्राम पंचायत अधिकारियों को GPDP अपलोड न करने पर अनुस्मारक पत्र बनाएँ — पहला पत्र दिनांक 15.10.2026", "उपयोगिता प्रमाण पत्र न भेजने पर द्वितीय अनुस्मारक"],
-    chetavni: ["ग्राम पंचायत अधिकारी को बार-बार निर्देश के बाद भी परिवार रजिस्टर अद्यतन न करने पर चेतावनी पत्र बनाएँ", "सफाईकर्मी की लगातार अनुपस्थिति पर अंतिम चेतावनी"],
-    prarthna: role === "resident" ? ["प्रधान जी को मेरे घर के सामने हैंडपंप लगवाने हेतु प्रार्थना पत्र बनाएँ", "BDO को वृद्धावस्था पेंशन न मिलने पर प्रार्थना पत्र"]
-      : ["सचिव जी को 2 दिन के अवकाश हेतु प्रार्थना पत्र बनाएँ", "BDO को मानदेय भुगतान हेतु प्रार्थना पत्र"],
-    shikayat: ["गाँव की नाली निर्माण में घटिया सामग्री लगाने की शिकायत BDO को बनाएँ", "राशन कोटेदार द्वारा कम राशन देने की IGRS शिकायत"]
-  };
-  Object.assign(E, X);
-  return E[k] || [`${(draftsFor(role).find(x => x.k === k) || {}).n || "पत्र"} बनाएँ — क्या चाहिए, एक-दो पंक्ति में लिखें`];
+  return e[k]||["आवश्यक कार्यालयी पत्र तैयार करें","patra banao","office letter"];
 }
 function progress(btn, label, ms = 22000) {
   const t0 = Date.now(); btn.disabled = true;
@@ -557,14 +622,14 @@ function draftEdit(el) {
   const d = RTI_DRAFTS.concat(draftsFor(S.profile.role)).find(x => x.k === S.draftType) || BASE_DRAFTS[0];
   const ex = examples(d.k, S.profile.role);
   el.innerHTML = `<div class="card"><h2 style="margin-top:0">${d.e} ${d.n} बनाएँ</h2>
-   <p class="hint">संक्षेप में हिन्दी में लिखें कि क्या बनाना है — जैसे मुझसे कहते हैं, वैसे ही। उदाहरण पर क्लिक करें:</p>
-   <div class="ex-list">${ex.map(x => `<button class="ex" type="button">“${esc(x)}”</button>`).join("")}</div>
-   <textarea id="pts" rows="3" placeholder="${esc(ex[0])}">${esc(S.draftSeed || "")}</textarea>
+   <label class="draft-prompt" for="pts">संक्षेप में लिखें कि क्या बनाना है</label>
+   <textarea id="pts" rows="3" placeholder="यहाँ लिखें…">${esc(S.draftSeed || "")}</textarea>
+   <div class="ex-list"><button class="ex ex-main" type="button">${esc(ex[0])}</button><div class="ex-row"><button class="ex" type="button">${esc(ex[1])}</button><button class="ex" type="button">${esc(ex[2])}</button></div></div>
    <div id="attHere"></div>
    <div class="btn-row"><button class="btn saf" id="mk">✨ Generate in 1 minute</button></div></div>
    <div id="out"></div>`;
   S.draftSeed = null; $("#attHere").appendChild(attachBar());
-  el.querySelectorAll(".ex").forEach(b => b.onclick = () => { $("#pts").value = b.textContent.replace(/[“”]/g, ""); $("#pts").focus(); });
+  el.querySelectorAll(".ex").forEach(b => b.onclick = () => { $("#pts").value = b.textContent.trim(); $("#pts").focus(); });
   $("#mk").onclick = async () => {
     const req = $("#pts").value.trim(); if (!req && !S.att.length) return toast("Please write what you need");
     const done = progress($("#mk"), "⏳ बन रहा है…");
@@ -572,7 +637,7 @@ function draftEdit(el) {
       const r = await api("/draft", { kind: d.n, profile: S.profile, points: req, gp: (S.profile.gps || [])[0] || "", att: S.att.splice(0),
         refs: [] });
       done(true); showDraft(r.html, r.refs || [], d.n);
-    } catch (e) { done(false); toast(e.message); }
+    } catch (e) { done(false);if(isDailyLimitError(e))showUpgrade(e.quotaKind,e.limit,e.code==="PLUS_LIMIT");else toast(e.message); }
   };
 }
 function showDraft(html, refs, kind) {
@@ -661,7 +726,7 @@ function news(el) {
       const ds = d && !isNaN(d) ? d.toLocaleDateString("hi-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
       return `<article class="ns">
        <div class="ns-img">${n.img ? `<img src="${esc(n.img)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<span class="ns-emoji">${E[i % E.length]}</span></div>
-       <div class="ns-bar"><span class="ns-brand"><span class="logo">पं</span>Panchayat AI</span>
+       <div class="ns-bar"><span class="ns-brand"><img src="icon.svg" class="logo news-logo" alt="पं AI">Panchayat AI</span>
          <span class="ns-act"><button class="ns-wa" data-wa="${i}" title="WhatsApp">🟢 WhatsApp</button><button class="ns-sh" data-sh="${i}" title="Share">↗ Share</button></span></div>
        <h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p>
        <div class="ns-foot">${esc(ds)}${n.source ? ` | ${esc(n.source)}` : ""} | ${n.url ? `<a href="${esc(n.url)}" target="_blank" rel="noopener">पूरा पढ़ें →</a>` : ""}</div></article>`;
@@ -740,11 +805,11 @@ function payUI(id) {
 
 async function admin(el) {
   if (!isAdmin()) { S.after = 'admin'; el.innerHTML = '<div class="card"><h2>Admin login</h2><p>Sign in with the administrator Google account.</p><button class="gbtn" data-go="login">' + googleIcon() + ' Continue with Google</button></div>'; return; }
-  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button></div><div id="adminPanel"></div>';
+  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="limits">Limits</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button></div><div id="adminPanel"></div>';
   el.querySelectorAll('[data-panel]').forEach(b => b.onclick = async () => {
     el.querySelectorAll('[data-panel]').forEach(x => x.classList.toggle('on', x === b));
     const panel = $("#adminPanel"); panel.innerHTML = '<p class="typing">Loading…</p>';
-    try { await ({ overview: adminOverview, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments }[b.dataset.panel])(panel); }
+    try { await ({ overview: adminOverview, limits: adminLimits, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments }[b.dataset.panel])(panel); }
     catch (e) { panel.innerHTML = '<div class="card">Admin data could not load. Please try again.</div>'; console.error(e); }
   });
   el.querySelector('[data-panel="overview"]').click();
@@ -787,6 +852,31 @@ async function adminPlans(panel) {
     } catch (e) { $("#planStatus").textContent = e.message; } finally { button.disabled = false; }
   };
 }
+async function adminLimits(panel){
+ const settings=(await settingsRef().get()).data()||{};
+ const fields=[["freeDailyChats","Free AI chats / day",10,500],["freeDailyDrafts","Free letters / day",3,500],["plusDailyChats","Plus AI chats / day",200,1000],["plusDailyDrafts","Plus letters / day",200,1000]];
+ panel.innerHTML='<section class="card limit-admin"><h3>Daily Usage Limits</h3><p class="hint">Admin sets each plan limit. Daily counters reset at midnight India time.</p>'+
+   fields.map(([key,label,def,max])=>'<label for="limit-'+key+'">'+label+'</label><input id="limit-'+key+'" type="number" min="0" max="'+max+'" step="1" inputmode="numeric" value="'+(Number.isInteger(settings[key])?settings[key]:def)+'">').join("")+
+   '<button type="button" id="saveLimits" class="btn">Save Limits</button><p id="limitResult" role="status"></p><p class="hint">The matching Firestore Security Rules must be published in Firebase for all users.</p></section>';
+ panel.querySelector("#saveLimits").onclick=async()=>{
+   const button=panel.querySelector("#saveLimits"),message=panel.querySelector("#limitResult"),update={};
+   try{
+     for(const [key,label,def,max] of fields){
+       const raw=panel.querySelector("#limit-"+key).value.trim();
+       if(!/^\d+$/.test(raw))throw new Error(label+": enter a whole number.");
+       const value=Number(raw);
+       if(!Number.isSafeInteger(value)||value<0||value>max)throw new Error(label+": allowed 0 to "+max+".");
+       update[key]=value;
+     }
+     button.disabled=true;
+     await settingsRef().set({...update,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+     liveSettings={...(liveSettings||{}),...update};
+     message.textContent="✓ Limits saved. Apply updated Firestore Security Rules to activate.";
+   }catch(e){message.textContent="Save failed: "+(e.message||"Retry");}
+   finally{button.disabled=false;}
+ };
+}
+
 async function adminCoupons(panel) {
   const snapshot = await S.db.collection("paiCoupons").get();
   panel.innerHTML = `<div class="card"><h3>Coupon</h3><label for="couponCode">Code</label><input id="couponCode" maxlength="40"><label for="couponType">Discount type</label><select id="couponType"><option value="percent">Percentage</option><option value="fixed">Fixed amount (₹)</option></select><label for="couponValue">Value</label><input id="couponValue" type="number" min="1"><label for="couponPlan">Plan</label><select id="couponPlan"><option value="">All plans</option>${(liveSettings?.plans || []).map(p => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join('')}</select><label for="couponExpiry">Expiry date (optional)</label><input id="couponExpiry" type="date"><label class="chk"><input id="couponActive" type="checkbox" checked> Active</label><button class="btn" id="saveCoupon">Save coupon</button><p id="couponMessage" role="status"></p></div><div id="couponList">${snapshot.docs.map(d => `<button class="card coupon-row" data-code="${esc(d.id)}">${esc(d.id)} · ${d.data().active ? 'Active' : 'Disabled'}</button>`).join('')}</div>`;

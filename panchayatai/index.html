@@ -5,14 +5,14 @@
 <base href="/panchayatai/">
 <link rel="canonical" href="https://techgaon.in/panchayatai/">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>पंचायत AI — PANCHAYT AI | TechGaon AI Services</title>
+<title>पंचायत AI | TechGaon AI Services</title>
 <meta name="description" content="उत्तर प्रदेश के पंचायत राज अधिनियम, नियम, शासनादेश, विभागीय प्रक्रियाओं तथा सरकारी पत्राचार के लिए AI सहायक।">
 <meta name="theme-color" content="#0f5132">
 <link rel="manifest" href="/panchayatai/manifest.webmanifest">
-<link rel="icon" href="icon.svg">
+<link rel="icon" href="icon.svg?v=20261120-brand12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=20261120-admin1">
+<link rel="stylesheet" href="app.css?v=20261120-mic12">
 <link rel="stylesheet" href="mobile.css?v=20261120-layout9">
 <link rel="stylesheet" href="tools.css?v=20261120-animation4">
 <link rel="stylesheet" href="estimate.css?v=20261120-estimate6">
@@ -22,7 +22,7 @@
   <header class="top">
     <button class="home-back hidden" id="backBtn" aria-label="Home">‹</button>
     <button class="icon-btn" id="menuBtn" aria-label="मेनू">☰</button>
-    <div class="brand"><span class="logo">पं</span><div><b>पंचायत AI</b><small>PANCHAYT AI</small></div></div>
+    <div class="brand"><img class="logo brand-logo" src="icon.svg" alt="पं AI"><div><b>पंचायत AI</b></div></div>
     <div class="top-r">
       <span id="planBadge" class="badge hidden"></span>
       <button class="btn-sm" id="loginTop">Login</button>
@@ -51,6 +51,14 @@
 
 </div>
 <div id="toast" class="toast"></div>
+<div class="upgrade-overlay hidden" id="upgradeModal" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle" aria-describedby="upgradeMessage">
+  <div class="upgrade-box">
+    <div class="upgrade-symbol" aria-hidden="true">⭐</div>
+    <h2 id="upgradeTitle">Upgrade to Plus</h2>
+    <p id="upgradeMessage"></p>
+    <div class="upgrade-actions"><button type="button" id="upgradeLater" class="btn alt">बाद में</button><button type="button" id="upgradeNow" class="btn">Upgrade to Plus</button></div>
+  </div>
+</div>
 
 <script src="config.js"></script>
 <script src="data/geo.js"></script>
@@ -64,8 +72,8 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script src="tools.js?v=20261120-estimate6"></script>
 <script src="estimate.js?v=20261120-estimate6"></script>
-<script src="app.js?v=20261120-uplaw10"></script>
-<script type="module" src="ai.js?v=20261120-uplaw10"></script>
+<script src="app.js?v=20261120-mic12"></script>
+<script type="module" src="ai.js?v=20261120-mic12"></script>
 <script src="visits.js?v=20261120-admin1"></script>
 </body>
 </html>

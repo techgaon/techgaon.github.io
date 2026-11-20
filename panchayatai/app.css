@@ -103,3 +103,48 @@ table.cmp td:first-child{text-align:left}
 .ns-foot a{font-weight:600}
 .ns-brand{white-space:nowrap;font-size:14px}
 .ns-act button{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:12.5px;padding:5px 9px}
+
+/* Revised Panchayat AI mark, Devanagari over AI, name beside it */
+.brand .brand-logo{display:block;width:40px;height:40px;flex:none;object-fit:contain;border-radius:11px;background:transparent}
+.brand>div b{font-size:19px;white-space:nowrap}
+.welcome img.welcome-logo{display:block;width:88px;height:88px;margin:0 auto 16px;background:transparent;border-radius:22px}
+.ns-brand img.news-logo{display:inline-block;width:26px;height:26px;object-fit:contain;border-radius:7px;background:transparent}
+
+/* Speech recognition with animated recording indication */
+.composer .in .voice-mic{width:44px;height:44px;min-width:44px;display:grid;place-items:center;border:1.5px solid #b7d6c2;border-radius:13px;background:#e8f5ec;color:#0c643c;cursor:pointer;transition:background .2s ease,box-shadow .2s ease}
+.voice-mic svg{width:23px;height:23px}
+.voice-mic:hover{background:#d6eadc}
+.voice-mic.listening{color:white;background:#138550;border-color:#138550;animation:pai-mic-beat 1.3s ease-in-out infinite}
+.voice-mic:focus-visible{outline:3px solid #eeb949}
+.voice-status{max-width:860px;margin:6px auto 0;font-size:12px;color:#137341}
+@keyframes pai-mic-beat{0%,100%{box-shadow:0 0 0 0 #0d885550}50%{box-shadow:0 0 0 8px #0d885500}}
+@media(prefers-reduced-motion:reduce){.voice-mic.listening{animation:none}}
+
+/* Profile completion invitation */
+.profile-onboarding{border:1px solid #b8dec7;border-radius:14px;background:#f0faf3;padding:13px;margin:12px 0}
+.profile-onboarding h3{color:#0b5b38;margin:0 0 5px;font-size:18px}
+.profile-onboarding p{font-size:13px;line-height:1.6;margin:0 0 11px}
+.onboard-roles{display:flex;flex-wrap:wrap;gap:6px}
+.onboard-roles span{padding:5px 8px;border:1px solid #c0e1ca;background:white;border-radius:8px;color:#155637;font-size:12px}
+
+/* Short draft instructions and examples; no quotation marks */
+.draft-prompt{font-weight:700;color:#0e5538;margin:12px 0 5px;font-size:15px}
+.ex-list{display:flex;flex-direction:column;gap:7px;margin:9px 0 10px}
+.ex-list .ex{font-weight:500;padding:9px 10px;min-width:0}
+.ex-list .ex-main{display:block;width:100%}
+.ex-list .ex-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ex-list .ex-row .ex{font-size:12px;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis}
+
+/* Upgrade dialog */
+.upgrade-overlay{position:fixed;inset:0;z-index:150;display:flex;align-items:center;justify-content:center;padding:20px;background:#061d17b8}
+.upgrade-box{background:#fff;width:min(100%,390px);padding:24px 20px;border-radius:20px;box-shadow:0 20px 60px #0003;text-align:center}
+.upgrade-symbol{font-size:32px}
+.upgrade-box h2{font-size:23px;color:#0f5132;margin:8px 0 10px}
+.upgrade-box p{line-height:1.6;font-size:14px;color:#384a40}
+.upgrade-actions{display:flex;gap:10px;margin-top:18px}
+.upgrade-actions>.btn{flex:1;min-width:0}
+.limit-admin input{margin:4px 0 12px}
+.limit-admin label{font-weight:600}
+.limit-admin #limitResult{font-size:13px;margin-top:10px;line-height:1.6}
+#view .seg{overflow-x:auto;-webkit-overflow-scrolling:touch}
+#view .seg button{flex-shrink:0;white-space:nowrap}
