@@ -198,7 +198,7 @@ function home(el) {
   <div class="card hero"><h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI — PANCHAYT AI"}</h1>
    <p>${p ? esc((ROLES[p.role] || ROLES.resident).n) + " · " + esc([p.block, p.district].filter(Boolean).join(", ")) : "AI assistant for Panchayat officials — Pradhan, Secretary, ADO, BDO, DPRO & clerks"}</p></div>
   ${!S.user ? `<div class="card"><b>अगर आप विभागीय अधिकारी, कर्मचारी या प्रधान हैं तो अपनी प्रोफ़ाइल पूरी करें और अपने काम — पत्र, स्पष्टीकरण आदि — 1 मिनट में निपटाएँ।</b>
-   <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} ${googleIcon()} Login with Google</button></div></div>` : ""}
+   <div class="btn-row"><button class="gbtn" data-go="login">${googleIcon()} Login with Google</button></div></div>` : ""}
   <div class="home-options">
    <button class="tile ai-tile" data-go="chat"><span class="e">💬</span><b>AI Help</b><small>चैट करें और Act, GO सहित उत्तर पाएँ</small></button>
    <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
@@ -642,7 +642,7 @@ function payUI(id) {
 }
 
 async function admin(el) {
-  if (!isAdmin()) { el.innerHTML = '<div class="card"><h2>Admin login</h2><p>Sign in with the administrator Google account.</p><button class="gbtn" data-go="login">' + googleIcon() + ' Continue with Google</button></div>'; return; }
+  if (!isAdmin()) { S.after = 'admin'; el.innerHTML = '<div class="card"><h2>Admin login</h2><p>Sign in with the administrator Google account.</p><button class="gbtn" data-go="login">' + googleIcon() + ' Continue with Google</button></div>'; return; }
   el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button></div><div id="adminPanel"></div>';
   el.querySelectorAll('[data-panel]').forEach(b => b.onclick = async () => {
     el.querySelectorAll('[data-panel]').forEach(x => x.classList.toggle('on', x === b));
