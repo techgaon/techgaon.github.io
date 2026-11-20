@@ -46,3 +46,22 @@
 @media(prefers-reduced-motion:reduce){
 .pai-tool-header,.pai-demo-flow *, .pai-tool-grid .pai-tool-tab,.pai-tool-panel,#pai-result:not(.hidden),.pai-tool-tab.active .pai-tool-emoji,.pai-status.pai-working:before{animation:none!important;transition:none!important}
 }
+
+/* Compact selector and truthful conversion progress */
+.pai-select{margin:0 0 10px}
+.pai-select label{margin:0 0 5px;font-weight:700;font-size:14px;color:var(--g)}
+.pai-select select{border-color:#bddbc9;min-height:46px;background:#fff}
+.pai-tool-panel{animation:pai-rise .3s ease both}
+.pai-progress{margin:13px 0;padding:12px;border-radius:12px;border:1px solid #d3e7d9;background:#f7fbf8}
+.pai-progress-line{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:13px;margin-bottom:8px;color:#24563b}
+.pai-progress-line b{font-weight:600;flex:1;min-width:0;overflow-wrap:anywhere}
+.pai-progress-line>span:nth-child(2){font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.pai-progress-track{height:9px;width:100%;background:#deece2;border-radius:999px;overflow:hidden}
+.pai-progress-track>span{height:100%;width:0;display:block;border-radius:999px;background:linear-gradient(90deg,#62b68b,#0d7849);transition:width .18s ease}
+.pai-progress-track.pai-progress-done>span{background:#159447}
+.pai-progress-track.pai-progress-unknown>span{animation:pai-progress-loading 1.3s ease-in-out infinite}
+.pai-green-tick{display:inline-grid;place-items:center;min-width:21px;height:21px;color:white;font-size:14px;font-weight:800;background:#13a051;border-radius:50%;animation:pai-pop .32s ease both}
+@keyframes pai-progress-loading{0%{transform:translateX(-105%)}100%{transform:translateX(320%)}}
+@media(prefers-reduced-motion:reduce){
+.pai-progress-track>span,.pai-green-tick{animation:none!important;transition:none!important}
+}

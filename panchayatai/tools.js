@@ -47,32 +47,63 @@
   }
   async function ocrWorker(progress) {
     const T=await loadTesseract();
-    progress("हिंदी + English OCR तैयार हो रहा है…");
-    return T.createWorker(["hin","eng"],1,{
+    const local = new URL("./vendor/lang/",document.baseURI).href;
+    const options={
       workerPath:new URL("./vendor/worker.min.js",document.baseURI).href,
       corePath:new URL("./vendor/core/",document.baseURI).href,
-      langPath:new URL("./vendor/lang/",document.baseURI).href,
-      gzip:true,
-      logger:m=>{if(m && m.status==="recognizing text" && Number.isFinite(m.progress)) progress("OCR: "+Math.round(m.progress*100)+"%");}
-    });
+      langPath:"https://cdn.jsdelivr.net/gh/tesseract-ocr/tessdata_best@main",
+      gzip:false,
+      logger:m=>{
+        if(m && m.status==="recognizing text" && Number.isFinite(m.progress)){
+          progress("Hindi OCR: "+Math.round(m.progress*100)+"%",m.progress*100);
+        }
+      }
+    };
+    let worker;
+    try{
+      progress("Loading accurate Hindi OCR model…");
+      worker=await T.createWorker(["hin","eng"],1,options);
+    }catch(e){
+      progress("Loading local Hindi OCR fallback…");
+      worker=await T.createWorker(["hin","eng"],1,{...options,langPath:local,gzip:true});
+    }
+    try{await worker.setParameters({preserve_interword_spaces:"1",user_defined_dpi:"300"});}
+    catch(e){console.warn("OCR parameter not available",e);}
+    return worker;
   }
   async function readImage(image,progress) {
-    let worker;
-    try {
+    let worker=null,prepared=null;
+    try{
+      if(typeof createImageBitmap==="function"){
+        try{
+          const bitmap=await createImageBitmap(image);
+          const w=bitmap.width,h=bitmap.height;
+          const zoom=Math.min(3,Math.max(1,1800/Math.max(1,Math.min(w,2000))),4500/Math.max(w,h));
+          if(zoom>1.01||w>4500||h>4500){
+            prepared=document.createElement("canvas");
+            prepared.width=Math.max(1,Math.round(w*zoom));prepared.height=Math.max(1,Math.round(h*zoom));
+            const context=prepared.getContext("2d");
+            context.filter="grayscale(1) contrast(1.2)";
+            context.drawImage(bitmap,0,0,prepared.width,prepared.height);
+          }
+          bitmap.close();
+        }catch(e){prepared=null;}
+      }
       worker=await ocrWorker(progress);
-      progress("फोटो से टेक्स्ट पढ़ा जा रहा है…");
-      const result=await worker.recognize(image);
-      return (result.data.text || "").trim();
-    } finally {
+      progress("Reading Hindi and English text…");
+      const answer=await worker.recognize(prepared||image);
+      return (answer.data.text||"").normalize("NFC").trim();
+    }finally{
       if(worker)await worker.terminate();
+      if(prepared){prepared.width=0;prepared.height=0;}
     }
   }
-  async function textFromPdf(file,progress) {
+  async function textFromPdf(file,progress,preloaded) {
     const pdfjs=await loadPdfjs();
-    const data=new Uint8Array(await file.arrayBuffer());
+    const data=new Uint8Array(preloaded || await file.arrayBuffer());
     const task=pdfjs.getDocument({data,cMapUrl:new URL("./vendor/cmaps/",document.baseURI).href,cMapPacked:true,standardFontDataUrl:new URL("./vendor/standard_fonts/",document.baseURI).href});
     const doc=await task.promise, pages=[];
-    let worker=null;
+    let worker=null,currentOcrPage=1;
     try {
       for(let pageNum=1;pageNum<=doc.numPages;pageNum++) {
         progress("PDF पढ़ रहे हैं: पृष्ठ "+pageNum+"/"+doc.numPages);
@@ -89,7 +120,8 @@
           if(Number.isFinite(y))oldY=y;
         }
         if(text.replace(/\s/g,"").length<25) {
-          if(!worker)worker=await ocrWorker(progress);
+          currentOcrPage=pageNum;
+          if(!worker)worker=await ocrWorker((message,pct)=>progress(message,Number.isFinite(pct)?(currentOcrPage-1+pct/100)*100/doc.numPages:null));
           progress("स्कैन पृष्ठ "+pageNum+"/"+doc.numPages+" पर हिंदी OCR…");
           const base=page.getViewport({scale:1});
           const scale=Math.min(2,Math.sqrt(3600000/(base.width*base.height)));
@@ -104,6 +136,7 @@
         }
         pages.push("पृष्ठ "+pageNum+"\n"+(text.trim() || "[इस पृष्ठ का टेक्स्ट पढ़ा नहीं जा सका]"));
         page.cleanup();
+        progress("PDF page "+pageNum+"/"+doc.numPages+" complete",pageNum*100/doc.numPages);
       }
       return pages.join("\n\n");
     } finally {
@@ -149,10 +182,10 @@
     });
     return doc.body.innerHTML;
   }
-  async function wordToPdf(file,progress) {
+  async function wordToPdf(file,progress,preloaded) {
     if(!window.mammoth||!window.html2pdf)throw new Error("Word/PDF लाइब्रेरी लोड नहीं हुई");
     progress("Word के पैराग्राफ, चित्र और टेबल पढ़ रहे हैं…");
-    const result=await window.mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()});
+    const result=await window.mammoth.convertToHtml({arrayBuffer:preloaded || await file.arrayBuffer()});
     if(!result.value.trim())throw new Error("DOCX में पढ़ने योग्य सामग्री नहीं मिली");
     const paper=document.createElement("section");
     paper.className="pai-printdoc";
@@ -175,11 +208,8 @@
     } finally {offscreen.remove();}
   }
   function mount(el) {
-    let type=tasks[0],file=null,output=null,outName="",copiedText="",busy=false;
-    el.innerHTML='<section class="card pai-tool-header"><h2>🧰 AI Tools</h2><p>फोटो, PDF और Word की फ़ाइलें बस 3 आसान स्टेप में बदलें।</p><div class="pai-demo-flow" aria-hidden="true"><span>📸</span><b>→</b><span>✨</span><b>→</b><span>📄</span></div><div class="pai-three-steps"><span>① फ़ाइल चुनें</span><span>② Convert करें</span><span>③ Download करें</span></div></section>'+
-      '<div class="pai-tool-grid">'+tasks.map(t=>
-        '<button class="pai-tool-tab'+(t.key===type.key?' active':'')+'" type="button" style="--step:'+tasks.indexOf(t)+'" data-tool="'+t.key+'"><span class="pai-tool-emoji">'+t.icon+'</span><b>'+t.title+'</b><small>'+t.note+'</small></button>'
-      ).join("")+'</div>'+
+    let type=tasks[0],file=null,loadedBytes=null,serial=0,output=null,outName="",copiedText="",busy=false;
+    el.innerHTML='<div class="pai-select"><label for="pai-task-select">Conversion tool</label><select id="pai-task-select">'+tasks.map(t=>'<option value="'+t.key+'">'+t.title+'</option>').join("")+'</select></div>'+ 
       '<section class="card pai-tool-panel"><h3 id="pai-tool-title">📷 Image to Text</h3>'+
       '<p id="pai-tool-note" class="hint">फोटो से हिंदी/English टेक्स्ट निकालें</p>'+
       '<div id="pai-image-source" class="pai-pickers"><button class="btn alt" type="button" id="pai-gallery">🖼️ Gallery / Files</button><button class="btn alt" type="button" id="pai-camera">📸 Camera से फोटो</button></div>'+
@@ -188,65 +218,105 @@
       '<input id="pai-camera-input" class="hidden" type="file" accept="image/*" capture="environment">'+
       '<input id="pai-document-input" class="hidden" type="file" accept=".pdf,application/pdf">'+
       '<p id="pai-file-name" class="pai-filename" role="status">अभी कोई फ़ाइल नहीं चुनी गई।</p>'+
+      '<div class="pai-progress hidden" id="pai-file-progress"><div class="pai-progress-line"><b id="pai-file-label">Reading file</b><span id="pai-file-percent">0%</span><span id="pai-file-tick" class="pai-green-tick hidden">✓</span></div><div class="pai-progress-track" role="progressbar" aria-label="File read progress" aria-valuemin="0" aria-valuemax="100" id="pai-file-track"><span id="pai-file-fill"></span></div></div>'+
       '<button id="pai-convert" type="button" class="btn" disabled>Convert करें</button>'+
+      '<div class="pai-progress hidden" id="pai-conversion-progress"><div class="pai-progress-line"><b id="pai-conversion-label">Converting</b><span id="pai-conversion-percent">Working…</span><span id="pai-conversion-tick" class="pai-green-tick hidden">✓</span></div><div class="pai-progress-track" role="progressbar" aria-label="Conversion progress" aria-valuemin="0" aria-valuemax="100" id="pai-conversion-track"><span id="pai-conversion-fill"></span></div></div>'+
       '<p id="pai-tool-status" class="pai-status" role="status" aria-live="polite"></p>'+
       '<div id="pai-result" class="hidden"><div class="pai-result-actions"><button id="pai-download" type="button" class="btn">⬇️ Download</button><button id="pai-copy" type="button" class="btn alt hidden">📋 टेक्स्ट Copy</button></div><pre id="pai-text-preview" class="pai-text-preview hidden"></pre></div>'+
       '</section>';
     const find=id=>el.querySelector("#"+id);
     const filenameEl=find("pai-file-name"),status=find("pai-tool-status"),convert=find("pai-convert"),result=find("pai-result"),download=find("pai-download"),copy=find("pai-copy"),preview=find("pai-text-preview");
     const setStatus=s=>{status.textContent=s;};
+    function progressBar(kind,pct,label,finished=false){
+      const card=find("pai-"+kind+"-progress"),track=find("pai-"+kind+"-track");
+      card.classList.remove("hidden");
+      find("pai-"+kind+"-label").textContent=label;
+      const known=Number.isFinite(pct);
+      const value=finished?100:known?Math.max(0,Math.min(99,Math.round(pct))):null;
+      find("pai-"+kind+"-percent").textContent=value===null?"Working…":value+"%";
+      find("pai-"+kind+"-fill").style.width=value===null?"35%":value+"%";
+      track.classList.toggle("pai-progress-unknown",value===null);
+      track.classList.toggle("pai-progress-done",finished);
+      if(value===null)track.removeAttribute("aria-valuenow");else track.setAttribute("aria-valuenow",String(value));
+      find("pai-"+kind+"-tick").classList.toggle("hidden",!finished);
+    }
+    function clearBars(){for(const k of ["file","conversion"])find("pai-"+k+"-progress").classList.add("hidden");}
     function chooseTask(key) {
       if(busy)return;
       type=tasks.find(t=>t.key===key)||tasks[0];
-      file=null;output=null;copiedText="";filenameEl.textContent="अभी कोई फ़ाइल नहीं चुनी गई।";
+      serial++;file=null;loadedBytes=null;output=null;copiedText="";clearBars();filenameEl.textContent="अभी कोई फ़ाइल नहीं चुनी गई।";
       find("pai-tool-title").textContent=type.icon+" "+type.title;
       find("pai-tool-note").textContent=type.note;
       find("pai-image-source").classList.toggle("hidden",type.type!=="image");
       find("pai-document-source").classList.toggle("hidden",type.type==="image");
       find("pai-document-input").accept=type.type==="pdf"?".pdf,application/pdf":".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      el.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===key));
+      find("pai-task-select").value=key;
       find("pai-image-input").value="";find("pai-camera-input").value="";find("pai-document-input").value="";
       convert.disabled=true;result.classList.add("hidden");setStatus("");
     }
     function chooseFile(f) {
       if(!f||busy)return;
-      const extension=(f.name||"").toLowerCase();
-      const valid=type.type==="image" ? (f.type.startsWith("image/")||/\.(jpg|jpeg|png|webp|bmp|heic|heif)$/i.test(extension)) :
-        type.type==="pdf"?extension.endsWith(".pdf"):extension.endsWith(".docx");
-      if(!valid){setStatus("इस टूल के लिए सही "+(type.type==="image"?"फोटो":type.type==="pdf"?"PDF":"DOCX")+" फ़ाइल चुनें।");return;}
+      const name=(f.name||"").toLowerCase();
+      const valid=type.type==="image" ? (/^image\/(jpeg|png|webp|bmp|gif)$/.test(f.type)||/\.(jpg|jpeg|png|webp|bmp|gif)$/.test(name)) :
+        type.type==="pdf"?(f.type==="application/pdf"||name.endsWith(".pdf")):name.endsWith(".docx");
+      if(!valid){setStatus("इस टूल के लिए सही JPG/PNG/WebP, PDF या DOCX फ़ाइल चुनें।");return;}
       const limit=type.type==="image"?25:50;
-      if(f.size>limit*1024*1024){setStatus("फ़ाइल "+limit+" MB से छोटी होनी चाहिए।");return;}
-      file=f;output=null;result.classList.add("hidden");preview.classList.add("hidden");
-      filenameEl.textContent="चुनी गई: "+f.name+" ("+(f.size/1048576).toFixed(2)+" MB)";
-      convert.disabled=false;setStatus("अब Convert करें पर क्लिक करें।");
+      if(!f.size||f.size>limit*1024*1024){setStatus("फ़ाइल 0 से "+limit+" MB के बीच होनी चाहिए।");return;}
+      const id=++serial;
+      file=null;loadedBytes=null;output=null;result.classList.add("hidden");convert.disabled=true;
+      find("pai-conversion-progress").classList.add("hidden");
+      filenameEl.textContent=f.name+" ("+(f.size/1048576).toFixed(2)+" MB)";
+      progressBar("file",0,"Reading file");setStatus("फ़ाइल पढ़ी जा रही है…");
+      const reader=new FileReader();
+      reader.onprogress=e=>{
+        if(id!==serial)return;
+        progressBar("file",e.lengthComputable&&e.total?e.loaded*100/e.total:null,"Reading file");
+      };
+      reader.onload=()=>{
+        if(id!==serial)return;
+        file=f;loadedBytes=reader.result;progressBar("file",100,"File ready",true);
+        convert.disabled=false;setStatus("✅ File ready. Convert दबाएँ।");
+      };
+      reader.onerror=()=>{if(id!==serial)return;progressBar("file",null,"File read failed");setStatus("❌ फ़ाइल पढ़ने में त्रुटि।");};
+      reader.readAsArrayBuffer(f);
     }
-    el.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>chooseTask(b.dataset.tool)));
+    find("pai-task-select").onchange=e=>chooseTask(e.target.value);
     find("pai-gallery").onclick=()=>find("pai-image-input").click();
     find("pai-camera").onclick=()=>find("pai-camera-input").click();
     find("pai-pick-document").onclick=()=>find("pai-document-input").click();
     ["pai-image-input","pai-camera-input","pai-document-input"].forEach(id=>find(id).addEventListener("change",e=>chooseFile(e.target.files[0])));
     convert.onclick=async()=>{
       if(!file||busy)return;
-      busy=true;convert.disabled=true;result.classList.add("hidden");status.classList.add("pai-working");
+      busy=true;convert.disabled=true;result.classList.add("hidden");status.classList.add("pai-working");progressBar("conversion",null,"Preparing conversion");
       const task=type.key,source=file,stem=filename(source);
       let text="",blob=null,ext="";
+      const onProgress=(message,pct)=>{
+        setStatus(message);
+        if(Number.isFinite(pct))progressBar("conversion",pct,message);
+        else{
+          const page=String(message).match(/पृष्ठ (\d+)\/(\d+)/);
+          if(page&&Number(page[2])>0)progressBar("conversion",(Number(page[1])-1)*100/Number(page[2]),message);
+          else progressBar("conversion",null,message);
+        }
+      };
       try {
-        if(task==="image-pdf"){blob=await imageToPdf(source,setStatus);ext=".pdf";}
-        if(task==="image-text"||task==="image-word"){text=await readImage(source,setStatus);ext=task==="image-word"?".docx":".txt";}
-        if(task==="pdf-text"||task==="pdf-word"){text=await textFromPdf(source,setStatus);ext=task==="pdf-word"?".docx":".txt";}
-        if(task==="word-pdf"){blob=await wordToPdf(source,setStatus);ext=".pdf";}
+        if(task==="image-pdf"){blob=await imageToPdf(source,onProgress);ext=".pdf";}
+        if(task==="image-text"||task==="image-word"){text=await readImage(source,onProgress);ext=task==="image-word"?".docx":".txt";}
+        if(task==="pdf-text"||task==="pdf-word"){text=await textFromPdf(source,onProgress,loadedBytes);ext=task==="pdf-word"?".docx":".txt";}
+        if(task==="word-pdf"){blob=await wordToPdf(source,onProgress,loadedBytes);ext=".pdf";}
         if(!blob){
           if(!text.trim())throw new Error("इस फ़ाइल में पढ़ने योग्य टेक्स्ट नहीं मिला। साफ फोटो या बेहतर स्कैन लगाएँ।");
-          setStatus("फ़ाइल बनाई जा रही है…");
+          onProgress("फ़ाइल बनाई जा रही है…");
           blob=ext===".docx"?await makeWord(text):new Blob(["\uFEFF"+text],{type:"text/plain;charset=utf-8"});
         }
+        if(!blob||!blob.size)throw Error("Conversion से खाली फ़ाइल बनी है; दूसरी फ़ाइल से कोशिश करें।");
         output=blob;outName=stem+ext;copiedText=text;
         result.classList.remove("hidden");
         copy.classList.toggle("hidden",!text);
         preview.classList.toggle("hidden",!text);
         if(text)preview.textContent=text.slice(0,20000)+(text.length>20000?"\n\n…आगे का टेक्स्ट डाउनलोड की गई फ़ाइल में है।":"");
-        setStatus("✅ तैयार: "+outName+" — Download पर क्लिक करें।");
-      }catch(e){output=null;setStatus("❌ "+reportError(e));console.error("Panchayat conversion failed",e);}
+        progressBar("conversion",100,"Conversion complete",true);setStatus("✅ तैयार: "+outName+" — Download पर क्लिक करें।");
+      }catch(e){output=null;progressBar("conversion",null,"Conversion failed");setStatus("❌ "+reportError(e));console.error("Panchayat conversion failed",e);}
       finally {busy=false;convert.disabled=!file;status.classList.remove("pai-working");}
     };
     download.onclick=()=>{

@@ -6,7 +6,7 @@ const TYPES={
  plaster:["प्लास्टर","area"],paver:["इंटरलॉकिंग पेवर","area"],tile:["फ्लोर टाइल्स","area"],
  soling:["गिट्टी सोलिंग","volume"],earth:["मिट्टी खुदाई / भराई","volume"],mortar:["सीमेंट मोर्टार","volume"]
 };
-const MATERIAL={cement:["सीमेंट","50 kg बैग"],sand:["बालू","m³"],aggregate:["गिट्टी","m³"],bricks:["ईंट","नग"],pavers:["पेवर ब्लॉक","नग"],tiles:["टाइल्स","नग"],steel:["स्टील","kg"]};
+const MATERIAL={cement:["Cement","50 kg bag"],sand:["Sand","m³"],aggregate:["Aggregate","m³"],bricks:["Bricks","pcs"],pavers:["Paver blocks","pcs"],tiles:["Tiles","pcs"],steel:["Steel","kg"]};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const f=x=>new Intl.NumberFormat("en-IN",{maximumFractionDigits:3}).format(x);
 const currency=x=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(x);
@@ -16,18 +16,23 @@ const save=(key,val)=>{try{localStorage.setItem(key,JSON.stringify(val));}catch{
 function calculate(v){
  const type=TYPES[v.type];
  if(!type)throw Error("काम चुनें");
- const area=type[1]==="area",scale=v.unit==="ft"?.3048:1;
+ const area=type[1]==="area";
+ if(!["m","ft"].includes(v.unit))throw Error("लंबाई/चौड़ाई की इकाई चुनें।");
+ const scale=v.unit==="ft"?.3048:1;
+ const hUnit=v.hunit||v.unit;
+ const heightFactor={m:1,cm:0.01,mm:0.001,ft:0.3048}[hUnit];
+ if(!heightFactor)throw Error("मोटाई की इकाई चुनें।");
  const count=good(v.count,"संख्या");
  if(!Number.isInteger(count)||count>10000)throw Error("संख्या पूर्णांक में भरें (1–10000)।");
  const l=good(v.l,"लंबाई"),b=good(v.b,"चौड़ाई"),h=area?1:good(v.h,"मोटाई/ऊँचाई");
- const gross=count*l*b*h*Math.pow(scale,area?2:3);
+ const gross=count*(l*scale)*(b*scale)*(area?1:h*heightFactor);
  const cut=good(v.cut,"कटौती",true)*Math.pow(scale,area?2:3);
- if(!Number.isFinite(gross)||gross<=0||cut>=gross)throw Error("कटौती कुल माप से कम होनी चाहिए।");
+ if(!Number.isFinite(gross)||gross<=0||gross>1e9||cut>=gross)throw Error("माप बहुत बड़ा है या कटौती कुल माप से कम नहीं है।");
  const qty=gross-cut;
  const mat={},notes=[];
  function mixed(wet,ratio,dryFactor){
-  const parts=ratio.split(":").map(Number),sum=parts.reduce((a,b)=>a+b,0);
-  if(parts.some(x=>!Number.isFinite(x)||x<=0)||!sum)throw Error("मिक्स अनुपात गलत है।");
+  const parts=String(ratio).split(":").map(Number),sum=parts.reduce((a,b)=>a+b,0);
+  if(parts.some(x=>!Number.isFinite(x)||x<=0)||!sum||parts.length<2||parts.length>3)throw Error("मिक्स अनुपात गलत है।");
   const dry=wet*dryFactor;
   mat.cement=(mat.cement||0)+dry*(parts[0]/sum)*1440/50;
   mat.sand=(mat.sand||0)+dry*(parts[1]/sum);
@@ -36,26 +41,31 @@ function calculate(v){
  if(v.type==="pcc"||v.type==="rcc"){
   mixed(qty,v.cmix,1.54);
   if(v.type==="rcc"){const kg=good(v.steel,"स्टील kg/m³",true);if(kg>0)mat.steel=qty*kg;}
-  notes.push("Concrete dry-volume factor 1.54; RCC का mix/steel Structural Design और BOQ से जाँचें।");
+  notes.push("Dry volume factor: 1.54. RCC mix and steel must follow approved structural design and BOQ.");
  }else if(v.type==="brick"){
-  mat.bricks=Math.ceil(qty*good(v.brickper,"प्रति m³ ईंटों की संख्या"));
-  mixed(qty*.23,v.mmix,1.33);
-  notes.push("Masonry में wet mortar 0.23 m³/m³ प्रारंभिक अनुमान है; ईंट का आकार तथा mortar joints से वास्तविक मात्रा बदलती है।");
+  const per=good(v.brickper,"प्रति m³ ईंटों की संख्या");
+  const mortarShare=good(v.mortarShare??"0.23","मोर्टार अनुपात",true);
+  if(mortarShare>=1)throw Error("मोर्टार अनुपात 0 और 1 के बीच भरें।");
+  const wastage=good(v.brickWaste??"0","ईंट टूटफूट (%)",true);
+  if(wastage>50)throw Error("ईंट टूटफूट अधिकतम 50% रखें।");
+  mat.bricks=Math.ceil(qty*per*(1+wastage/100));
+  mixed(qty*mortarShare,v.mmix,1.33);
+  notes.push("Brick and mortar quantities are indicative; check actual brick dimensions and joint thickness.");
  }else if(v.type==="plaster"||v.type==="mortar"){
   mixed(v.type==="plaster"?qty*good(v.thickness,"प्लास्टर मोटाई (mm)")/1000:qty,v.mmix,1.33);
-  notes.push("मोर्टार Dry-factor 1.33; वास्तविक सतह एवं कटौती जाँचें।");
+  notes.push("Mortar dry-volume factor: 1.33. Verify actual surface and deductions.");
  }else if(v.type==="paver"||v.type==="tile"){
   const pieceArea=good(v.piecel,"टाइल लंबाई")*good(v.pieceb,"टाइल चौड़ाई")/1000000;
   const waste=good(v.waste,"Wastage",true);
   if(waste>50)throw Error("Wastage 0–50% रखें।");
   mat[v.type==="paver"?"pavers":"tiles"]=Math.ceil(qty*(1+waste/100)/pieceArea);
   if(v.type==="paver")mat.sand=qty*good(v.bedding,"Bedding (mm)",true)/1000;
-  notes.push("Piece count में wastage शामिल है; अन्य layers/adhesive अलग गिनें।");
+  notes.push("Piece count includes cutting waste; bedding, adhesive, grout and other layers may be separate.");
  }else if(v.type==="soling"){
-  mat.aggregate=qty;notes.push("Volume compacted स्थिति का है; loose material अलग हो सकता है।");
- }else notes.push("Earthwork के lead/lift और swell/compaction अलग होंगे।");
- const rate=v.rate===""?null:good(v.rate,"कार्य दर",true);
- return {type:v.type,title:type[0],name:v.name.slice(0,150),dim:String(count)+" × "+l+" × "+b+(area?"":" × "+h)+" "+v.unit,
+  mat.aggregate=qty;notes.push("Volume is measured in place; loose aggregate purchase quantities may differ.");
+ }else notes.push("Earthwork lead/lift, bulking and compaction adjustments are excluded.");
+ const rate=v.rate===""||v.rate==null?null:good(v.rate,"कार्य दर",true);
+ return {type:v.type,title:type[0],name:String(v.name||"").slice(0,150),dim:String(count)+" × "+l+" × "+b+" "+v.unit+(area?"":" × "+h+" "+hUnit),
   unit:area?"m²":"m³",qty,gross,cut,mat,notes,rate};
 }
 const FIELDS=[
@@ -65,11 +75,14 @@ const FIELDS=[
  ["l","लंबाई","number",""],
  ["b","चौड़ाई / ऊँचाई","number",""],
  ["h","मोटाई / गहराई","number",""],
+ ["hunit","मोटाई/गहराई की इकाई","select",[{value:"m",text:"मीटर"},{value:"cm",text:"सेमी"},{value:"mm",text:"मिमी"},{value:"ft",text:"फीट"}]],
  ["cut","कटौती (इकाई अनुसार)","number","0"],
  ["cmix","Concrete Mix (cement:sand:aggregate)","select",["1:4:8","1:3:6","1:2:4","1:1.5:3"]],
  ["mmix","Mortar Mix (cement:sand)","select",["1:4","1:5","1:6","1:8"]],
  ["thickness","प्लास्टर मोटाई (mm)","number","12"],
  ["brickper","1 m³ में ईंट (नग)","number","500"],
+ ["mortarShare","1 m³ चिनाई में Wet Mortar (m³)","number","0.23"],
+ ["brickWaste","ईंट टूटफूट (%)","number","5"],
  ["piecel","ब्लॉक/टाइल लंबाई (mm)","number","200"],
  ["pieceb","ब्लॉक/टाइल चौड़ाई (mm)","number","100"],
  ["waste","टूटफूट/कटिंग (%)","number","5"],
@@ -80,7 +93,7 @@ const FIELDS=[
 function mount(el){
  let mb=read("pai_mb_draft_items",[]),rates=read("pai_mb_draft_rates",{});
  if(!Array.isArray(mb))mb=[];
- mb=mb.slice(0,100).filter(x=>x&&TYPES[x.type]&&Number.isFinite(x.qty)&&x.qty>0);
+ mb=mb.slice(0,100).filter(x=>x&&TYPES[x.type]&&Number.isFinite(x.qty)&&x.qty>0).map(x=>({...x,rate:x.rate==null||x.rate===""||!Number.isFinite(Number(x.rate))||Number(x.rate)<0?null:Number(x.rate)}));
  if(!rates||typeof rates!=="object")rates={};
  let current=null;
  const selectField=(key,label,options)=>{
@@ -89,7 +102,7 @@ function mount(el){
  };
  const renderField=([key,label,type,def])=>{
   if(type==="select")return selectField(key,label,def);
-  const preset=["1","0","12","500","200","100","5","30"].includes(def)?def:"";
+  const preset=["1","0","12","500","200","100","5","30","0.23"].includes(def)?def:"";
   return '<label data-field="'+key+'"><span>'+label+'</span><input data-key="'+key+'" type="'+type+'"'+(type==="number"?' min="0" step="any" inputmode="decimal"':'')+' value="'+preset+'" placeholder="'+esc(def)+'"></label>';
  };
  el.innerHTML='<section class="card mb-head"><span class="mb-logo">📐</span><div><h2>Estimate & MB Calculator</h2><p>सीमेंट, बालू, गिट्टी, ईंट, कंक्रीट और अन्य कार्यों का अनुमान।</p></div></section>'+
@@ -99,27 +112,30 @@ function mount(el){
  '<div id="mb-fields">'+FIELDS.map(renderField).join("")+'</div>'+
  '<div class="btn-row"><button type="button" id="mb-example" class="btn alt">✨ उदाहरण भरें</button><button type="button" id="mb-run" class="btn">गणना करें</button></div>'+
  '<p id="mb-notice" role="status" aria-live="polite" class="mb-notice"></p></section>'+
- '<section class="card mb-result-box"><h3>सामग्री का अनुमान</h3><div id="mb-answer"><p class="hint">माप भरकर गणना करें।</p></div>'+
- '<button id="mb-add" type="button" class="btn" disabled>＋ MB में जोड़ें</button>'+
- '<details class="mb-rates"><summary>स्थानीय सामग्री की दरें भरें (वैकल्पिक)</summary><div class="mb-rate-grid">'+
- Object.entries(MATERIAL).map(([k,v])=>'<label>'+v[0]+' (₹/'+v[1]+')<input type="number" min="0" step="any" data-material="'+k+'" placeholder="अपनी दर"></label>').join("")+'</div></details></section>'+
+ '<section class="card mb-result-box"><h3>Estimate तैयार</h3><div id="mb-answer"><p class="hint">Enter measurements and click Calculate.</p></div>'+
+ '<button id="mb-add" type="button" class="btn" disabled>＋ Add to MB</button>'+
+ '<details class="mb-rates"><summary>Material rates (optional)</summary><div class="mb-rate-grid">'+
+ Object.entries(MATERIAL).map(([k,v])=>'<label>'+v[0]+' (₹/'+v[1]+')<input type="number" min="0" step="any" data-material="'+k+'" placeholder="Enter rate"></label>').join("")+'</div></details></section>'+
  '<section class="card mb-book"><h3>Measurement Book (Draft)</h3><div id="mb-items"></div><div class="btn-row">'+
- '<button type="button" id="mb-csv" class="btn alt">⬇️ MB CSV</button><button type="button" id="mb-print" class="btn alt">🖨️ Print / Save PDF</button>'+
- '<button type="button" id="mb-clear" class="btn alt">🗑️ साफ करें</button></div>'+
- '<p class="hint">यह प्रारंभिक कैलकुलेटर है, आधिकारिक MB नहीं। अंतिम माप, SOR, BOQ, डिजाइन और भुगतान संबंधित अधिकृत अभियंता/अधिकारी सत्यापित करें।</p></section>'+
+ '<button type="button" id="mb-csv" class="btn alt">⬇️ Export MB CSV</button><button type="button" id="mb-print" class="btn alt">🖨️ Print / Save PDF</button>'+
+ '<button type="button" id="mb-clear" class="btn alt">🗑️ Clear MB</button></div>'+
+ '<p class="hint">Preliminary estimate only, not an official MB. Site measurements, SOR, BOQ, design and payable quantities must be verified by an authorised engineer/officer.</p></section>'+
  '<div id="mb-print-sheet"></div>';
  const q=s=>el.querySelector(s),inputs=Object.fromEntries(FIELDS.map(([k])=>[k,q('[data-key="'+k+'"]')]));
  function values(){return Object.fromEntries(Object.entries(inputs).map(([k,x])=>[k,x.value]));}
  function alert(t){q("#mb-notice").textContent=t;}
- function clearPreview(){current=null;q("#mb-add").disabled=true;q("#mb-answer").innerHTML='<p class="hint">माप भरकर गणना करें।</p>';}
+ function clearPreview(){current=null;q("#mb-add").disabled=true;q("#mb-answer").innerHTML='<p class="hint">Enter measurements and click Calculate.</p>';}
  function adapt(){
   const k=q("#mb-type").value,area=TYPES[k][1]==="area";
-  const visible={h:!area,cmix:k==="pcc"||k==="rcc",mmix:["brick","plaster","mortar"].includes(k),
-   thickness:k==="plaster",brickper:k==="brick",piecel:k==="paver"||k==="tile",pieceb:k==="paver"||k==="tile",
+  const visible={h:!area,hunit:!area,cmix:k==="pcc"||k==="rcc",mmix:["brick","plaster","mortar"].includes(k),
+   thickness:k==="plaster",brickper:k==="brick",mortarShare:k==="brick",brickWaste:k==="brick",piecel:k==="paver"||k==="tile",pieceb:k==="paver"||k==="tile",
    waste:k==="paver"||k==="tile",bedding:k==="paver",steel:k==="rcc"};
   for(const [key,yes] of Object.entries(visible))q('[data-field="'+key+'"]').classList.toggle("hidden",!yes);
-  q('[data-field="cut"] span').textContent="कटौती ("+(inputs.unit.value==="ft"?"ft":"m")+(area?"²":"³")+")";
+  q('[data-field="cut"] span').textContent="पूरी कटौती ("+(inputs.unit.value==="ft"?"ft":"m")+(area?"²":"³")+")";
   q('[data-field="rate"] span').textContent="कार्य दर ₹/"+(area?"m²":"m³")+" (वैकल्पिक, SOR अनुसार)";
+  if(!area&&inputs.unit.dataset.prevUnit!==inputs.unit.value){
+    inputs.hunit.value=inputs.unit.value;inputs.unit.dataset.prevUnit=inputs.unit.value;
+  }
   if(k==="tile"&&inputs.piecel.value==="200"&&inputs.pieceb.value==="100"){inputs.piecel.value="600";inputs.pieceb.value="600";}
   if(k==="paver"&&inputs.piecel.value==="600"&&inputs.pieceb.value==="600"){inputs.piecel.value="200";inputs.pieceb.value="100";}
   clearPreview();
@@ -127,38 +143,38 @@ function mount(el){
  function compute(){
   try{
    current=calculate({type:q("#mb-type").value,...values()});
-   const x=current,mats=Object.entries(x.mat),cards=[["मापी गई मात्रा",f(x.qty)+" "+x.unit]].concat(
+   const x=current,mats=Object.entries(x.mat),cards=[["Measured quantity",f(x.qty)+" "+x.unit]].concat(
     mats.map(([k,v])=>[MATERIAL[k][0]+" ("+MATERIAL[k][1]+")",f(v)]));
    let materialCost=0,priced=0;
-   mats.forEach(([k,v])=>{if(rates[k]!==undefined&&rates[k]!==""){const rate=good(rates[k],"सामग्री दर",true);materialCost+=rate*v;priced++;}});
+   mats.forEach(([k,v])=>{if(rates[k]!==undefined&&rates[k]!==""){const rate=good(rates[k],"Material rate",true);materialCost+=rate*v;priced++;}});
    q("#mb-answer").innerHTML='<div class="mb-figures">'+cards.map(([a,b],i)=>
     '<div class="mb-figure" style="--index:'+i+'"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join("")+'</div>'+
-    '<p class="hint">Gross: '+f(x.gross)+" "+x.unit+"; कटौती: "+f(x.cut)+" "+x.unit+"</p>"+
-    (priced?'<p><b>दर्ज सामग्री दरों की '+(priced<mats.length?'आंशिक ':'')+'लागत: '+currency(materialCost)+'</b></p>':"")+
-    (x.rate!==null?'<p><b>कार्य राशि: '+currency(x.rate*x.qty)+'</b></p>':"")+
+    '<p class="hint">Gross: '+f(x.gross)+" "+x.unit+"; Deduction: "+f(x.cut)+" "+x.unit+"</p>"+
+    (priced?'<p><b>'+(priced<mats.length?'Partial material cost':'Material cost')+': '+currency(materialCost)+'</b></p>':"")+
+    (x.rate!==null?'<p><b>Work amount: '+currency(x.rate*x.qty)+'</b></p>':"")+
     '<p class="hint">'+x.notes.map(esc).join(" ")+'</p>';
-   q("#mb-add").disabled=false;alert("✅ गणना तैयार। MB में जोड़ सकते हैं।");
+   q("#mb-add").disabled=false;alert("✅ Estimate ready. Add the item to MB.");
   }catch(e){clearPreview();alert("⚠️ "+e.message);}
  }
  function outputSheet(){
   const total=mb.reduce((a,x)=>a+(x.rate===null?0:x.qty*x.rate),0);
-  q("#mb-print-sheet").innerHTML='<h1>पंचायत AI — Draft Measurement Book</h1><p>दिनांक: '+
-   new Date().toLocaleDateString("en-IN")+'</p><table><thead><tr><th>क्र.</th><th>काम</th><th>माप</th><th>मात्रा</th><th>दर ₹</th><th>राशि ₹</th></tr></thead><tbody>'+
+  q("#mb-print-sheet").innerHTML='<h1>Panchayat AI — Draft Measurement Book</h1><p>Date: '+
+   new Date().toLocaleDateString("en-IN")+'</p><table><thead><tr><th>No.</th><th>Work</th><th>Measurement</th><th>Quantity</th><th>Rate ₹</th><th>Amount ₹</th></tr></thead><tbody>'+
    mb.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.name||x.title)+'</td><td>'+esc(x.dim)+'</td><td>'+f(x.qty)+' '+x.unit+'</td><td>'+(x.rate===null?"—":f(x.rate))+'</td><td>'+(x.rate===null?"—":currency(x.qty*x.rate))+'</td></tr>').join("")+
-   '</tbody></table><p><b>दर्ज दरों के अनुसार कुल: '+currency(total)+'</b></p><p>यह आधिकारिक MB नहीं है; माप सत्यापन आवश्यक है।</p>';
+   '</tbody></table><p><b>Total based on entered rates: '+currency(total)+'</b></p><p>Draft only: verify site measurements before official use.</p>';
  }
  function refreshBook(){
-  if(!mb.length){q("#mb-items").innerHTML='<p class="hint">MB खाली है। गणना करके आइटम जोड़ें।</p>';}
+  if(!mb.length){q("#mb-items").innerHTML='<p class="hint">No measurements added yet. Calculate and add an item.</p>';}
   else{
    const total=mb.reduce((a,x)=>a+(x.rate===null?0:x.qty*x.rate),0);
-   q("#mb-items").innerHTML='<div class="mb-scroll"><table class="mb-table"><thead><tr><th>क्र.</th><th>कार्य</th><th>मात्रा</th><th>दर ₹</th><th>राशि ₹</th><th></th></tr></thead><tbody>'+
+   q("#mb-items").innerHTML='<div class="mb-scroll"><table class="mb-table"><thead><tr><th>No.</th><th>Work</th><th>Quantity</th><th>Rate ₹</th><th>Amount ₹</th><th></th></tr></thead><tbody>'+
    mb.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.name||x.title)+'</b><small>'+esc(x.dim)+'</small></td>'+
-    '<td>'+f(x.qty)+' '+x.unit+'</td><td><input type="number" min="0" step="any" aria-label="दर" data-mb-rate="'+i+'" value="'+(x.rate===null?"":x.rate)+'"></td>'+
-    '<td>'+(x.rate===null?"—":currency(x.qty*x.rate))+'</td><td><button type="button" class="mb-delete" data-delete="'+i+'" aria-label="हटाएँ">×</button></td></tr>').join("")+
-   '</tbody></table></div><p class="mb-total"><b>दर्ज दरों का योग: '+currency(total)+'</b></p>';
+    '<td>'+f(x.qty)+' '+x.unit+'</td><td><input type="number" min="0" step="any" aria-label="Rate" data-mb-rate="'+i+'" value="'+(x.rate===null?"":x.rate)+'"></td>'+
+    '<td>'+(x.rate===null?"—":currency(x.qty*x.rate))+'</td><td><button type="button" class="mb-delete" data-delete="'+i+'" aria-label="Remove">×</button></td></tr>').join("")+
+   '</tbody></table></div><p class="mb-total"><b>Total based on entered rates: '+currency(total)+'</b></p>';
    q("#mb-items").querySelectorAll("[data-mb-rate]").forEach(input=>input.onchange=()=>{
     const s=input.value.trim(),v=s===""?null:Number(s);
-    if(v!==null&&(!Number.isFinite(v)||v<0)){alert("दर गलत है।");return;}
+    if(v!==null&&(!Number.isFinite(v)||v<0)){alert("Please enter a valid rate.");return;}
     mb[Number(input.dataset.mbRate)].rate=v;save("pai_mb_draft_items",mb);refreshBook();
    });
    q("#mb-items").querySelectorAll("[data-delete]").forEach(button=>button.onclick=()=>{
@@ -169,7 +185,7 @@ function mount(el){
   ["mb-csv","mb-print","mb-clear"].forEach(id=>q("#"+id).disabled=!mb.length);
  }
  function exportCSV(){
-  const all=[["क्रमांक","कार्य","विवरण","माप","मात्रा","इकाई","दर ₹","राशि ₹"],...mb.map((x,i)=>[
+  const all=[["No.","Work","Description","Measurements","Quantity","Unit","Rate ₹","Amount ₹"],...mb.map((x,i)=>[
    i+1,x.title,x.name,x.dim,x.qty.toFixed(3),x.unit,x.rate===null?"":x.rate,x.rate===null?"":(x.qty*x.rate).toFixed(2)
   ])];
   const cell=x=>{let s=String(x??"");if(/^\s*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
@@ -180,22 +196,22 @@ function mount(el){
  q("#mb-type").onchange=adapt;inputs.unit.onchange=adapt;
  Object.values(inputs).forEach(i=>i.addEventListener("input",()=>{if(current){clearPreview();alert("माप बदला है। पुनः गणना करें।");}}));
  q("#mb-example").onclick=()=>{
-  const k=q("#mb-type").value,a=TYPES[k][1]==="area"?[8,3,""]:[5,3,.15];
-  [inputs.l,inputs.b,inputs.h].forEach((input,i)=>input.value=a[i]);inputs.count.value="1";inputs.cut.value="0";
+  const k=q("#mb-type").value,a=TYPES[k][1]==="area"?[8,3,""]:[5,3,15];
+  [inputs.l,inputs.b,inputs.h].forEach((input,i)=>input.value=a[i]);inputs.count.value="1";inputs.cut.value="0";inputs.hunit.value="cm";
   clearPreview();alert("उदाहरण भरा है। वास्तविक माप के अनुसार बदलें।");
  };
  q("#mb-run").onclick=compute;
  q("#mb-add").onclick=()=>{
-  if(!current)return;if(mb.length>=100){alert("अधिकतम 100 आइटम जोड़ सकते हैं।");return;}
-  mb.push({...current});save("pai_mb_draft_items",mb);refreshBook();alert("✅ MB में जोड़ दिया।");
+  if(!current)return;if(mb.length>=100){alert("MB supports up to 100 items.");return;}
+  mb.push({...current});save("pai_mb_draft_items",mb);refreshBook();alert("✅ Item added to MB.");
  };
  q("#mb-csv").onclick=exportCSV;
  q("#mb-print").onclick=()=>{if(mb.length)window.print();};
- q("#mb-clear").onclick=()=>{if(mb.length&&confirm("सभी MB प्रविष्टियाँ हटानी हैं?")){mb=[];save("pai_mb_draft_items",mb);refreshBook();}};
+ q("#mb-clear").onclick=()=>{if(mb.length&&confirm("Clear all MB entries?")){mb=[];save("pai_mb_draft_items",mb);refreshBook();}};
  q(".mb-rate-grid").querySelectorAll("[data-material]").forEach(input=>{
   input.value=rates[input.dataset.material]??"";
   input.onchange=()=>{
-   const s=input.value.trim();if(s!==""&&(!Number.isFinite(Number(s))||Number(s)<0)){alert("सामग्री दर सही भरें।");return;}
+   const s=input.value.trim();if(s!==""&&(!Number.isFinite(Number(s))||Number(s)<0)){alert("Please enter a valid material rate.");return;}
    rates[input.dataset.material]=s;save("pai_mb_draft_rates",rates);if(current)compute();
   };
  });
