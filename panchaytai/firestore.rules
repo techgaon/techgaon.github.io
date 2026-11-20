@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email_verified == true
+        && request.auth.token.email == 'surajbhanpandey853@gmail.com';
+    }
+    function activeUser() {
+      return signedIn() && (!exists(/databases/$(db)/documents/users/$(request.auth.uid))
+        || get(/databases/$(db)/documents/users/$(request.auth.uid)).data.get('blocked', false) == false);
+    }
+    function today() { return int(request.time.toMillis() / 86400000); }
+    function plusUser() {
+      return resource != null && ('plan' in resource.data)
+        && resource.data.plan.until > request.time.toMillis();
+    }
+    function usageOk() {
+      let n = request.resource.data.usage;
+      let o = (resource != null && ('usage' in resource.data) && resource.data.usage.day == today())
+        ? resource.data.usage : {'chat': 0, 'draft': 0};
+      let cl = plusUser() ? 200 : 10;
+      let dl = plusUser() ? 200 : 3;
+      return n.keys().hasOnly(['day', 'chat', 'draft'])
+        && n.day == today() && n.chat is int && n.draft is int
+        && n.chat >= o.chat && n.draft >= o.draft
+        && n.chat - o.chat + n.draft - o.draft == 1
+        && n.chat <= cl && n.draft <= dl;
+    }
+    function usageChanged() {
+      return resource == null ? ('usage' in request.resource.data)
+        : request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage']);
+    }
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if signedIn() && request.auth.uid == uid
+        && !request.resource.data.keys().hasAny(['plan', 'blocked'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && (!usageChanged() || usageOk());
+      allow update: if isAdmin() || (activeUser() && request.auth.uid == uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan', 'blocked', 'uid', 'email'])
+        && (!usageChanged() || usageOk()));
+    }
+    match /paiSettings/public {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /paiCoupons/{code} {
+      allow get: if activeUser();
+      allow list, write: if isAdmin();
+    }
+    match /paiPayments/{id} {
+      allow create: if activeUser()
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'planId', 'amount', 'coupon', 'utr', 'status', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'pending'
+        && request.resource.data.at == request.time
+        && request.resource.data.amount is number && request.resource.data.amount >= 0
+        && request.resource.data.planId is string && request.resource.data.planId.size() <= 100
+        && request.resource.data.coupon is string && request.resource.data.coupon.size() <= 40
+        && request.resource.data.utr is string && request.resource.data.utr.size() <= 12;
+      allow read, update: if isAdmin();
+    }
+    match /payments/{id} {
+      allow read, update: if isAdmin();
+    }
+    match /stats/visits {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['count']) && request.resource.data.count == 1;
+      allow update: if request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count is int && request.resource.data.count == resource.data.count + 1;
+    }
+    match /paiVisitorDays/{day} {
+      allow read: if isAdmin();
+      allow create: if day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.keys().hasOnly(['count']) && request.resource.data.count == 1;
+      allow update: if request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count is int && request.resource.data.count == resource.data.count + 1;
+    }
+    match /{p=**} { allow read, write: if false; }
+  }
+}

@@ -1,7 +1,7 @@
 // ===== पंचायत AI — कॉन्फ़िग (डिप्लॉय से पहले ये मान भरें) =====
 window.PAI_CONFIG = {
   appName: "PANCHAYT AI",
-  appUrl: "https://techgaon.in/panchaytai",
+  appUrl: "https://techgaon.in/panchayatai/",
   companyName: "TechGaon AI Services",
   companyUrl: "https://techgaon.in",
 
@@ -16,7 +16,7 @@ window.PAI_CONFIG = {
 },
 
   // Gemini: Firebase AI Logic (Gemini Developer API) — key Firebase में सुरक्षित, निःशुल्क Spark प्लान
-  geminiModel: "gemini-flash-lite-latest",
+  geminiModel: "gemini-3.5-flash-lite",
   recaptchaSiteKey: "6Lcmdw8uAAAAALp9S2hlQaEAiLe72Att_nX7pq4G", // App Check (public site key)
 
   // मूल GO/नियम PDF कहाँ रखी हैं. फ़ाइल नाम: <ID>.pdf
@@ -31,3 +31,4 @@ window.PAI_CONFIG = {
   },
   whatsapp: "919129203268"
 };
+

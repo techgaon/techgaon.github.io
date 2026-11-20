@@ -1,28 +1,35 @@
-/* पंचायत AI — विज़िटर काउंट (Firestore: stats/visits.count) */
+/* A session counts once per browser tab. Dates use India time. */
 (() => {
-  const fmt = n => Number(n || 0).toLocaleString("en-IN");
   let count = null;
   function paint() {
-    if (count === null) return;
-    const html = `👁 कुल विज़िटर: <b>${fmt(count)}</b>`;
-    const foot = document.querySelector(".drawer-foot");
-    if (foot && !foot.querySelector(".vc")) foot.insertAdjacentHTML("afterbegin", `<div class="vc" style="padding:0 22px 8px;color:#5f6b66"></div>`);
-    if (foot) foot.querySelector(".vc").innerHTML = html;
-    const view = document.querySelector("#view");
-    if (view && view.querySelector(".hero") && !view.querySelector(".vc-home"))
-      view.insertAdjacentHTML("beforeend", `<p class="hint vc-home" style="text-align:center;margin-top:16px">${html}</p>`);
+    const foot = document.querySelector('.drawer-foot');
+    if (!foot || count === null) return;
+    let label = foot.querySelector('.vc');
+    if (!label) { label = document.createElement('div'); label.className = 'vc hint'; foot.prepend(label); }
+    const text = '👁 Total visitors: ' + Number(count).toLocaleString('en-IN');
+    if (label.textContent !== text) label.textContent = text;
+    const view = document.querySelector('#view');
+    if (view?.querySelector('.home-options')) {
+      let home = view.querySelector('.vc-home');
+      if (!home) { home = document.createElement('p'); home.className = 'hint vc-home'; home.style.textAlign = 'center'; view.appendChild(home); }
+      if (home.textContent !== text) home.textContent = text;
+    }
   }
   async function run() {
     if (!window.firebase || !firebase.apps.length) return;
-    const db = firebase.firestore(), ref = db.collection("stats").doc("visits");
+    const db = firebase.firestore(), total = db.collection('stats').doc('visits');
     try {
-      if (!sessionStorage.getItem("pai_v")) {
-        await ref.set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
-        sessionStorage.setItem("pai_v", "1");
+      if (!sessionStorage.getItem('pai_v2')) {
+        const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+        const daily = db.collection('paiVisitorDays').doc(day);
+        const batch = db.batch();
+        batch.set(total, { count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+        batch.set(daily, { count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+        await batch.commit(); sessionStorage.setItem('pai_v2', '1');
       }
-      count = (await ref.get()).data().count; paint();
-    } catch (e) { console.warn("visits", e); }
+      total.onSnapshot(doc => { count = doc.data()?.count || 0; paint(); }, e => console.warn('Visitor count unavailable', e.code));
+    } catch(e) { console.warn('Visitor tracking unavailable', e.code); }
   }
-  new MutationObserver(paint).observe(document.querySelector("#view"), { childList: true });
-  if (document.readyState === "complete") run(); else window.addEventListener("load", run);
+  new MutationObserver(paint).observe(document.querySelector('#view'), { childList: true });
+  if (document.readyState === 'complete') run(); else window.addEventListener('load', run, { once: true });
 })();
