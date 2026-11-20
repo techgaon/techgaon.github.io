@@ -43,7 +43,7 @@ jobs:
           s=s.replace("applicationId 'in.techgaon.panchayatai'","applicationId 'in.techgaon.panchayatai.fresh'")
           s=s.replace("versionCode 1","versionCode 5").replace("versionName '1.0.0'","versionName '1.0.4'")
           if "implementation 'androidx.browser:browser:1.8.0'" not in s:
-              s=s.replace("dependencies {","dependencies { implementation 'androidx.browser:browser:1.8.0'")
+              s=s.replace("dependencies {","dependencies {\n implementation 'androidx.browser:browser:1.8.0';")
           build.write_text(s,encoding="utf-8")
           manifest=Path("panchayat-android/app/src/main/AndroidManifest.xml")
           xml=manifest.read_text(encoding="utf-8")
