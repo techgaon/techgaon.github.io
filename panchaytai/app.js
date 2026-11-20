@@ -691,6 +691,7 @@ async function admin(el) {
   el.querySelector('[data-panel="overview"]').click();
 }
 async function adminOverview(panel) {
+  await S.db.waitForPendingWrites();
   const since = new Date(Date.now() - 13 * 864e5).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const [total, daily] = await Promise.all([S.db.collection("stats").doc("visits").get(), S.db.collection("paiVisitorDays").where(firebase.firestore.FieldPath.documentId(), ">=", since).get()]);
   const days = new Map(daily.docs.map(d => [d.id, d.data().count || 0]));
