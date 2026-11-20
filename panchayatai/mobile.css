@@ -27,3 +27,9 @@ main{max-width:480px;padding:16px 14px 32px}.hero h1{font-size:22px;line-height:
 .home-options .home-estimate{min-height:106px}
 @keyframes pai-new-pulse{0%,100%{box-shadow:0 0 0 0 #149e4c40;transform:scale(1)}50%{box-shadow:0 0 0 6px #149e4c00;transform:scale(1.04)}}
 @media(prefers-reduced-motion:reduce){.home-options .home-ai-new .new-pulse{animation:none!important}}
+
+/* News and estimate: equal-width tiles in one row on mobile and desktop */
+.home-options .home-news-estimate{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.home-options .home-news-estimate>.tile{width:100%;min-width:0;min-height:116px;padding:12px 7px}
+.home-options .home-news-estimate .home-estimate{min-height:116px}
+.home-options .home-news-estimate>.tile b{font-size:15px;overflow-wrap:anywhere}

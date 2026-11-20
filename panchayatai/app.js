@@ -215,17 +215,17 @@ function home(el) {
       <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
     </div>
     <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
-    <div class="grid draft-grid">
+    <div class="grid draft-grid home-news-estimate">
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
+      <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
     </div>
-    <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
     <div class="grid draft-grid home-final-pair">
       <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
       <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>More features</small></button>
     </div>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
-   ${["भारत में मानसून कैसे बनता है?","किसी दस्तावेज़ का सार कैसे लिखें?","ग्राम पंचायत के पत्र का प्रारूप बताएँ।","AI का उपयोग पढ़ाई में कैसे करें?"]
+   ${["ग्राम पंचायत की खुली बैठक आयोजित करने की प्रक्रिया क्या है?","ग्राम पंचायत की कार्ययोजना (GPDP) कैसे तैयार की जाती है?","15वें वित्त आयोग की धनराशि से कार्य कराते समय किन बातों का ध्यान रखना चाहिए?","ग्राम पंचायत में RTI आवेदन मिलने पर सचिव को क्या करना चाहिए?"]
      .map(q => `<div class="lib-item"><a data-ask="${esc(q)}">❓ ${esc(q)}</a></div>`).join("")}
   </div>`;
   el.querySelectorAll("[data-draft]").forEach(t => t.onclick = () => { if (needLogin("draft")) return; S.draftType = t.dataset.draft; go("draftEdit"); });
