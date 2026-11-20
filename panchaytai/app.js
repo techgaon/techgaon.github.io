@@ -172,7 +172,7 @@ function chrome() {
   $("#loginTop").classList.toggle("hidden", !!S.user);
   $("#logoutBtn").classList.toggle("hidden", !S.user);
   $("#backBtn").classList.toggle("hidden", S.view === "home");
-  $("#avatar").onclick = () => go("profile");
+  $("#avatar").onclick = () => go(isAdmin() ? "admin" : "profile");
   $("#avatar").classList.toggle("hidden", !S.user || !S.user.photoURL);
   if (S.user && S.user.photoURL) $("#avatar").src = S.user.photoURL;
   $("#planBadge").classList.toggle("hidden", !isPlus()); $("#planBadge").textContent = "PLUS";
@@ -181,10 +181,14 @@ function chrome() {
 }
 function needLogin(next) {
   if (!S.user) { S.after = next; go("login"); return true; }
-  if (!S.profile || !S.profile.role) { S.after = next; go("profile"); return true; }
+  if (!isAdmin() && (!S.profile || !S.profile.role)) { S.after = next; go("profile"); return true; }
   return false;
 }
 function render() {
+  if (isAdmin() && ["details", "profile", "login"].includes(S.view)) {
+    S.view = "admin";
+    window.history.replaceState(null, "", location.pathname + "#admin");
+  }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
   const V = { home, login, details, profile, chat, draft, draftEdit, library, news, plans, history, admin }[S.view] || home;
   const cw = $("#composerWrap"); if (cw) cw.remove();
@@ -242,6 +246,13 @@ function login(el) {
   const d = $("#demo"); if (d) d.onclick = () => { S.user = { uid: "demo", displayName: "डेमो उपयोगकर्ता", email: "demo@techgaon.in" }; S.gInfo = { name: "डेमो उपयोगकर्ता", phone: "", gender: "" }; afterLogin(); };
 }
 async function afterLogin() {
+  if (isAdmin()) {
+    S.profile = { uid: S.user.uid, name: S.user.displayName || "Suraj Bhan Pandey", email: S.user.email };
+    S.blocked = false;
+    S.after = null;
+    go("admin");
+    return;
+  }
   S.gInfo = S.gInfo || { name: S.user.displayName || "", email: S.user.email || "", phone: S.user.phoneNumber || "" };
   let p = LS.get("profile");
   if (S.db && S.user.uid !== "demo") { const s = await S.db.collection("users").doc(S.user.uid).get(); if (s.exists) p = s.data(); }
@@ -259,7 +270,7 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
       await afterLogin();
       S.userWatch = S.db.collection("users").doc(u.uid).onSnapshot(doc => {
         const data = doc.data() || {};
-        S.blocked = data.blocked === true;
+        S.blocked = !isAdmin() && data.blocked === true;
         if (S.profile) S.profile.plan = data.plan || null;
         if (S.blocked) { S.view = "blocked"; render(); }
       });
