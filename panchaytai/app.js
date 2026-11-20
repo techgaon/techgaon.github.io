@@ -446,8 +446,8 @@ function assistantHtml(message, index) {
   }
   answer = answer.replace(new RegExp('^' + salutation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[,।\\s]+'), '');
   const roleHeading = english ? `Your role as ${title}` : `${title} के रूप में आपकी भूमिका`;
-  if (advice.startsWith(roleHeading)) advice = advice.slice(roleHeading.length).replace(/^\\s*[:：]?\\s*/, "");
-  advice = advice.split(/\\n+/).map(line => line.replace(/^\\s*(?:[-*•]|\\d+[.)])\\s*/, "")).join(" ").trim();
+  if (advice.startsWith(roleHeading)) advice = advice.slice(roleHeading.length).replace(/^\s*[:：]?\s*/, "");
+  advice = advice.split(/\n+/).map(line => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "")).join(" ").trim();
   const web = (message.web || []).filter(source => /^https?:\/\//i.test(source.uri || '')).map(source => `<a href="${esc(source.uri)}" target="_blank" rel="noopener">${esc(source.title || (english ? 'Source' : 'स्रोत'))}</a>`).join(' · ');
   return `<p class="chat-salutation">${esc(salutation)},</p>${chatParagraphs(answer)}${advice ? `<p class="role-heading"><b>${esc(roleHeading)}</b></p>${chatParagraphs(advice)}` : ''}${web ? `<p class="hint">${web}</p>` : ''}${refsHtml(message.refs || [], index)}<div class="followups">${nextQuestions(message).map(question => `<button class="btn alt followup" data-followup="${esc(question)}" data-message-index="${index}" ${S.chatBusy ? "disabled" : ""}>${esc(question)}</button>`).join('')}</div><div class="btn-row"><button class="btn-sm btn alt" data-tod="${index}">📝 इससे पत्र बनाएँ</button></div>`;
 }
