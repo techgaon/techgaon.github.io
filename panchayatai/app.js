@@ -10,8 +10,8 @@ const toast = m => { const t = $("#toast"); t.textContent = m; t.classList.add("
 const ROLES = {
   pradhan:  { n: "ग्राम प्रधान", call: "प्रधान जी", scope: "gp" },
   prashasak:{ n: "प्रशासक (ग्राम पंचायत)", call: "प्रशासक जी", scope: "gp" },
+  gpa:      { n: "पंचायत सचिव (ग्राम पंचायत अधिकारी)", call: "सचिव जी", scope: "multigp" },
   sahayak:  { n: "पंचायत सहायक", call: "पंचायत सहायक जी", scope: "gp" },
-  gpa:      { n: "ग्राम पंचायत अधिकारी (GPA)", call: "सचिव जी", scope: "multigp" },
   gva:      { n: "ग्राम विकास अधिकारी (GVA)", call: "सचिव जी", scope: "multigp" },
   ado:      { n: "सहायक विकास अधिकारी (पंचायत)", call: "ADO पंचायत जी", scope: "block" },
   bdo:      { n: "खण्ड विकास अधिकारी (BDO)", call: "BDO साहब", scope: "block" },
@@ -19,7 +19,8 @@ const ROLES = {
   adpro:    { n: "सहायक जिला पंचायत राज अधिकारी (ADPRO)", call: "ADPRO साहब", scope: "district" },
   dpro:     { n: "जिला पंचायत राज अधिकारी (DPRO)", call: "DPRO साहब", scope: "district" },
   ddo:      { n: "जिला विकास अधिकारी (DDO)", call: "DDO साहब", scope: "district" },
-  resident: { n: "पंचायत निवासी", call: "जी", scope: "gp" }
+  resident: { n: "पंचायत निवासी", call: "जी", scope: "gp" },
+  other_staff: { n: "अन्य विभागीय कर्मचारी", call: "जी", scope: "district" }
 };
 
 /* पदवार ड्राफ्ट प्रकार — सभी के लिए 4 मूल + पद अनुसार अतिरिक्त */
@@ -45,7 +46,8 @@ const EXTRA_DRAFTS = {
   adpro: [["aakhya","🔎","जाँच आख्या","जाँच रिपोर्ट"],["chetavni","⚠️","चेतावनी पत्र","प्रतिकूल प्रविष्टि/चेतावनी"]],
   dpro: [["chetavni","⚠️","चेतावनी / निलंबन आदेश","अनुशासनिक"],["samiksha","📊","समीक्षा कार्यवृत्त","जनपद समीक्षा"],["anusmarak","⏰","अनुस्मारक","रिमाइंडर"]],
   ddo: [["samiksha","📊","समीक्षा कार्यवृत्त","विकास समीक्षा"],["chetavni","⚠️","चेतावनी पत्र","अनुशासनिक"]],
-  resident: [["prarthna","🙏","प्रार्थना पत्र","प्रधान/सचिव/BDO को आवेदन"],["shikayat","📣","शिकायत पत्र","IGRS/शिकायत"],["rti","ℹ️","RTI आवेदन","जन सूचना माँगें"]]
+  resident: [["prarthna","🙏","प्रार्थना पत्र","प्रधान/सचिव/BDO को आवेदन"],["shikayat","📣","शिकायत पत्र","IGRS/शिकायत"],["rti","ℹ️","RTI आवेदन","जन सूचना माँगें"]],
+  other_staff: [["prarthna","🙏","प्रार्थना पत्र","कार्यालय/विभाग को आवेदन"],["shikayat","📣","शिकायत पत्र","विभागीय शिकायत"],["tippani","🗒️","टिप्पणी / नोटशीट","कार्यालयीय टिप्पणी"]]
 };
 const draftsFor = r => BASE_DRAFTS.concat((EXTRA_DRAFTS[r] || []).map(([k,e,n,d]) => ({k,e,n,d})));
 
@@ -340,7 +342,7 @@ function profile(el) {
    <div id="pArea"></div>
    <div class="btn-row"><button class="btn" id="pSave">Save ✔</button><button class="btn alt" data-go="details">Edit name/mobile</button></div></div>`;
   const area = $("#pArea");
-  const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", gps: (p.gps || []).slice(), clerkLevel: p.clerkLevel || "block" };
+  const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", gps: (p.gps || []).slice(), clerkLevel: p.clerkLevel || "block", designation: p.designation || "" };
   async function draw() {
     const role = $("#pRole").value; if (!role) { area.innerHTML = ""; return; }
     let scope = ROLES[role].scope; if (scope === "clerk") scope = st.clerkLevel === "district" ? "district" : "block";
@@ -351,6 +353,7 @@ function profile(el) {
       : `<label>${label}</label><input id="${id}" value="${esc(val)}" placeholder="${ph}">`;
     let h = `<label>State</label><select disabled><option>उत्तर प्रदेश</option></select>`;
     if (ROLES[role].scope === "clerk") h += `<label>Office level</label><select id="aLvl"><option value="block" ${st.clerkLevel === "block" ? "selected" : ""}>Block office</option><option value="district" ${st.clerkLevel === "district" ? "selected" : ""}>District office (DPRO/DDO/CDO)</option></select>`;
+    if (role === "other_staff") h += `<label>विभाग एवं पदनाम (Optional)</label><input id="aDesignation" maxlength="100" value="${esc(st.designation)}" placeholder="जैसे: राजस्व विभाग, कनिष्ठ सहायक">`;
     h += sel("aDist", "District", G.districts, st.district, "");
     if (scope !== "district") h += sel("aBlock", "Block", blocks, st.block, "Type block name");
     if (scope === "gp") h += sel("aGp", role === "resident" ? "Your Gram Panchayat" : "Gram Panchayat", gpsAll, st.gps[0] || "", "Type Gram Panchayat name");
@@ -376,12 +379,14 @@ function profile(el) {
     const role = $("#pRole").value; if (!role) return toast("Select your post");
     const v = id => { const x = $("#" + id); return x ? x.value.trim() : ""; };
     if ($("#aTeh")) st.tehsil = v("aTeh"); if ($("#aBlock")) st.block = v("aBlock"); if ($("#aGp")) st.gps = v("aGp") ? [v("aGp")] : [];
+    if (role === "other_staff") st.designation = v("aDesignation").slice(0,100);
     let scope = ROLES[role].scope; if (scope === "clerk") scope = st.clerkLevel === "district" ? "district" : "block";
     if (role !== "resident" && !st.district) return toast("Select district");
     if (role !== "resident" && scope !== "district" && !st.block) return toast("Select block");
     if (role !== "resident" && (scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
     Object.assign(S.profile, { role, state: "उत्तर प्रदेश", district: st.district, tehsil: scope.includes("gp") ? st.tehsil : "", block: scope === "district" ? "" : st.block,
-      gps: scope.includes("gp") ? st.gps : [], clerkLevel: role === "clerk" ? st.clerkLevel : "", sign: ROLES[role].n });
+      gps: scope.includes("gp") ? st.gps : [], clerkLevel: role === "clerk" ? st.clerkLevel : "",
+      designation: role === "other_staff" ? st.designation : "", sign: role === "other_staff" && st.designation ? st.designation : ROLES[role].n });
     saveProfile(); toast("Profile saved ✔"); const n = S.after || "home"; S.after = null; go(n);
   };
 }
@@ -414,8 +419,8 @@ function attachBar(onChange) {
 }
 
 /* ---------- चैट ---------- */
-const CHAT_ROLE_TITLES = { pradhan: 'प्रधान', prashasak: 'प्रशासक', sahayak: 'पंचायत सहायक', gpa: 'सचिव', gva: 'सचिव', ado: 'ADO पंचायत', bdo: 'BDO', clerk: 'लिपिक', adpro: 'ADPRO', dpro: 'DPRO', ddo: 'DDO', resident: 'पंचायत निवासी' };
-const CHAT_ENGLISH_TITLES = { pradhan: 'Pradhan', prashasak: 'Administrator', sahayak: 'Panchayat Assistant', gpa: 'Secretary', gva: 'Secretary', ado: 'ADO Panchayat', bdo: 'BDO', clerk: 'Clerk', adpro: 'ADPRO', dpro: 'DPRO', ddo: 'DDO', resident: 'Panchayat Resident' };
+const CHAT_ROLE_TITLES = { pradhan: 'प्रधान', prashasak: 'प्रशासक', sahayak: 'पंचायत सहायक', gpa: 'सचिव', gva: 'सचिव', ado: 'ADO पंचायत', bdo: 'BDO', clerk: 'लिपिक', adpro: 'ADPRO', dpro: 'DPRO', ddo: 'DDO', resident: 'पंचायत निवासी', other_staff: 'अन्य विभागीय कर्मचारी' };
+const CHAT_ENGLISH_TITLES = { pradhan: 'Pradhan', prashasak: 'Administrator', sahayak: 'Panchayat Assistant', gpa: 'Secretary', gva: 'Secretary', ado: 'ADO Panchayat', bdo: 'BDO', clerk: 'Clerk', adpro: 'ADPRO', dpro: 'DPRO', ddo: 'DDO', resident: 'Panchayat Resident', other_staff: 'Other Departmental Employee' };
 function cleanChatAnswer(value){return String(value||"").trim();}
 function chatParagraphs(text){const safe=esc(text).replace(/\*\*([^\n*]+)\*\*/g,"<strong>$1</strong>");return "<p>"+safe.replace(/\n\s*\n/g,"</p><p>").replace(/\n/g,"<br>")+"</p>";}
 function refsHtml(ids){
