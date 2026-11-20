@@ -1,0 +1,60 @@
+name: Build Panchayat AI Android
+on:
+  push:
+    branches: [panchayat-android-20261120]
+    paths: ['.github/workflows/panchayat-android.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Create Android project
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          files=json.loads("{\"settings.gradle\":\"pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }\\ndependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }\\nrootProject.name = 'PanchayatAI'\\ninclude ':app'\\n\",\"build.gradle\":\"plugins { id 'com.android.application' version '8.10.1' apply false }\\n\",\"gradle.properties\":\"android.useAndroidX=true\\norg.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8\\n\",\"app/build.gradle\":\"plugins { id 'com.android.application' }\\nandroid {\\n namespace 'in.techgaon.panchayatai'\\n compileSdk 36\\n defaultConfig {\\n  applicationId 'in.techgaon.panchayatai'\\n  minSdk 26\\n  targetSdk 36\\n  versionCode 1\\n  versionName '1.0.0'\\n }\\n buildTypes { release { minifyEnabled false } }\\n compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }\\n}\\ndependencies { implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3' }\\n\",\"app/src/main/AndroidManifest.xml\":\"<manifest xmlns:android=\\\"http://schemas.android.com/apk/res/android\\\">\\n <uses-permission android:name=\\\"android.permission.INTERNET\\\"/>\\n <application android:allowBackup=\\\"false\\\" android:icon=\\\"@mipmap/ic_launcher\\\" android:label=\\\"पंचायत AI\\\" android:supportsRtl=\\\"true\\\" android:theme=\\\"@android:style/Theme.Translucent.NoTitleBar\\\" android:usesCleartextTraffic=\\\"false\\\">\\n  <meta-data android:name=\\\"asset_statements\\\" android:resource=\\\"@string/asset_statements\\\"/>\\n  <activity android:name=\\\".MainActivity\\\" android:exported=\\\"true\\\" android:label=\\\"पंचायत AI\\\">\\n   <meta-data android:name=\\\"android.support.customtabs.trusted.DEFAULT_URL\\\" android:value=\\\"https://techgaon.in/panchayatai/\\\"/>\\n   <meta-data android:name=\\\"android.support.customtabs.trusted.STATUS_BAR_COLOR\\\" android:resource=\\\"@color/brand\\\"/>\\n   <meta-data android:name=\\\"android.support.customtabs.trusted.NAVIGATION_BAR_COLOR\\\" android:resource=\\\"@color/brand\\\"/>\\n   <intent-filter><action android:name=\\\"android.intent.action.MAIN\\\"/><category android:name=\\\"android.intent.category.LAUNCHER\\\"/></intent-filter>\\n   <intent-filter android:autoVerify=\\\"true\\\">\\n    <action android:name=\\\"android.intent.action.VIEW\\\"/><category android:name=\\\"android.intent.category.DEFAULT\\\"/><category android:name=\\\"android.intent.category.BROWSABLE\\\"/>\\n    <data android:scheme=\\\"https\\\" android:host=\\\"techgaon.in\\\" android:pathPrefix=\\\"/panchayatai/\\\"/>\\n   </intent-filter>\\n  </activity>\\n  <activity android:name=\\\"com.google.androidbrowserhelper.trusted.FocusActivity\\\"/>\\n </application>\\n</manifest>\\n\",\"app/src/main/java/in/techgaon/panchayatai/MainActivity.java\":\"package in.techgaon.panchayatai;\\npublic class MainActivity extends com.google.androidbrowserhelper.trusted.LauncherActivity {\\n @Override protected android.net.Uri getLaunchingUrl() {\\n  android.net.Uri uri = super.getLaunchingUrl();\\n  if (\\\"https\\\".equals(uri.getScheme()) && \\\"techgaon.in\\\".equals(uri.getHost()) &&\\n      uri.getPath() != null && uri.getPath().startsWith(\\\"/panchayatai/\\\")) return uri;\\n  return android.net.Uri.parse(\\\"https://techgaon.in/panchayatai/\\\");\\n }\\n}\\n\",\"app/src/main/res/values/strings.xml\":\"<resources>\\n <string name=\\\"asset_statements\\\">[{\\\\\\\"relation\\\\\\\":[\\\\\\\"delegate_permission/common.handle_all_urls\\\\\\\"],\\\\\\\"target\\\\\\\":{\\\\\\\"namespace\\\\\\\":\\\\\\\"web\\\\\\\",\\\\\\\"site\\\\\\\":\\\\\\\"https://techgaon.in\\\\\\\"}}]</string>\\n <color name=\\\"brand\\\">#13513A</color>\\n</resources>\\n\"}")
+          for name,content in files.items():
+           p=pathlib.Path('panchayat-android')/name
+           p.parent.mkdir(parents=True,exist_ok=True)
+           p.write_text(content,encoding='utf-8')
+          
+          PY
+      - name: Prepare icon and SDK
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y librsvg2-bin fonts-noto-core
+          mkdir -p panchayat-android/app/src/main/res/mipmap-xxxhdpi
+          rsvg-convert -w 192 -h 192 panchayatai/icon.svg -o panchayat-android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+          echo "sdk.dir=$ANDROID_HOME" > panchayat-android/local.properties
+      - name: Build APK and AAB
+        working-directory: panchayat-android
+        run: gradle --no-daemon assembleRelease bundleRelease lintRelease
+      - name: Collect verified unsigned builds
+        shell: bash
+        run: |
+          mkdir -p out
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f -v 4 panchayat-android/app/build/outputs/apk/release/app-release-unsigned.apk out/PanchayatAI-1.0.0-unsigned.apk
+          cp panchayat-android/app/build/outputs/bundle/release/app-release.aab out/PanchayatAI-1.0.0-unsigned.aab
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" out/apksigner.jar
+          cp panchayat-android/app/build/reports/lint-results-release.html out/lint-results.html
+          zip -r out/PanchayatAI-Android-source.zip panchayat-android -x '*/build/*' '*/.gradle/*' '*/local.properties'
+          sha256sum out/* > out/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PanchayatAI-Android-1.0.0
+          path: out/*
+          retention-days: 30
