@@ -22,7 +22,7 @@ window.PAI_CONFIG = {
   // UPI भुगतान (FoodGaon की तरह केवल UPI)
   upi: { vpa: "REPLACE_ME@upi", payeeName: "TechGaon AI Services" },
   plans: {
-    free:   { label: "निःशुल्क", price: 0, dailyChats: 10, dailyDrafts: 3 },
+    free:   { label: "निःशुल्क", price: 0, dailyChats: null, dailyDrafts: null },
     plus:   { label: "Plus मासिक", price: 49, days: 30 },
     yearly: { label: "Plus वार्षिक", price: 499, days: 365 }
   },
