@@ -1,4 +1,4 @@
-/* Panchayat AI: premium animated Home tiles, no change to app routing. */
+/* Panchayat AI: restrained illustrated Home tiles; preserve all original text, order and routes. */
 (() => {
   "use strict";
   const icons = {
@@ -20,13 +20,6 @@
     rti: `<rect x="17" y="11" width="53" height="67" rx="5" fill="#f7fbff" stroke="#9db7dd" stroke-width="2"/><text x="43" y="37" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-size="17" font-weight="900" fill="#345eac">RTI</text><path d="M27 46h29m-29 9h29m-29 9h20" stroke="#a7bad6" stroke-width="3" stroke-linecap="round"/><circle cx="65" cy="67" r="17" fill="#c8efff" fill-opacity=".75" stroke="#438ebc" stroke-width="5"/><path d="m77 80 12 12" stroke="#376da6" stroke-width="7" stroke-linecap="round"/>`,
     plans: `<path d="m48 9 12 25 28 4-20 20 5 29-25-13-25 13 5-29L8 38l28-4z" fill="#ffe1a0" stroke="#e6b45d" stroke-width="2"/><path d="m48 24 7 15 17 2-12 12 3 18-15-8-15 8 3-18-12-12 17-2z" fill="#fff3d3"/><path d="M72 12v10m-5-5h10" stroke="#80d1db" stroke-width="3" stroke-linecap="round"/>`
   };
-  const subs = {
-    chat:"पंचायत नियम व AI सहायता",tools:"फ़ाइल और टेक्स्ट टूल्स",
-    patra:"सरकारी पत्र तैयार करें",spasht:"नोटिस का उत्तर",
-    notice:"कारण बताओ नोटिस",aadesh:"आदेश-पत्र बनाएँ",
-    news:"पंचायत की खबरें",estimate:"काम की गणना",
-    rti:"सूचना का अधिकार",plans:"अतिरिक्त सुविधाएँ"
-  };
   function identify(tile) {
     if (tile.dataset.draft) return tile.dataset.draft;
     if (tile.dataset.go) return tile.dataset.go;
@@ -40,10 +33,6 @@
     const area = home?.querySelector(".home-options");
     if (!area || area.classList.contains("pai-home-premium")) return;
     area.classList.add("pai-home-premium");
-    const header=document.createElement("div");
-    header.className="pai-home-section-label";
-    header.innerHTML='<span>डिजिटल पंचायत की सुविधाएँ</span><small>अपना काम चुनें</small>';
-    area.insertBefore(header,area.firstChild);
     for (const tile of area.querySelectorAll(".tile")) {
       const kind=identify(tile);
       if (!kind || !Object.prototype.hasOwnProperty.call(icons,kind)) continue;
@@ -53,16 +42,7 @@
       holder.classList.add("pai-home-icon");
       holder.classList.remove("pai-ai-logo");
       holder.innerHTML=icon(kind);
-      if(!tile.querySelector("small") && subs[kind]){
-        const desc=document.createElement("small");
-        desc.textContent=subs[kind];
-        tile.appendChild(desc);
-      }
-      const arrow=document.createElement("span");
-      arrow.className="pai-home-arrow";
-      arrow.setAttribute("aria-hidden","true");
-      arrow.textContent="›";
-      tile.appendChild(arrow);
+      // Original headings and subtitles remain exactly as authored in app.js.
     }
   }
   window.PAI_HOME_UI={enhance};
