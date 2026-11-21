@@ -30,13 +30,13 @@ function showAndroidAppReturn() {
 }
 
 /* ---------- पद (भूमिकाएँ) ---------- */
-// scope: gp = एक GP, multigp = अधिकतम 20 GP, block, district, clerk = ब्लॉक/जनपद स्तर चुनें
+// scope: gp = एक GP, multigp = अधिकतम 3 Cluster और 25 GP, block, district, clerk = ब्लॉक/जनपद स्तर चुनें
 const ROLES = {
   pradhan:  { n: "ग्राम प्रधान", call: "प्रधान जी", scope: "gp" },
   prashasak:{ n: "प्रशासक (ग्राम पंचायत)", call: "प्रशासक जी", scope: "gp" },
-  gpa:      { n: "पंचायत सचिव (ग्राम पंचायत अधिकारी)", call: "सचिव जी", scope: "multigp" },
+  gpa:      { n: "सचिव (ग्राम पंचायत अधिकारी)", call: "सचिव जी", scope: "multigp" },
   sahayak:  { n: "पंचायत सहायक", call: "पंचायत सहायक जी", scope: "gp" },
-  gva:      { n: "पंचायत सचिव (ग्राम विकास अधिकारी)", call: "सचिव जी", scope: "multigp" },
+  gva:      { n: "सचिव (ग्राम विकास अधिकारी)", call: "सचिव जी", scope: "multigp" },
   ado:      { n: "सहायक विकास अधिकारी (पंचायत)", call: "ADO पंचायत जी", scope: "block" },
   bdo:      { n: "खण्ड विकास अधिकारी (BDO)", call: "BDO साहब", scope: "block" },
   clerk:    { n: "विभागीय लिपिक", call: "बाबू जी", scope: "clerk" },
@@ -274,6 +274,8 @@ const isPlus = () => { const p = S.profile && S.profile.plan; return p && p.unti
 // FoodGaon जैसा: लिंग के अनुसार भैया / बहन
 const sib = () => S.profile && S.profile.gender === "महिला" ? "बहन" : "भैया";
 const callName = () => S.profile ? ((S.profile.name || "").split(" ")[0] + " " + sib() + " जी") : "";
+// Home greeting uses exactly the first two meaningful name words (no surname after two).
+const greetingName = () => String(S.profile?.name || S.user?.displayName || "साथी").trim().split(/\s+/u).filter(Boolean).slice(0,2).join(" ");
 
 function chrome() {
   $("#loginTop").classList.toggle("hidden", !!S.user);
@@ -330,7 +332,7 @@ function home(el) {
   el.innerHTML = `
   <div class="card hero">
    <div class="hero-motion" aria-hidden="true"><span class="trace"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span></div>
-   <h1>${p ? 'प्रणाम <span class="pai-greeting-emoji" role="img" aria-label="प्रणाम">🙏</span> <span class="pai-greeting-name">' + esc(callName()) + '</span>' : "पंचायत AI"}</h1>
+   <h1>${p ? 'प्रणाम <span class="pai-greeting-emoji" role="img" aria-label="प्रणाम">🙏</span> <span class="pai-greeting-name">' + esc(greetingName()) + '</span>' : "पंचायत AI"}</h1>
    <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी में AI सहायता, सरकारी पत्र, नोटिस और पंचायत के उपयोगी Tools"}</p>
    </div>
   ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
@@ -490,7 +492,7 @@ function profile(el) {
    <div id="pArea"></div>
    <div class="btn-row"><button class="btn" id="pSave">Save ✔</button><button class="btn alt" data-go="details">Edit name/mobile</button></div></div>`;
   const area = $("#pArea");
-  const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", gps: (p.gps || []).slice(), clerkLevel: p.clerkLevel || "block", designation: p.designation || "" };
+  const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", clusters: (Array.isArray(p.clusters) ? p.clusters : p.cluster ? [p.cluster] : []).slice(0,3), gps: (Array.isArray(p.gps) ? p.gps : []).slice(0,25), clerkLevel: p.clerkLevel || "block", designation: p.designation || "" };
   async function draw() {
     const role = $("#pRole").value; if (!role) { area.innerHTML = ""; return; }
     let scope = ROLES[role].scope; if (scope === "clerk") scope = st.clerkLevel === "district" ? "district" : "block";
@@ -506,20 +508,35 @@ function profile(el) {
     if (scope !== "district") h += sel("aBlock", "Block", blocks, st.block, "Type block name");
     if (scope === "gp") h += sel("aGp", role === "resident" ? "Your Gram Panchayat" : "Gram Panchayat", gpsAll, st.gps[0] || "", "Type Gram Panchayat name");
     if (scope === "multigp") {
-      h += `<label>Gram Panchayats (max 20)</label><p class="hint">If you hold charge of more than one Gram Panchayat, select all of them.</p>
+      h += `<label for="aClusterTxt">Select Cluster name (अधिकतम 3)</label>
+       <p class="hint">अपने Block के Cluster का नाम लिखकर जोड़ें। अधिकतम 3 Cluster जोड़ सकते हैं।</p>
+       <div class="pai-cluster-add"><input id="aClusterTxt" maxlength="100" autocomplete="off" placeholder="Cluster का नाम"><button class="btn" id="aClusterBtn" type="button">+ Add</button></div>
+       <div class="gp-list" aria-label="चुने गए Cluster">${st.clusters.map((g,i)=>`<span class="chip">${esc(g)}<button type="button" aria-label="${esc(g)} Cluster हटाएँ" data-rm-cluster="${i}">✕</button></span>`).join("")}</div>
+       <p class="hint">${st.clusters.length}/3 Cluster selected</p>
+       <label>Gram Panchayats (max 25)</label><p class="hint">अपनी ग्राम पंचायतें चुनें। अधिकतम 25 GP जोड़ सकते हैं।</p>
        ${gpsAll.length ? `<select id="aGpAdd"><option value="">+ Add Gram Panchayat</option>${gpsAll.filter(x => !st.gps.includes(x)).map(x => `<option>${esc(x)}</option>`).join("")}</select>`
         : `<div style="display:flex;gap:6px"><input id="aGpTxt" placeholder="Gram Panchayat name"><button class="btn" id="aGpBtn" type="button">Add</button></div>`}
-       <div class="gp-list">${st.gps.map((g, i) => `<span class="chip">${esc(g)}<b data-rm="${i}">✕</b></span>`).join("")}</div><p class="hint">${st.gps.length}/20 selected</p>`;
+       <div class="gp-list">${st.gps.map((g, i) => `<span class="chip">${esc(g)}<b data-rm="${i}">✕</b></span>`).join("")}</div><p class="hint">${st.gps.length}/25 selected</p>`;
     }
     area.innerHTML = h;
     const on = (id, f) => { const x = $("#" + id); if (x) x.onchange = f; };
     on("aLvl", e => { st.clerkLevel = e.target.value; draw(); });
-    on("aDist", e => { st.district = e.target.value; st.tehsil = st.block = ""; st.gps = []; draw(); });
+    on("aDist", e => { st.district = e.target.value; st.tehsil = st.block = ""; st.clusters = []; st.gps = []; draw(); });
     on("aTeh", e => { st.tehsil = e.target.value; });
-    on("aBlock", e => { st.block = e.target.value; if (geo && geo.blocks) { st.gps = []; draw(); } });
+    on("aBlock", e => { st.block = e.target.value; st.clusters = []; st.gps = []; draw(); });
     on("aGp", e => { st.gps = [e.target.value]; });
-    on("aGpAdd", e => { if (st.gps.length >= 20) return toast("Maximum 20 Gram Panchayats"); st.gps.push(e.target.value); draw(); });
-    const b = $("#aGpBtn"); if (b) b.onclick = () => { const v = $("#aGpTxt").value.trim(); if (!v) return; if (st.gps.length >= 20) return toast("Maximum 20 Gram Panchayats"); st.gps.push(v); draw(); };
+    on("aGpAdd", e => { if (!e.target.value) return; if (st.gps.length >= 25) return toast("Maximum 25 Gram Panchayats"); if (!st.gps.includes(e.target.value)) st.gps.push(e.target.value); draw(); });
+    const b = $("#aGpBtn"); if (b) b.onclick = () => { const v = $("#aGpTxt").value.trim(); if (!v) return; if (st.gps.length >= 25) return toast("Maximum 25 Gram Panchayats"); if (!st.gps.includes(v)) st.gps.push(v); draw(); };
+    const addCluster = () => {
+      const field = $("#aClusterTxt"), name = (field?.value || "").trim().replace(/\s+/gu," ");
+      if (!name) return;
+      if (st.clusters.includes(name)) return toast("यह Cluster पहले से जुड़ा है");
+      if (st.clusters.length >= 3) return toast("अधिकतम 3 Cluster चुन सकते हैं");
+      st.clusters.push(name); draw();
+    };
+    const addBtn = $("#aClusterBtn"); if (addBtn) addBtn.onclick = addCluster;
+    const clusterField = $("#aClusterTxt"); if (clusterField) clusterField.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addCluster(); } };
+    area.querySelectorAll("[data-rm-cluster]").forEach(x => x.onclick = () => { st.clusters.splice(Number(x.dataset.rmCluster),1); draw(); });
     area.querySelectorAll("[data-rm]").forEach(x => x.onclick = () => { st.gps.splice(+x.dataset.rm, 1); draw(); });
   }
   $("#pRole").onchange = draw; draw();
@@ -531,9 +548,12 @@ function profile(el) {
     let scope = ROLES[role].scope; if (scope === "clerk") scope = st.clerkLevel === "district" ? "district" : "block";
     if (role !== "resident" && !st.district) return toast("Select district");
     if (role !== "resident" && scope !== "district" && !st.block) return toast("Select block");
+    if (role !== "resident" && scope === "multigp" && !st.clusters.length) return toast("कम-से-कम 1 Cluster जोड़ें");
+    if (scope === "multigp" && st.clusters.length > 3) return toast("अधिकतम 3 Cluster");
+    if (scope === "multigp" && st.gps.length > 25) return toast("अधिकतम 25 Gram Panchayats");
     if (role !== "resident" && (scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
-    Object.assign(S.profile, { role, state: "उत्तर प्रदेश", district: st.district, tehsil: scope.includes("gp") ? st.tehsil : "", block: scope === "district" ? "" : st.block,
-      gps: scope.includes("gp") ? st.gps : [], clerkLevel: role === "clerk" ? st.clerkLevel : "",
+    Object.assign(S.profile ||= {}, { role, state: "उत्तर प्रदेश", district: st.district, tehsil: scope.includes("gp") ? st.tehsil : "", block: scope === "district" ? "" : st.block,
+      clusters: scope === "multigp" ? st.clusters.slice(0,3) : [], gps: scope.includes("gp") ? st.gps.slice(0,25) : [], clerkLevel: role === "clerk" ? st.clerkLevel : "",
       designation: role === "other_staff" ? st.designation : "", sign: role === "other_staff" && st.designation ? st.designation : ROLES[role].n, profileComplete: true });
     S.needsProfileSetup=false;
     saveProfile(); toast("Profile saved ✔"); const n = S.after || "home"; S.after = null; go(n);
