@@ -1,0 +1,30 @@
+/* Panchayat AI | private Gram Pradhan letterhead studio */
+.pai-lh-studio{display:grid;gap:13px;padding-bottom:22px}
+.pai-lh-studio h2{margin:2px 0 0;font-size:22px}
+.pai-lh-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.pai-lh-switch button{font:700 12px/1.45 "Noto Sans Devanagari",sans-serif;padding:11px 8px;background:var(--card);color:var(--ink);border:1px solid var(--bd);border-radius:12px;cursor:pointer;min-height:53px}
+.pai-lh-switch button.on{background:#ebf5ff;color:#185a88;border-color:#80bbd6}
+.pai-lh-fields{padding:17px!important}
+.pai-lh-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.pai-lh-grid label{font-size:12px;font-weight:700;color:var(--ink);min-width:0}
+.pai-lh-grid input,.pai-lh-grid select{margin-top:5px;width:100%;padding:9px 10px;box-sizing:border-box}
+.pai-lh-upload-form{background:#f2f7fd;border:1px dashed #7fa9c9;border-radius:12px;padding:12px;margin-top:9px}
+.pai-lh-upload-form[hidden],.pai-lh-preview[hidden]{display:none!important}
+.pai-lh-upload-form input[type=file]{width:100%;max-width:100%;font-size:12px}
+.pai-lh-upload-form input[type=range]{width:100%;max-width:100%}
+.pai-lh-preview{margin-top:7px;scroll-margin-top:85px}
+.pai-lh-page{box-sizing:border-box;background:#fff;color:#23334e;width:100%;max-width:210mm;min-height:297mm;padding:20mm;box-shadow:0 5px 25px #11365720;border:1px solid #cbd8e6;font:12pt/1.7 "Noto Sans Devanagari",sans-serif;overflow-wrap:anywhere}
+.pai-lh-page .pai-lh-demo{padding-top:16px;font-size:13px;color:#35465d}
+.pai-lh-demo small{display:block;color:#9a7d53;background:#fff3dd;padding:7px;border-radius:6px}
+.pai-lh-header{box-sizing:border-box;background:#fff;color:#243750;page-break-inside:avoid;break-inside:avoid;margin:0 0 14pt;padding:0 0 7pt}
+.pai-lh-header p{margin:4px 0;line-height:1.6}
+.pai-lh-created-title{line-height:1.35}
+.pai-lh-modern{background:#f5fafe;padding:12px!important;border-top:5px solid var(--pai-feature,#15a39b)}
+.pai-lh-upload{padding:0;margin:0 0 14pt;max-width:100%;border-bottom:1px solid #dedede}
+.pai-lh-upload-image{display:block;max-width:100%;width:100%;height:auto;object-fit:contain;object-position:center top}
+.inline-draft-stationery{margin:0;padding:7px 6px 0;background:#fff;color:#243750}
+.inline-draft-stationery:empty{display:none}
+.inline-draft-stationery+.inline-draft-paper{padding-top:7px}
+.pai-letterhead-status{font-size:12px;color:#4b7295}
+@media(max-width:440px){.pai-lh-grid{grid-template-columns:1fr}.pai-lh-page{min-height:170mm;padding:12mm}.pai-lh-switch button{font-size:11px}}
+@media print{.pai-lh-page{box-shadow:none;border:0;max-width:none}.pai-lh-studio button{display:none}}
