@@ -36,9 +36,20 @@ jobs:
               if(/gstatic|firebase|google|techgaon/.test(host))
                 console.log('FAILED_RESOURCE',host,r.failure()?.errorText||'unknown');
             });
-            page.on('response',r=>{
-              if(/firebasevertexai\.googleapis\.com/.test(r.url()))
+            page.on('response',async r=>{
+              const url=r.url();
+              if(/firebasevertexai\.googleapis\.com/.test(url))
                 console.log('AI_HTTP_STATUS',r.status());
+              if(/firebaseappcheck\.googleapis\.com|recaptchaenterprise\.googleapis\.com/.test(url)&&r.status()>=400){
+                let category='';
+                try{
+                  const data=JSON.parse(await r.text());
+                  category=String(data.error?.message||data.error?.status||'')
+                    .replace(/https?:\/\/[^\s"'<>]+/g,'[URL]')
+                    .replace(/AIza[0-9A-Za-z_-]{20,}/g,'[KEY]').slice(0,260);
+                }catch{}
+                console.log('APP_CHECK_HTTP',new URL(url).hostname,r.status(),category);
+              }
             });
             try{
               await page.goto('https://techgaon.in/panchayatai/',{waitUntil:'domcontentloaded',timeout:45000});
