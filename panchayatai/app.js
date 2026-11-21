@@ -170,11 +170,24 @@ async function api(path, body) {
     await S.db.collection("payments").add({ uid: S.user.uid, email: S.user.email, name: S.profile.name, phone: S.profile.phone, plan: body.plan, utr: body.utr, ref: body.ref, status: "pending", at: Date.now() });
     return { ok: true };
   }
-  // No artificial Free attachment count cap while default is Unlimited.
-  await aiReady();
-  await useQuota(path === "/chat" ? "chat" : "draft");
-  try { return await (path === "/chat" ? window.PAI_AI.chat(body) : window.PAI_AI.draft(body)); }
-  catch (e) { console.error(e); throw new Error("AI से उत्तर नहीं मिला: " + (e.message || "").slice(0, 120)); }
+  // Preserve the real failure category; never dump Firebase API URLs or tokens.
+  try{
+    await aiReady();
+    await useQuota(path === "/chat" ? "chat" : "draft");
+    return await (path === "/chat" ? window.PAI_AI.chat(body) : window.PAI_AI.draft(body));
+  }catch(error){
+    if(isDailyLimitError(error))throw error;
+    const diagnostics=window.PAI_AI_ERRORS?.explain(error,path)||{
+      code:"AI_UNKNOWN",status:null,title:"AI सेवा से जवाब नहीं मिला",
+      message:"AI कनेक्शन जाँचकर दोबारा प्रयास करें।"
+    };
+    console.warn("Panchayat AI request failure",{
+      type:diagnostics.code,stage:path,status:diagnostics.status||null
+    });
+    const safe=window.PAI_AI_ERRORS?.asError(error,path);
+    if(safe)throw safe;
+    throw new Error(diagnostics.title+" — "+diagnostics.message+" ["+diagnostics.code+"]");
+  }
 }
 
 /* Curated original PDFs only: owner-managed list starts empty */
@@ -787,7 +800,9 @@ function chat(el) {
   const uid=S.user.uid,archiveKey="chat_archives_v1_"+uid,activeKey="chat_general_v1_"+uid;
   const readArchives=()=>Array.isArray(LS.get(archiveKey))?(LS.get(archiveKey)||[]):[];
   el.innerHTML='<div class="pai-chat-mode"><button type="button" class="on" aria-current="page">✦ AI Help</button>'+
-    '<button type="button" id="paiStartNewChat">＋ New Chat</button></div>'+
+    '<button type="button" id="paiStartNewChat">＋ New Chat</button>'+
+    '<button type="button" data-ai-health>◉ AI कनेक्शन जाँचें</button></div>'+
+    '<p class="pai-ai-status" role="status" aria-live="polite" hidden></p>'+
     '<div class="pai-chat-archive"><label for="paiChatArchive">पुरानी बातचीत</label>'+
     '<select id="paiChatArchive"><option value="">— History देखें —</option></select></div>'+
     '<div class="draft-chat-header"><h2>AI Help</h2></div>'+
