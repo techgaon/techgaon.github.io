@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Panchayat AI v1.0.5: native safety launcher, with verified full-screen
+ * Panchayat AI v1.0.6: immediate full-screen launch with native fallback only
  * Trusted Web Activity (TWA) as the default, not a plain Custom Tab.
  * This keeps Chrome's Google/Firebase auth session intact.
  */
@@ -34,6 +34,13 @@ public class MainActivity extends Activity {
     private static final String TAG = "PanchayatAITWA";
     private static final String SITE = "https://techgaon.in/panchayatai/";
     private TextView status;
+    private LinearLayout fallbackView;
+    /** Only show the old native screen if the browser cannot launch. */
+    private void showFallbackScreen() {
+        if (fallbackView != null && !isFinishing()) {
+            setContentView(fallbackView);
+        }
+    }
     private CustomTabsServiceConnection tabsConnection;
     private boolean tabsBound = false;
     private boolean launchPending = false;
@@ -58,6 +65,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(12, 73, 49));
         getWindow().setNavigationBarColor(Color.rgb(12, 73, 49));
+        getWindow().getDecorView().setBackgroundColor(Color.rgb(247, 249, 247));
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -90,10 +98,10 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(-1, dp(80));
         statusParams.topMargin = dp(12);
         root.addView(status, statusParams);
-        setContentView(root);
-
+        // No intermediate page or delay on a successful app launch.
+        fallbackView = root;
         open.setOnClickListener(v -> openSite());
-        if (state == null) new Handler(Looper.getMainLooper()).postDelayed(this::openSite, 350);
+        openSite();
     }
 
     @Override
@@ -103,7 +111,7 @@ public class MainActivity extends Activity {
         Uri uri = intent == null ? null : intent.getData();
         if (uri != null && "panchayatai".equals(uri.getScheme()) &&
                 "open".equals(uri.getHost())) {
-            new Handler(Looper.getMainLooper()).postDelayed(this::openSite, 250);
+            openSite();
         }
     }
 
@@ -139,7 +147,8 @@ public class MainActivity extends Activity {
                                 Uri.parse(SITE)).build(session);
                         twa.getIntent().setPackage(chosenBrowser);
                         twa.launchTrustedWebActivity(MainActivity.this);
-                        status.setText("पंचायत AI खुल रहा है।");
+                        // Remove launcher activity from back stack after opening TWA.
+                        finish();
                     } catch (Exception e) {
                         Log.w(TAG, "Trusted Web Activity launch failed", e);
                         openBrowserFallback();
@@ -150,7 +159,11 @@ public class MainActivity extends Activity {
 
                 @Override
                 public void onServiceDisconnected(ComponentName name) {
-                    launchPending = false;
+                    if (launchPending) {
+                        launchPending = false;
+                        status.setText("Chrome से कनेक्शन टूट गया। फिर से खोलें दबाएँ।");
+                        showFallbackScreen();
+                    }
                 }
             };
             tabsBound = CustomTabsClient.bindCustomTabsService(this, chosenBrowser, tabsConnection);
@@ -163,6 +176,7 @@ public class MainActivity extends Activity {
                     if (launchPending && !isFinishing() && !isDestroyed()) {
                         launchPending = false;
                         status.setText("Chrome तैयार नहीं है। फिर से खोलें दबाएँ।");
+                        showFallbackScreen();
                     }
                 }, 7000);
             }
@@ -184,7 +198,7 @@ public class MainActivity extends Activity {
                         .build();
                 tab.intent.setPackage(browser);
                 tab.launchUrl(this, site);
-                status.setText("Full-Screen उपलब्ध नहीं; सुरक्षित Browser Tab खुला है।");
+                finish();
                 return;
             }
         } catch (Exception e) {
@@ -199,13 +213,15 @@ public class MainActivity extends Activity {
                 if (pkg == null || pkg.equals(getPackageName())) continue;
                 intent.setPackage(pkg);
                 startActivity(intent);
-                status.setText("Browser में पंचायत AI खुल रहा है।");
+                finish();
                 return;
             }
             status.setText("Chrome इंस्टॉल/अपडेट करके फिर खोलें दबाएँ।");
+            showFallbackScreen();
         } catch (Exception e) {
             Log.e(TAG, "No browser available", e);
             status.setText("Browser नहीं खुल सका। Chrome अपडेट करें।");
+            showFallbackScreen();
         }
     }
 
