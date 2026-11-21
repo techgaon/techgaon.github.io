@@ -687,6 +687,10 @@ function draftEdit(el) {
    <label class="draft-prompt" for="pts">संक्षेप में लिखें कि क्या बनाना है</label>
    <textarea id="pts" rows="3" placeholder="यहाँ लिखें…">${esc(S.draftSeed || "")}</textarea>
    <div class="ex-list"><button class="ex ex-main" type="button">${esc(ex[0])}</button><div class="ex-row"><button class="ex" type="button">${esc(ex[1])}</button><button class="ex" type="button">${esc(ex[2])}</button></div></div>
+   <label for="draftGP">इस पत्र की ग्राम पंचायत</label>
+   <input id="draftGP" list="draftGPList" value="${esc((S.profile.gps || []).length === 1 ? S.profile.gps[0] : "")}" placeholder="पंचायत चुनें या निर्देश में नाम लिखें">
+   <datalist id="draftGPList">${(S.profile.gps || []).map(g=>`<option value="${esc(g)}"></option>`).join("")}</datalist>
+   <p class="hint">तारीख, घटना के दिन और उत्तर अवधि नहीं बताएँगे तो उनके लिए खाली स्थान रहेगा। अंतिम पत्र जाँचकर ही जारी करें।</p>
    <div id="attHere"></div>
    <div class="btn-row"><button class="btn saf" id="mk">✨ Generate in 1 minute</button></div></div>
    <div id="out"></div>`;
@@ -696,18 +700,25 @@ function draftEdit(el) {
     const req = $("#pts").value.trim(); if (!req && !S.att.length) return toast("Please write what you need");
     const done = progress($("#mk"), "⏳ बन रहा है…");
     try {
-      const r = await api("/draft", { kind: d.n, profile: S.profile, points: req, gp: (S.profile.gps || [])[0] || "", att: S.att.splice(0),
+      const r = await api("/draft", { kind: d.n, profile: S.profile, points: req, gp: $("#draftGP").value.trim(), att: S.att.slice(),
         refs: [] });
-      done(true); showDraft(r.html, r.refs || [], d.n);
+      done(true); showDraft(r.html, r.refs || [], d.n, 12, r.review);
     } catch (e) { done(false);if(isDailyLimitError(e))showUpgrade(e.quotaKind,e.limit,e.code==="PLUS_LIMIT");else toast(e.message); }
   };
 }
-function showDraft(html, refs, kind, savedFontSize=12) {
+function showDraft(html, refs, kind, savedFontSize=12, review=null) {
   const out = $("#out");
-  out.innerHTML = `<div class="card"><p class="hint">✏️ Tap the letter to edit it directly.</p><div class="paper" id="paper" contenteditable="true">${html}</div>
+  out.innerHTML = `<div class="card"><p class="hint">✏️ पत्र पर टैप करके संपादित करें।</p><div id="draftReview"><b>जारी करने से पहले समीक्षा आवश्यक है</b><p>नाम, पद, ग्राम पंचायत, आरोप/तथ्य, तारीख, समय-सीमा, संलग्नक और सक्षम हस्ताक्षरकर्ता का मूल अभिलेख से मिलान करें। यह अभी कार्यालय द्वारा जारी पत्र नहीं है।</p>${review?.attachmentReview ? `<p>फोटो/PDF में दिए तथ्यों की अलग से जाँच करें; उनका स्वचालित पाठ मिलान पूरा नहीं हुआ है।</p>` : ""}${review?.missing?.length ? `<p>भरने योग्य विवरण: ${esc(review.missing.join("; "))}</p>` : ""}${review?.sourceIds?.length ? `<details><summary>प्रारूप का आधार</summary><p>${esc(review.sourceIds.join(", "))} — पुराने नमूनों से केवल संरचना ली गई है, कानूनी आधार नहीं।</p></details>` : ""}<label><input type="checkbox" id="reviewedDraft" style="width:auto;display:inline-block"> मैंने वर्तमान पत्र और अभिलेख जाँच लिए हैं।</label></div><div class="paper" id="paper" contenteditable="true">${html}</div>
    <div class="btn-row"><button class="btn" id="dcopy">📋 Copy</button><button class="btn" id="dpdf">⬇ PDF</button><button class="btn alt" id="dword">⬇ Word (.docx)</button><button class="btn alt" id="dsave">💾 Save</button><button class="btn alt" id="dwa">WhatsApp</button></div>${refsHtml(refs)}</div>`;
+  const exportIds = ["dcopy", "dpdf", "dword", "dwa"];
+  const resetReview = () => { $("#reviewedDraft").checked=false; exportIds.forEach(id=>$("#"+id).disabled=true); };
+  resetReview();
+  $("#reviewedDraft").onchange = e => exportIds.forEach(id=>$("#"+id).disabled=!e.target.checked);
+  $("#paper").addEventListener("input", resetReview);
   const roleTitle = S.profile ? (ROLES[S.profile.role]?.n || S.profile.designation || "कार्यालय") : "कार्यालय";
   window.PAI_EDITOR?.mount({paper:$("#paper"),profile:S.profile,role:roleTitle,toast,docSize:savedFontSize});
+  const reviewObserver = new MutationObserver(resetReview);
+  reviewObserver.observe($("#paper"), {childList:true,subtree:true,characterData:true});
   const name = kind + "_" + new Date().toISOString().slice(0, 10);
   $("#dcopy").onclick = async () => { const t = $("#paper").innerText; try { await navigator.clipboard.writeText(t); } catch { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); document.execCommand("copy"); x.remove(); } toast("Copied ✔"); };
   const makeLetterPdf = async () => {
@@ -751,7 +762,7 @@ function showDraft(html, refs, kind, savedFontSize=12) {
     } catch(e) {console.error(e);toast("Word Error: "+(e.message||"फिर कोशिश करें"));}
     finally{button.disabled=false;}
   };
-  $("#dsave").onclick = () => { const h = LS.get("drafts") || []; h.unshift({ kind, html: $("#paper").innerHTML, refs, size:Number($("#paper").dataset.docSize||12), at: Date.now() }); LS.set("drafts", h.slice(0, 50)); toast("Saved ✔"); };
+  $("#dsave").onclick = () => { const h = LS.get("drafts") || []; h.unshift({ kind, html: $("#paper").innerHTML, refs, review, size:Number($("#paper").dataset.docSize||12), at: Date.now() }); LS.set("drafts", h.slice(0, 50)); toast("Saved ✔"); };
   $("#dwa").onclick = async () => {
     const message=$("#paper").innerText.trim();
     if(!message){toast("Nothing to share");return;}
@@ -773,7 +784,7 @@ function showDraft(html, refs, kind, savedFontSize=12) {
 function history(el) {
   const h = LS.get("drafts") || [];
   el.innerHTML = `<h2>My Drafts</h2>` + (h.length ? h.map((x, i) => `<div class="lib-item"><a data-i="${i}"><b>${esc(x.kind)}</b></a><small>${new Date(x.at).toLocaleString("hi-IN")}</small></div>`).join("") : `<p class="hint">No saved drafts yet.</p>`) + `<div id="out"></div>`;
-  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind, x.size||12); });
+  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind, x.size||12, x.review); });
 }
 
 /* ---------- पंचायत न्यूज़ (Inshorts जैसी छोटी ख़बरें) ---------- */
