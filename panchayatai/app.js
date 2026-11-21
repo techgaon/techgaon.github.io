@@ -356,6 +356,12 @@ function home(el) {
   </div>`;
   const homeGoogleLogin = el.querySelector("#homeGoogleLogin");
   if (homeGoogleLogin) homeGoogleLogin.onclick = startGoogleLogin;
+  window.PAI_DASH?.mount(el, {
+    profile:p,user:S.user,drafts:draftsFor(p?.role||"resident"),
+    roleName:p?(ROLES[p.role]||ROLES.resident).n:"",
+    design:liveSettings?.design||{},history:LS.get("navHistory")||[],
+    saved:(LS.get("drafts")||[]).length
+  });
   el.querySelectorAll("[data-draft]").forEach(t => t.onclick = () => { if (needLogin("draft")) return; S.draftType = t.dataset.draft; go("draftEdit"); });
   el.querySelectorAll("[data-ask]").forEach(t => t.onclick = () => { if (needLogin("chat")) return; S.pendingAsk = t.dataset.ask; go("chat"); });
 }
