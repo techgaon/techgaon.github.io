@@ -146,7 +146,10 @@
     section.setAttribute("tabindex","0");
     const reduceMotion = () => document.body.classList.contains("pai-motion-off") ||
       (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    let index = 0, lastManual = 0, pointerStart = null, paused = false;
+    const pauseKey="pai_scenes_paused_v1";
+    const readPaused=()=>{try{return localStorage.getItem(pauseKey)==="1";}catch{return false;}};
+    let index=0,lastManual=0,pointerStart=null,paused=readPaused();
+    document.body.classList.toggle("pai-animations-paused",paused);
     const paint = () => {
       const scene = scenes[index];
       section.classList.remove("pai-scene-on");
@@ -196,6 +199,8 @@
     section.addEventListener("click",event => {
       if(event.target.closest('.pai-scene-pause')){
         paused=!paused;
+        document.body.classList.toggle("pai-animations-paused",paused);
+        try{localStorage.setItem(pauseKey,paused?"1":"0");}catch{}
         const button=section.querySelector('.pai-scene-pause');
         button.textContent=paused?'▶':'⏸';
         button.title=paused?'दृश्य चलाएँ':'दृश्य रोकें';
