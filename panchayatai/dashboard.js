@@ -65,11 +65,53 @@
     </svg>`;
   }
 
+
+  const documentScene = `<svg viewBox="0 0 260 178" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+    <circle cx="129" cy="86" r="77" fill="#c9edf3" opacity=".58"/>
+    <rect x="40" y="42" width="126" height="112" rx="12" fill="#8dbdcb" opacity=".27" transform="rotate(-7 103 98)"/>
+    <rect x="61" y="24" width="135" height="137" rx="13" fill="#fff" stroke="#8bbccb" stroke-width="2"/>
+    <rect x="61" y="24" width="135" height="29" rx="12" fill="#285c8d"/>
+    <rect x="61" y="40" width="135" height="13" fill="#285c8d"/>
+    <text x="129" y="43" text-anchor="middle" fill="#fff" font-family="Noto Sans Devanagari,sans-serif" font-size="13" font-weight="800">पंचायत AI</text>
+    <path d="M80 70h96M80 81h89M80 92h74M80 103h83M80 114h56" stroke="#9ac8d4" stroke-width="4" stroke-linecap="round" class="pai-laptop-lines"/>
+    <rect x="79" y="126" width="55" height="20" rx="8" fill="#e4f9f1"/>
+    <path d="M90 135l6 5 9-10" fill="none" stroke="#20a788" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="pai-happy-spark"/>
+    <path d="M142 135h32" stroke="#a0bfc8" stroke-width="3" stroke-linecap="round"/>
+    <g class="pai-orbit-a"><circle cx="205" cy="50" r="25" fill="#e8fffa" stroke="#65c8b7" stroke-width="2.5"/><path d="M194 51l8 8 15-18" fill="none" stroke="#1cae92" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g class="pai-orbit-b"><rect x="18" y="66" width="39" height="42" rx="12" fill="#24618a"/><text x="37" y="93" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" font-weight="800" fill="#fff">AI</text></g>
+    <circle cx="212" cy="115" r="5" fill="#5ac9bb"/><path d="M218 128h12m-6-6v12" stroke="#68bcc8" stroke-width="3" stroke-linecap="round"/>
+  </svg>`;
+
+  const meetingScene = `<svg viewBox="0 0 260 178" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+    <circle cx="130" cy="88" r="77" fill="#c7ebf0" opacity=".65"/>
+    <path d="M25 151Q125 137 236 151" fill="none" stroke="#8ebfc9" stroke-width="4" stroke-linecap="round"/>
+    <path d="M79 46l31-27h43l30 27" fill="#377f90" stroke="#336d85" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="86" y="46" width="91" height="54" rx="5" fill="#f0faf9" stroke="#88b6bf" stroke-width="2"/>
+    <rect x="100" y="57" width="63" height="30" rx="4" fill="#d5f5f2"/>
+    <text x="131.5" y="69" text-anchor="middle" fill="#246185" font-family="Noto Sans Devanagari,sans-serif" font-size="8" font-weight="800">पंचायत</text>
+    <text x="131.5" y="81" text-anchor="middle" fill="#1d928d" font-family="Manrope,Arial,sans-serif" font-size="11" font-weight="800">AI</text>
+    <path d="M84 101h97" stroke="#6ca4b5" stroke-width="5" stroke-linecap="round"/>
+    <g class="pai-orbit-b">
+      <circle cx="55" cy="106" r="13" fill="#c78c68"/><path d="M35 146q0-27 20-27t20 27z" fill="#448d9e"/>
+      <path d="M45 102q0-14 10-14t10 14" fill="#233b54"/>
+    </g>
+    <g class="pai-orbit-a">
+      <circle cx="204" cy="104" r="13" fill="#dda37d"/><path d="M184 147q0-28 20-28t20 28z" fill="#477eab"/>
+      <path d="M191 101q0-15 13-15t13 15" fill="#2f4156"/>
+    </g>
+    <circle cx="130" cy="126" r="12" fill="#d8a583"/><path d="M106 160q0-25 24-25t24 25z" fill="#8b76aa"/>
+    <path d="M119 123q0-15 11-15t11 15" fill="#2c425b"/>
+    <g class="pai-happy-spark"><path d="M199 28l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#ffc56e"/></g>
+    <path d="M32 62h20m-10-10v20" stroke="#57bcb7" stroke-width="3" stroke-linecap="round"/>
+  </svg>`;
+
   const scenes = [
     {tag:"स्मार्ट पंचायत",title:"सचिव के साथ पंचायत AI",detail:"कंप्यूटर पर काम करता सचिव, चारों ओर AI की सहायता।",art:workingSecretary},
     {tag:"काम हुआ आसान",title:"खुश हैं पंचायत सचिव",detail:"पत्र, नोटिस और आख्या तैयार—काम तेज़, मुस्कान बरकरार।",art:happyPerson("#467fae","paper")},
     {tag:"डिजिटल ग्राम पंचायत",title:"खुश हैं ग्राम प्रधान",detail:"योजनाएँ, प्रस्ताव और जानकारी अब समझना आसान।",art:happyPerson("#438b87","village")},
-    {tag:"हर साथी की मदद",title:"खुश हैं पंचायत सहायक",detail:"दैनिक कार्यालयी काम में AI बना उपयोगी साथी।",art:happyPerson("#805f9e","help")}
+    {tag:"हर साथी की मदद",title:"खुश हैं पंचायत सहायक",detail:"दैनिक कार्यालयी काम में AI बना उपयोगी साथी।",art:happyPerson("#805f9e","help")},
+    {tag:"सरकारी पत्राचार",title:"मिनटों में पत्र और नोटिस",detail:"AI की सहायता से साफ-सुथरे सरकारी दस्तावेज़ तैयार।",art:documentScene},
+    {tag:"स्मार्ट ग्राम सभा",title:"डिजिटल पंचायत बैठक",detail:"योजनाओं और प्रस्तावों पर सभी को मिले स्पष्ट जानकारी।",art:meetingScene}
   ];
 
   function addGreetingEmblem(hero) {
