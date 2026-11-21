@@ -701,12 +701,12 @@ function draftEdit(el) {
     } catch (e) { done(false);if(isDailyLimitError(e))showUpgrade(e.quotaKind,e.limit,e.code==="PLUS_LIMIT");else toast(e.message); }
   };
 }
-function showDraft(html, refs, kind) {
+function showDraft(html, refs, kind, savedFontSize=12) {
   const out = $("#out");
   out.innerHTML = `<div class="card"><p class="hint">✏️ Tap the letter to edit it directly.</p><div class="paper" id="paper" contenteditable="true">${html}</div>
    <div class="btn-row"><button class="btn" id="dcopy">📋 Copy</button><button class="btn" id="dpdf">⬇ PDF</button><button class="btn alt" id="dword">⬇ Word (.docx)</button><button class="btn alt" id="dsave">💾 Save</button><button class="btn alt" id="dwa">WhatsApp</button></div>${refsHtml(refs)}</div>`;
   const roleTitle = S.profile ? (ROLES[S.profile.role]?.n || S.profile.designation || "कार्यालय") : "कार्यालय";
-  window.PAI_EDITOR?.mount({paper:$("#paper"),profile:S.profile,role:roleTitle,toast});
+  window.PAI_EDITOR?.mount({paper:$("#paper"),profile:S.profile,role:roleTitle,toast,docSize:savedFontSize});
   const name = kind + "_" + new Date().toISOString().slice(0, 10);
   $("#dcopy").onclick = async () => { const t = $("#paper").innerText; try { await navigator.clipboard.writeText(t); } catch { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); document.execCommand("copy"); x.remove(); } toast("Copied ✔"); };
   const makeLetterPdf = async () => {
@@ -750,7 +750,7 @@ function showDraft(html, refs, kind) {
     } catch(e) {console.error(e);toast("Word Error: "+(e.message||"फिर कोशिश करें"));}
     finally{button.disabled=false;}
   };
-  $("#dsave").onclick = () => { const h = LS.get("drafts") || []; h.unshift({ kind, html: $("#paper").innerHTML, refs, at: Date.now() }); LS.set("drafts", h.slice(0, 50)); toast("Saved ✔"); };
+  $("#dsave").onclick = () => { const h = LS.get("drafts") || []; h.unshift({ kind, html: $("#paper").innerHTML, refs, size:Number($("#paper").dataset.docSize||12), at: Date.now() }); LS.set("drafts", h.slice(0, 50)); toast("Saved ✔"); };
   $("#dwa").onclick = async () => {
     const message=$("#paper").innerText.trim();
     if(!message){toast("Nothing to share");return;}
@@ -772,7 +772,7 @@ function showDraft(html, refs, kind) {
 function history(el) {
   const h = LS.get("drafts") || [];
   el.innerHTML = `<h2>My Drafts</h2>` + (h.length ? h.map((x, i) => `<div class="lib-item"><a data-i="${i}"><b>${esc(x.kind)}</b></a><small>${new Date(x.at).toLocaleString("hi-IN")}</small></div>`).join("") : `<p class="hint">No saved drafts yet.</p>`) + `<div id="out"></div>`;
-  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind); });
+  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind, x.size||12); });
 }
 
 /* ---------- पंचायत न्यूज़ (Inshorts जैसी छोटी ख़बरें) ---------- */
