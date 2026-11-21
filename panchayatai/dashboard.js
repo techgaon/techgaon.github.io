@@ -1,7 +1,7 @@
 /* Panchayat AI role-aware work dashboard and admin-driven homepage content. */
 (() => {
  "use strict";
- const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;":"&quot;","'":"&#39;"}[c]));
+ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const options={
   chat:["✦","AI से पूछें","पंचायत नियम व प्रक्रिया","chat",null],
   draft:["✉","नया पत्र","पत्र व नोटिस","draft",null],
