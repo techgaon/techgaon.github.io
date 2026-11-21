@@ -120,6 +120,10 @@ jobs:
           unzip -l "$APK" | grep "classes.dex"
           "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f 4 "$APK" out/PanchayatAI-v1.0.7-Fullscreen-TWA-unsigned.apk
           sha256sum out/*apk > out/SHA256SUMS.txt
+          # For local private-key signing after downloading this unsigned build.
+          # The signing key is never sent to GitHub.
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" out/apksigner.jar
+          test -s out/apksigner.jar
       - uses: actions/upload-artifact@v4
         if: always()
         with:
