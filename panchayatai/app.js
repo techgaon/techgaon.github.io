@@ -89,6 +89,24 @@ try {
 } catch (e) { console.warn(e); }
 // Wait for Firebase to restore its saved session before showing guest/login UI.
 S.authReady = !S.auth;
+// Show the home screen even if Firebase session restoration is slow.
+// Late auth callbacks are still processed normally; no session or token is fabricated.
+let authWaitTimer = null;
+if (S.auth) authWaitTimer = setTimeout(() => {
+  if (S.authReady) return;
+  console.warn("Firebase Auth is slow; opening the public home screen.");
+  S.authReady = true;
+  render();
+}, 8000);
+async function withDeadline(promise, ms) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("Profile request timed out")), ms); })
+    ]);
+  } finally { clearTimeout(timer); }
+}
 
 async function idToken() { return S.auth && S.auth.currentUser ? S.auth.currentUser.getIdToken() : ""; }
 // निःशुल्क सीमा (प्रतिदिन) — Firestore (सर्वर) पर गिनती; नियम (firestore.rules) सीमा से ऊपर लिखने नहीं देते
@@ -280,7 +298,7 @@ function rememberNavigation(view) {
   const old = LS.get("navHistory") || [];
   LS.set("navHistory", [item,...old.filter(x => x.view !== item.view || (x.draft || "") !== item.draft)].slice(0,7));
 }
-function go(v) { stopSpeech(); if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } rememberNavigation(v); S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
+function go(v) { if (!S.authReady && v !== "home") { toast("लॉगिन तैयार होते ही फिर से चुनें।"); return; } stopSpeech(); if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } rememberNavigation(v); S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
 document.addEventListener("click", e => { const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); if(a.dataset.go === "chat") S.draftMode = ""; go(a.dataset.go); } });
 const closeDrawer = () => { $("#drawer").classList.remove("open"); $("#scrim").classList.remove("show"); };
 $("#menuBtn").onclick = () => { $("#drawer").classList.add("open"); $("#scrim").classList.add("show"); };
@@ -323,6 +341,7 @@ function chrome() {
   showAndroidAppReturn();
 }
 function needLogin(next) {
+  if (!S.authReady) { toast("लॉगिन तैयार होते ही फिर से चुनें।"); return true; }
   if (isAdmin()) { go("admin"); return true; }
   if (!S.user) { S.after = next; go("login"); return true; }
   if (!isAdmin() && (!S.profile || !S.profile.role)) { S.after = next; go("profile"); return true; }
@@ -331,11 +350,12 @@ function needLogin(next) {
 function render() {
   S.chatCleanup?.(); S.chatCleanup=null;
   if (!S.authReady) {
+    // Never block the whole app behind an auth splash.
     document.body.classList.add("pai-auth-pending");
     const composer=document.getElementById("composerWrap");if(composer)composer.remove();
-    const login=document.getElementById("loginTop");if(login)login.classList.add("hidden");
     const view=document.getElementById("view");
-    if(view)view.innerHTML='<section class="pai-auth-loading" role="status" aria-live="polite"><span class="pai-auth-loading-icon" aria-hidden="true">पं</span><strong>पंचायत AI</strong><p>आपका पिछला Login जाँच रहे हैं…</p></section>';
+    if (view) { view.innerHTML=""; home(view); }
+    const login=document.getElementById("loginTop");if(login)login.classList.add("hidden");
     return;
   }
   document.body.classList.remove("pai-auth-pending");
@@ -375,7 +395,7 @@ function home(el) {
    <h1>${p ? 'प्रणाम <span class="pai-greeting-emoji" role="img" aria-label="प्रणाम">🙏</span> <span class="pai-greeting-name">' + esc(greetingName()) + ' ' + esc(greetingHonorific()) + '</span>' : "पंचायत AI"}</h1>
    <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी में AI सहायता, सरकारी पत्र, नोटिस और पंचायत के उपयोगी Tools"}</p>
    </div>
-  ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
+  ${!S.user && S.authReady ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" id="homeGoogleLogin" type="button">${googleIcon()} Continue with Google</button></div></div>` : ""}
   <div class="home-options">
     <div class="grid draft-grid home-feature-pair">
@@ -451,7 +471,12 @@ async function afterLogin() {
   }
   S.gInfo = S.gInfo || { name: S.user.displayName || "", email: S.user.email || "", phone: S.user.phoneNumber || "" };
   let p = LS.get("profile");
-  if (S.db && S.user.uid !== "demo") { const s = await S.db.collection("users").doc(S.user.uid).get(); if (s.exists) p = s.data(); }
+  if (S.db && S.user.uid !== "demo") {
+    try {
+      const snapshot = await withDeadline(S.db.collection("users").doc(S.user.uid).get(), 5500);
+      if (snapshot.exists) p = snapshot.data();
+    } catch (e) { console.warn("Profile load delayed; using saved local profile", e); }
+  }
   const previous = p && p.uid === S.user.uid ? p : null;
   const needsDefaults = !previous || !previous.name || !ROLES[previous.role];
   S.profile = Object.assign({
@@ -462,7 +487,7 @@ async function afterLogin() {
   if (!S.profile.name) S.profile.name = S.user.displayName || "पंचायत निवासी";
   S.profile.sign = ROLES[S.profile.role].n;
   S.blocked = S.profile.blocked === true;
-  if (needsDefaults && !S.blocked) await saveProfile();
+  if (needsDefaults && !S.blocked) saveProfile().catch(e => console.warn("Initial profile sync delayed", e));
   const scope=ROLES[S.profile.role]?.scope||"gp";
   const selectedClusters=Array.isArray(S.profile.clusters) ? S.profile.clusters.filter(Boolean).length : (S.profile.cluster ? 1 : 0);
   const selectedGps=Array.isArray(S.profile.gps) ? S.profile.gps.filter(Boolean).length : 0;
@@ -487,6 +512,8 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
   if (S.userWatch) S.userWatch();
   if((u?.uid||"")!==(S.chatOwner||"")){S.chat=[];S.att=[];S.chatOwner=u?.uid||null;}
   S.user = u;
+  S.authReady = true;
+  clearTimeout(authWaitTimer);
   if (u) {
     try {
       await afterLogin();
@@ -503,6 +530,7 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
 }, e => {
   console.warn("Auth session restore error",e);
   S.authReady = true;
+  clearTimeout(authWaitTimer);
   document.body.classList.remove("pai-auth-pending");
   render();
 });
@@ -926,7 +954,7 @@ function chat(el) {
 /* ---------- ड्राफ्ट ---------- */
 function draft(el) {
   if (needLogin("draft")) return;
-  el.innerHTML = `<h2>What shall we draft, ${esc(callName())}?</h2><div class="grid">${draftsFor(S.profile.role).map(d => `<div class="tile" data-k="${d.k}"><span class="e">${d.e}</span>${d.n}<small>${d.d}</small></div>`).join("")}</div>`;
+  el.innerHTML = `<h2>What shall we draft, ${esc(callName())}?</h2><div class="grid">${draftsFor(S.profile.role).map(d => `<div class="tile" data-k="${d.k}"><span class="e">${d.e}</span>${d.n}</div>`).join("")}</div>`;
   el.querySelectorAll("[data-k]").forEach(t => t.onclick = () => { S.draftType = t.dataset.k; go("draftEdit"); });
 }
 /* Short, selectable examples for drafting: one Hindi + two Roman Hindi. */
