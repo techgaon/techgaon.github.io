@@ -669,9 +669,52 @@ function chat(el) {
   if (needLogin("chat")) return;
   S.chat = S.chat.length ? S.chat : (LS.get("chat_general_v1_" + S.user.uid) || []);
   const choices = RTI_DRAFTS.concat(draftsFor(S.profile.role));
-  el.innerHTML = `<div class="draft-chat-header"><h2>बातचीत और पत्र</h2></div><div class="draft-chat-mode"><label for="chatDraftKind">बनाएँ</label><select id="chatDraftKind"><option value="">सामान्य बातचीत</option>${[...new Set(choices.map(d=>d.n))].map(n=>`<option ${n===S.draftMode?'selected':''}>${esc(n)}</option>`).join("")}</select><input id="chatDraftGP" list="chatGPList" aria-label="इस पत्र की ग्राम पंचायत" placeholder="ग्राम पंचायत" value="${esc(S.chatGP ?? ((S.profile.gps||[]).length===1?S.profile.gps[0]:""))}"><datalist id="chatGPList">${(S.profile.gps||[]).map(g=>`<option value="${esc(g)}"></option>`).join("")}</datalist></div><div class="chat draft-conversation" id="chatBox"></div>`;
-  $("#chatDraftKind").onchange=e=>{S.draftMode=e.target.value;};
-  $("#chatDraftGP").oninput=e=>{S.chatGP=e.target.value;};
+  S.draftMode="";
+  const uid=S.user.uid,archiveKey="chat_archives_v1_"+uid,activeKey="chat_general_v1_"+uid;
+  const readArchives=()=>Array.isArray(LS.get(archiveKey))?(LS.get(archiveKey)||[]):[];
+  el.innerHTML='<div class="pai-chat-mode"><button type="button" class="on" aria-current="page">✦ AI Help</button>'+
+    '<button type="button" id="paiStartNewChat">＋ New Chat</button></div>'+
+    '<div class="pai-chat-archive"><label for="paiChatArchive">पुरानी बातचीत</label>'+
+    '<select id="paiChatArchive"><option value="">— History देखें —</option></select></div>'+
+    '<div class="draft-chat-header"><h2>AI Help</h2></div>'+
+    '<div class="chat draft-conversation" id="chatBox"></div>';
+  function paintArchives(){
+    const picker=$("#paiChatArchive");if(!picker)return;
+    picker.innerHTML='<option value="">— पुरानी बातचीत —</option>'+
+      readArchives().map((item,i)=>'<option value="'+i+'">'+
+      esc(String(item.title||"पुरानी Chat").slice(0,55))+'</option>').join("");
+  }
+  paintArchives();
+  $("#paiStartNewChat").onclick=()=>{
+    if(S.chatBusy)return toast("पहले चल रहा जवाब पूरा होने दें।");
+    if(S.chat.length){
+      const old=readArchives();
+      const first=S.chat.find(m=>m.r==="u");
+      const archive={title:(first?.t||"नई बातचीत").slice(0,80),at:Date.now(),
+        messages:S.chat.slice(-40)};
+      if(!LS.set(archiveKey,[archive,...old].slice(0,12)))
+        return toast("पुरानी बातचीत सुरक्षित नहीं हुई; नई Chat नहीं खोली गई।");
+    }
+    S.chat=[];S.att=[];LS.set(activeKey,[]);
+    S.draftSeed=null;S.pendingAsk=null;
+    toast("नई Chat शुरू ✓");
+    go("chat");
+  };
+  $("#paiChatArchive").onchange=e=>{
+    if(S.chatBusy)return toast("पहले जवाब पूरा होने दें।");
+    const value=e.target.value;if(value==="")return;
+    const chosen=readArchives()[Number(value)];if(!chosen)return;
+    if(S.chat.length){
+      const old=readArchives();
+      const first=S.chat.find(m=>m.r==="u");
+      const item={title:(first?.t||"पिछली Chat").slice(0,80),at:Date.now(),
+        messages:S.chat.slice(-40)};
+      if(!LS.set(archiveKey,[item,...old].slice(0,12)))
+        return toast("वर्तमान बातचीत सुरक्षित नहीं हुई।");
+    }
+    S.chat=Array.isArray(chosen.messages)?chosen.messages:[];
+    LS.set(activeKey,S.chat.slice(-40));go("chat");
+  };
   const box = $("#chatBox");
   const draftCards = new Map();
   S.chatCleanup=()=>draftCards.forEach(c=>c.dispose());
