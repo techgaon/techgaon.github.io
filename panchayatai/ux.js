@@ -3,7 +3,7 @@
   "use strict";
   const KEY="pai_appearance_v2";
   const $=(q,root=document)=>root.querySelector(q);
-  const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;":"&quot;","'":"&#39;"}[c]));
+  const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const presets={
     navy:{name:"Midnight Blue",primary:"#254f86",blue:"#3166b3",start:"#172f58",end:"#24618a",feature:"#15a39b"},
     teal:{name:"Ocean Teal",primary:"#116e79",blue:"#158d91",start:"#123a56",end:"#0c8688",feature:"#1aada0"},
