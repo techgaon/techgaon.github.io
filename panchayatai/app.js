@@ -575,8 +575,8 @@ function profile(el) {
     const sel = (id,label,list,val,ph) => list.length
       ? `<label for="${id}">${label}</label><select id="${id}"><option value="">— ${label} चुनें —</option>${list.map(x => `<option value="${esc(x)}" ${x===val?"selected":""}>${esc(id==="aDist"?x:id==="aBlock"?(x===st.block?st.blockHindi||hintFor(x):H?.label(x)||x):hindiName(x))}</option>`).join("")}</select>`
       : `<label for="${id}">${label}</label><input id="${id}" value="${esc(val)}" placeholder="${ph}">`;
-    let h = `<label>State</label><select disabled><option>उत्तर प्रदेश</option></select>`;
-    if (ROLES[role].scope === "clerk") h += `<label>Office level</label><select id="aLvl"><option value="block" ${st.clerkLevel === "block" ? "selected" : ""}>Block office</option><option value="district" ${st.clerkLevel === "district" ? "selected" : ""}>District office (DPRO/DDO/CDO)</option></select>`;
+    let h = `<label>राज्य</label><select disabled><option>उत्तर प्रदेश</option></select>`;
+    if (ROLES[role].scope === "clerk") h += `<label>कार्यालय स्तर</label><select id="aLvl"><option value="block" ${st.clerkLevel === "block" ? "selected" : ""}>विकास खण्ड कार्यालय</option><option value="district" ${st.clerkLevel === "district" ? "selected" : ""}>जनपद स्तरीय कार्यालय (DPRO/DDO/CDO)</option></select>`;
     if (role === "other_staff") h += `<label>विभाग एवं पदनाम (Optional)</label><input id="aDesignation" maxlength="100" value="${esc(st.designation)}" placeholder="जैसे: राजस्व विभाग, कनिष्ठ सहायक">`;
     h += sel("aDist", "जनपद", G.districts, st.district, "");
     if(scope!=="district"){
@@ -588,14 +588,14 @@ function profile(el) {
       if(st.gps[0])h += `<label for="aGpHindi">ग्राम पंचायत का हिंदी नाम (सही करें)</label><input lang="hi" id="aGpHindi" maxlength="100" value="${esc(hindiName(st.gps[0]))}">`;
     }
     if (scope === "multigp" && st.block) {
-      h += `<label for="aClusterSelect">Select Cluster (अधिकतम 3)</label>
+      h += `<label for="aClusterSelect">Cluster चुनें (अधिकतम 3)</label>
        <p class="hint" id="clusterHelp">इस Block की सभी ग्राम पंचायतों में से Cluster चुनें। Cluster का नाम भी ग्राम पंचायत का नाम होता है।</p>
        <div class="pai-cluster-add"><select id="aClusterSelect" aria-describedby="clusterHelp" ${availableGpNames.length ? "" : "disabled"}><option value="">— ग्राम पंचायत से Cluster चुनें —</option>${availableGpNames.map(name=>`<option value="${esc(name)}" ${st.clusters.includes(name) ? "disabled" : ""}>${esc(hindiName(name))}${st.clusters.includes(name) ? " ✓" : ""}</option>`).join("")}</select><button class="btn" id="aClusterBtn" type="button" ${availableGpNames.length && st.clusters.length<3 ? "" : "disabled"}>+ Add</button></div>
        ${!availableGpNames.length ? '<p class="hint" role="status">इस Block की ग्राम पंचायत सूची उपलब्ध नहीं है। सही Block चुनें या सूची अपडेट करवाएँ।</p>' : ""}
        <div class="gp-list" aria-label="चुने गए Cluster">${st.clusters.map((g,i)=>`<span class="chip">${esc(hindiName(g))}<button type="button" aria-label="${esc(g)} Cluster हटाएँ" data-rm-cluster="${i}">✕</button></span>`).join("")}</div>
-       <p class="hint">${st.clusters.length}/3 Cluster selected</p>
-       <label>Gram Panchayats (max 25)</label><p class="hint">अपनी ग्राम पंचायतें चुनें। अधिकतम 25 GP जोड़ सकते हैं।</p>
-       ${gpsAll.length ? `<select id="aGpAdd"><option value="">+ Add Gram Panchayat</option>${gpsAll.filter(x => !st.gps.includes(x)).map(x => `<option value="${esc(x)}">${esc(hindiName(x))}</option>`).join("")}</select>`
+       <p class="hint">${st.clusters.length}/3 Cluster चुने गए</p>
+       <label>ग्राम पंचायतें चुनें (अधिकतम 25)</label><p class="hint">अपनी ग्राम पंचायतें चुनें। अधिकतम 25 GP जोड़ सकते हैं।</p>
+       ${gpsAll.length ? `<select id="aGpAdd"><option value="">+ ग्राम पंचायत जोड़ें</option>${gpsAll.filter(x => !st.gps.includes(x)).map(x => `<option value="${esc(x)}">${esc(hindiName(x))}</option>`).join("")}</select>`
         : `<div style="display:flex;gap:6px"><input id="aGpTxt" placeholder="Gram Panchayat name"><button class="btn" id="aGpBtn" type="button">Add</button></div>`}
        <div class="gp-list">${st.gps.map((g, i) => `<span class="chip">${esc(hindiName(g))}<b data-rm="${i}">✕</b></span>`).join("")}</div>
        <p class="hint">${st.gps.length}/25 ग्राम पंचायतें चुनी गईं</p>
