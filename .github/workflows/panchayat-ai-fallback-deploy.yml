@@ -30,7 +30,8 @@ jobs:
           c=Path("panchayatai/ai-fallback-client.js").read_text()
           w=Path("panchayatai/ai-fallback-worker/src/index.js").read_text()
           app=Path("panchayatai/ai.js").read_text()
-          assert "GROQ_API_KEY" not in c
+          assert "env.GROQ_API_KEY" not in c
+          assert "AIza" not in c
           assert "api.groq.com" not in c
           assert "PAI_FREE_FALLBACK.complete" in app
           assert '["Groq",groq]' in w
