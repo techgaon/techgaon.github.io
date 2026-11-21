@@ -32,3 +32,7 @@ test("short, safe status for broken network",()=>{
  const e=AI.explain(Error("Failed to fetch: net::ERR_CONNECTION_CLOSED"));
  assert.equal(e.code,"AI_NETWORK");
 });
+
+test("AI module loading problem has separate actionable code",()=>{
+ assert.equal(AI.explain(Error("AI could not load. Please refresh")).code,"AI_MODULE_NOT_LOADED");
+});
