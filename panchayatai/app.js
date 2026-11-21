@@ -790,7 +790,13 @@ function chat(el) {
     '<div class="pai-chat-archive"><label for="paiChatArchive">पुरानी बातचीत</label>'+
     '<select id="paiChatArchive"><option value="">— History देखें —</option></select></div>'+
     '<div class="draft-chat-header"><h2>AI Help</h2></div>'+
+    ((S.profile.gps||[]).length>1?'<div class="pai-chat-gp"><label for="chatDraftGP">पत्र बनाते समय संबंधित ग्राम पंचायत (वैकल्पिक)</label>'+
+    '<select id="chatDraftGP"><option value="">— ग्राम पंचायत चुनें —</option>'+
+    (S.profile.gps||[]).map(raw=>'<option value="'+esc(raw)+'" '+
+      (S.chatGP===raw?'selected':'')+'>'+esc(S.profile.gpsHindi?.[raw]||window.PAI_HINDI?.label(raw)||raw)+'</option>').join('')+
+    '</select></div>':'')+
     '<div class="chat draft-conversation" id="chatBox"></div>';
+  if($("#chatDraftGP"))$("#chatDraftGP").onchange=e=>{S.chatGP=e.target.value;};
   function paintArchives(){
     const picker=$("#paiChatArchive");if(!picker)return;
     picker.innerHTML='<option value="">— पुरानी बातचीत —</option>'+
