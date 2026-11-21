@@ -13,6 +13,8 @@ on:
       - 'panchayatai/docx-export.js'
       - 'panchayatai/draft-card.js'
       - 'panchayatai/draft-workspace.js'
+      - 'panchayatai/hindi-profile.js'
+      - 'panchayatai/hindi-profile.test.cjs'
       - 'panchayatai/workspace.css'
       - 'panchayatai/config.js'
       - 'panchayatai/index.html'
@@ -31,12 +33,12 @@ jobs:
       - name: JavaScript syntax
         run: |
           set -e
-          for f in panchayatai/{app,letterhead,draft-card,draft-workspace,docx-export,ux,editor,dashboard}.js panchayatai/ai.js panchayatai/{drafting-core,drafting-corpus,drafting.test}.mjs; do
+          for f in panchayatai/{app,letterhead,draft-card,draft-workspace,docx-export,ux,editor,dashboard,hindi-profile}.js panchayatai/ai.js panchayatai/{drafting-core,drafting-corpus,drafting.test}.mjs; do
             test -s "$f"
             node --check "$f"
           done
       - name: Pure drafting regression tests
-        run: node --test panchayatai/drafting.test.mjs
+        run: node --test panchayatai/drafting.test.mjs panchayatai/hindi-profile.test.cjs
       - name: Review UI integration
         run: |
           python3 - <<'PY'
@@ -71,6 +73,14 @@ jobs:
           assert '<script src="draft-workspace.js' in html
           assert 'mode' in head and 'gp_office' in head
           assert 'new Function' not in workspace
+          assert '<script src="hindi-profile.js' in html
+          assert 'id="pNameHindi"' in app and 'id="pPhone"' in app
+          assert 'id="aBlockHindi"' in app and 'data-hindi-gp' in app
+          assert 'gpsHindi:mapping' in app
+          assert 'hindiProfileReviewed:true' in app
+          assert 'S.after="draftEdit"' not in app[app.index('function draftEdit(el)'):app.index('function history(el)')]
+          assert 'resolveGp(payload,b)' in core
+          assert 'if(selected)return {gp:selected' in core
           print('Login, New Chat, unlimited quotas, Hindi name and Draft Studio gates OK')
           print('Letterhead UI and export integration checks OK')
           PY
