@@ -718,6 +718,7 @@ function profile(el) {
       else go(n);
     }catch(e){
       S.profile=previousProfile;
+      LS.set("profile",previousProfile);
       $("#pHindiStatus").textContent="Save नहीं हुआ: "+(e.message||"Network error");
       btn.disabled=false;
     }
