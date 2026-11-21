@@ -61,7 +61,7 @@
    return devanagari(trim(text)) && trim(text).length>=2;
  }
  function label(raw,mapping){
-   return trim(mapping?.[raw])||guess(raw);
+   return trim(mapping?.[raw])||trim(cached()[raw])||guess(raw);
  }
  const cacheKey="pai-hindi-hints-2026";
  function cached(){
