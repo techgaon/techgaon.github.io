@@ -36,3 +36,12 @@ test("short, safe status for broken network",()=>{
 test("AI module loading problem has separate actionable code",()=>{
  assert.equal(AI.explain(Error("AI could not load. Please refresh")).code,"AI_MODULE_NOT_LOADED");
 });
+
+test("unconfigured live backup reports secure setup rather than URL",()=>{
+ const e=Object.assign(Error("Groq बैकअप सर्वर अभी Deploy नहीं हुआ है।"),{code:"AI_BACKUP_NOT_DEPLOYED"});
+ assert.equal(AI.explain(e).code,"AI_BACKUP_SETUP");
+});
+test("quota exhaustion and text-only restrictions are distinct",()=>{
+ assert.equal(AI.explain(Object.assign(Error("all providers failed"),{code:"BACKUP_EXHAUSTED"})).code,"AI_BACKUP_EXHAUSTED");
+ assert.equal(AI.explain(Object.assign(Error("photo is not supported"),{code:"AI_BACKUP_TEXT_ONLY"})).code,"AI_BACKUP_TEXT_ONLY");
+});
