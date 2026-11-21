@@ -959,7 +959,7 @@ function chat(el) {
 /* ---------- ड्राफ्ट ---------- */
 function draft(el) {
   if (needLogin("draft")) return;
-  el.innerHTML = `<h2>कौन-सा पत्र या दस्तावेज़ बनाएँ, ${esc(callName())}?</h2><div class="grid">${draftsFor(S.profile.role).map(d => `<div class="tile" data-k="${d.k}"><span class="e">${d.e}</span>${d.n}</div>`).join("")}</div>`;
+  el.innerHTML = `<h2>What shall we draft, ${esc(callName())}?</h2><div class="grid">${draftsFor(S.profile.role).map(d => `<div class="tile" data-k="${d.k}"><span class="e">${d.e}</span>${d.n}</div>`).join("")}</div>`;
   el.querySelectorAll("[data-k]").forEach(t => t.onclick = () => { S.draftType = t.dataset.k; go("draftEdit"); });
 }
 /* Short, selectable examples for drafting: one Hindi + two Roman Hindi. */
