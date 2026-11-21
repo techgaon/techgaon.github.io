@@ -87,6 +87,8 @@ try {
     firebase.initializeApp(C.firebase); S.auth = firebase.auth(); S.db = firebase.firestore(); fbReady = true;
   }
 } catch (e) { console.warn(e); }
+// Wait for Firebase to restore its saved session before showing guest/login UI.
+S.authReady = !S.auth;
 
 async function idToken() { return S.auth && S.auth.currentUser ? S.auth.currentUser.getIdToken() : ""; }
 // निःशुल्क सीमा (प्रतिदिन) — Firestore (सर्वर) पर गिनती; नियम (firestore.rules) सीमा से ऊपर लिखने नहीं देते
@@ -311,6 +313,15 @@ function needLogin(next) {
 }
 function render() {
   S.chatCleanup?.(); S.chatCleanup=null;
+  if (!S.authReady) {
+    document.body.classList.add("pai-auth-pending");
+    const composer=document.getElementById("composerWrap");if(composer)composer.remove();
+    const login=document.getElementById("loginTop");if(login)login.classList.add("hidden");
+    const view=document.getElementById("view");
+    if(view)view.innerHTML='<section class="pai-auth-loading" role="status" aria-live="polite"><span class="pai-auth-loading-icon" aria-hidden="true">पं</span><strong>पंचायत AI</strong><p>आपका पिछला Login जाँच रहे हैं…</p></section>';
+    return;
+  }
+  document.body.classList.remove("pai-auth-pending");
   if (isAdmin() && !["admin","settings"].includes(S.view)) {
     S.view = "admin";
     window.history.replaceState(null, "", location.pathname + "#admin");
@@ -465,7 +476,14 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
         if (S.blocked) { S.view = "blocked"; render(); }
       });
     } catch (e) { toast("Account could not load. Please try again."); go("login"); }
-  } else { S.blocked = false; render(); }
+  } else { S.blocked = false; S.profile = null; }
+  S.authReady = true;
+  render();
+}, e => {
+  console.warn("Auth session restore error",e);
+  S.authReady = true;
+  document.body.classList.remove("pai-auth-pending");
+  render();
 });
 
 /* ---------- अगली स्क्रीन: नाम, लिंग, मोबाइल ---------- */
