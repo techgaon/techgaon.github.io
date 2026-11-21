@@ -2,17 +2,56 @@ import { request as draftRequest, render as renderDraft } from './drafting-core.
 /* पंचायत AI — Gemini (Firebase AI Logic, Spark/निःशुल्क प्लान पर चलता है; API key Firebase में सुरक्षित) */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-ai.js";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app-check.js";
 
 const C = window.PAI_CONFIG;
-const app = initializeApp(C.firebase, "pai-ai");
-// App Check (reCAPTCHA Enterprise) — Gemini कोटे की सुरक्षा
-initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(C.recaptchaSiteKey), isTokenAutoRefreshEnabled: true });
-const ai = getAI(app, { backend: new GoogleAIBackend() });
-const MODEL = C.geminiModel || "gemini-flash-lite-latest";
-const gen = async (s, q, req) => { if (q) { try { return await model(s, true).generateContent(req); } catch (e) { if (!/429|quota|billing/i.test(e.message)) throw e; } } return model(s, false).generateContent(req); };
-const model = (system, search) => getGenerativeModel(ai, { model: MODEL, systemInstruction: system,
-  generationConfig: { temperature: 0.3 }, ...(search ? { tools: [{ googleSearch: {} }] } : {}) });
+const MODEL = C?.geminiModel || "gemini-3.5-flash-lite";
+// Keep diagnostics available even if Firebase/App Check initialization fails;
+// otherwise the whole module crashes and the user only sees a loading URL.
+let app=null, appCheck=null, ai=null, initializationError=null;
+try {
+  if(!C?.firebase?.appId||!C?.firebase?.projectId||!C?.recaptchaSiteKey)
+    throw new Error("Firebase AI / App Check Web Config उपलब्ध नहीं है।");
+  app=initializeApp(C.firebase,"pai-ai");
+  appCheck=initializeAppCheck(app,{
+    provider:new ReCaptchaEnterpriseProvider(C.recaptchaSiteKey),
+    isTokenAutoRefreshEnabled:true
+  });
+  ai=getAI(app,{backend:new GoogleAIBackend()});
+}catch(error){
+  initializationError=error;
+  console.warn("Panchayat AI initialization failed",window.PAI_AI_ERRORS?.explain(error,"initialization")?.code||"AI_INIT");
+}
+async function checkAppCheck(){
+  if(initializationError)throw initializationError;
+  if(!appCheck)throw Error("App Check प्रारंभ नहीं हुआ");
+  try{
+    const response=await getToken(appCheck,false);
+    if(!response?.token||typeof response.token!=="string")throw Error("App Check ने कोई Token नहीं दिया");
+    return true; // Never log or save the token.
+  }catch(error){
+    const detail=window.PAI_AI_ERRORS?.explain(error,"App Check");
+    if(detail&&detail.code==="AI_UNKNOWN"){
+      const e=Error("App Check token failed: "+(error?.code||"UNKNOWN"));
+      e.code="AI_APP_CHECK";throw e;
+    }
+    throw error;
+  }
+}
+const gen = async (s,q,req) => {
+  await checkAppCheck();
+  if(q){
+    try {return await model(s,true).generateContent(req);}
+    catch(e){if(!/429|quota|billing/i.test(String(e.message)))throw e;}
+  }
+  return model(s,false).generateContent(req);
+};
+const model = (system,search) => {
+  if(initializationError)throw initializationError;
+  if(!ai)throw Error("Firebase AI Logic तैयार नहीं हुआ");
+  return getGenerativeModel(ai,{model:MODEL,systemInstruction:system,
+    generationConfig:{temperature:0.3},...(search?{tools:[{googleSearch:{}}]}:{})});
+};
 
 const parts = (text, att = []) => { const p = [{ text }];
   for (const a of att.slice(0, 5)) { if (a.text) p.push({ text: `\n[संलग्न Word फ़ाइल: ${a.name}]\n${a.text}` }); else if (a.data) p.push({ inlineData: { mimeType: a.mime, data: a.data } }); }
@@ -81,6 +120,7 @@ async function chat(b) {
   return {text:caveat?caveat+"\n\n"+answer:answer,language,followups,refs:[],web};
 }
 async function draft(b) {
+  await checkAppCheck();
   const prepared=draftRequest(b);
   const source=[String(b.points||""),...(b.att||[]).filter(x=>x.text).map(x=>String(x.text))].join("\n");
   let previousError=null;
@@ -113,6 +153,7 @@ async function draft(b) {
 }
 // पंचायत न्यूज़ — Google समाचार RSS (निःशुल्क) → Gemini से 60 शब्द का हिन्दी सार (केवल दिए गए पाठ से)
 async function news(area) {
+  await checkAppCheck();
   const key = "pai_news3_" + area, c = JSON.parse(localStorage.getItem(key) || "null");
   if (c && Date.now() - c.at < 3 * 3600e3 && c.items.length) return c;
   const q = area === "उत्तर प्रदेश" ? "उत्तर प्रदेश ग्राम पंचायत OR पंचायती राज OR ग्राम प्रधान OR पंचायत सचिव when:7d"
@@ -136,6 +177,7 @@ async function news(area) {
 }
 // Best-effort Hindi spelling suggestions for editable profile fields.
 async function hindiNames(names) {
+  await checkAppCheck();
   const originals=Array.isArray(names)?[...new Set(names.filter(n=>typeof n==="string"&&n.length<120))].slice(0,30):[];
   if(!originals.length)return {};
   const sys="आप उत्तर प्रदेश के स्थाननाम और भारतीय व्यक्तिनामों के देवनागरी लिप्यंतरण विशेषज्ञ हैं। दिए गए Roman नाम का हिंदी उच्चारण के अनुसार सही रूप लिखें। केवल JSON object लौटाएँ जिसमें मूल नाम अक्षरशः key और हिंदी वर्तनी value हो। व्यक्ति, गांव, जनपद, स्थान का अनुमान बदलकर किसी दूसरे नाम में न बदलें। संदिग्ध वर्तनी का सुझाव दें जिसे उपयोगकर्ता स्वयं सुधार सके; अतिरिक्त जानकारी न जोड़ें।";
@@ -150,5 +192,22 @@ async function hindiNames(names) {
   }
   return result;
 }
-window.PAI_AI = { chat, draft, news, hindiNames };
+async function diagnose(){
+  const result={
+    project:C?.firebase?.projectId||"unconfigured",
+    model:MODEL,provider:"Gemini Developer API",appCheck:false,ai:false
+  };
+  try{
+    result.appCheck=await checkAppCheck();
+    const res=await model("Respond with only the word OK.",false).generateContent("OK");
+    if(!String(res.response.text()||"").trim())throw Error("AI ने रिक्त उत्तर दिया।");
+    result.ai=true;return result;
+  }catch(error){
+    const detail=window.PAI_AI_ERRORS?.explain(error,result.appCheck?"AI":"App Check")||{
+      code:"AI_UNKNOWN",title:"AI कनेक्शन विफल",message:"कनेक्शन नहीं बन सका",technical:""
+    };
+    return {...result,error:detail};
+  }
+}
+window.PAI_AI = { chat,draft,news,hindiNames,diagnose };
 window.dispatchEvent(new Event("pai-ai-ready"));
