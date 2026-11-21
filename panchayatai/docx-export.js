@@ -38,6 +38,19 @@
    }
    if(n.nodeType!==1)return [];
    const tag=n.tagName.toLowerCase();
+   if(tag==="img"){
+     const src=n.getAttribute("src")||"";
+     if(!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(src)||src.length>200000)return [];
+     try{
+       const raw=atob(src.slice("data:image/jpeg;base64,".length));
+       const data=Uint8Array.from(raw,ch=>ch.charCodeAt(0));
+       const originalWidth=Number(n.dataset.paiWidth)||1000;
+       const originalHeight=Number(n.dataset.paiHeight)||Math.round(originalWidth*.33);
+       const width=575,height=Math.max(38,Math.min(310,Math.round(width*originalHeight/originalWidth)));
+       return [new d.Paragraph({children:[new d.ImageRun({data,type:"jpg",transformation:{width,height}})],
+         alignment:d.AlignmentType.CENTER,spacing:{after:130}})];
+     }catch(error){console.warn("Unable to include uploaded letterhead",error);return [];}
+   }
    if(["p","h1","h2","h3","h4"].includes(tag))return [paragraph(n,d)];
    if(tag==="ul"||tag==="ol")return Array.from(n.children).filter(c=>c.tagName==="LI").map((li,i)=>
      new d.Paragraph({children:[new d.TextRun({text:tag==="ol"?(i+1)+". ":"• ",font:FONT,size:activeHalfPoints}),...runs(li,d)],
@@ -85,6 +98,17 @@
    if(!paper?.textContent?.trim())throw Error("पहले पत्र तैयार करें।");
    const selected=Number(paper.dataset.docSize || 12);
    activeHalfPoints=Number.isFinite(selected)?Math.round(Math.min(16,Math.max(10,selected))*2):24;
+   // Decode the already locally-compressed uploaded letterhead so Word keeps
+   // its correct aspect ratio rather than stretching it.
+   for(const img of paper.querySelectorAll("img.pai-lh-upload-image")){
+     const src=img.getAttribute("src")||"";
+     if(!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(src))continue;
+     try {
+       const picture=new Image();picture.src=src;await picture.decode();
+       img.dataset.paiWidth=String(picture.naturalWidth||1000);
+       img.dataset.paiHeight=String(picture.naturalHeight||330);
+     }catch(e){console.warn("Letterhead image dimensions unavailable",e);}
+   }
    const children=Array.from(paper.childNodes).flatMap(n=>elements(n,d));
    if(!children.length)throw Error("Word फाइल के लिए कोई टेक्स्ट नहीं मिला।");
    const doc=new d.Document({
