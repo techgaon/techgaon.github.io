@@ -17,6 +17,9 @@ window.PAI_CONFIG = {
 
   // Gemini: Firebase AI Logic (Gemini Developer API) — key Firebase में सुरक्षित, निःशुल्क Spark प्लान
   geminiModel: "gemini-3.5-flash-lite",
+  // Gemini प्राथमिक, Groq → Cloudflare Worker केवल Gemini विफल होने पर।
+  // Secrets और Google Login validation केवल सुरक्षित Worker में होंगे।
+  aiFallback: {enabled:true,endpoint:"/panchayatai/api/ai-fallback"},
   recaptchaSiteKey: "6Lcmdw8uAAAAALp9S2hlQaEAiLe72Att_nX7pq4G", // App Check (public site key)
 
   // UPI भुगतान (FoodGaon की तरह केवल UPI)
