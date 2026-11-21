@@ -7,7 +7,7 @@ export const escapeHTML = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;'
 export function context(b={}) {
  const p=b.profile||{}, gps=Array.isArray(p.gps)?p.gps.map(str).filter(Boolean):[];
  // A multi-GP profile must never silently use the first GP.
- return {role:p.role==='other_staff'?(str(p.designation)||roles.other_staff):(roles[p.role]||roles.other_staff),roleCode:p.role||'',name:str(p.name)||hole('हस्ताक्षरकर्ता का नाम'),gp:str(b.gp)||(gps.length===1?gps[0]:hole('ग्राम पंचायत')),district:str(p.district)||hole('जनपद'),block:str(p.block)||hole('विकास खण्ड')};
+ return {role:p.role==='other_staff'?(str(p.designation)||roles.other_staff):(roles[p.role]||roles.other_staff),roleCode:p.role||'',name:str(p.name),gp:str(b.gp)||(gps.length===1?gps[0]:''),district:str(p.district),block:str(p.block)};
 }
 export function retrieve(b={}) {
  const q=`${str(b.kind)} ${str(b.points)}`.toLowerCase();
@@ -22,8 +22,11 @@ export function request(b={}) {
 ग्राम पंचायत चयन को प्राथमिकता दें। निर्देश में दूसरी पंचायत हो तो gpOverride में उसी निर्देश का अक्षरशः नाम दें, उसके अलावा नया स्थान न बनाएं। अनेक पंचायतों में चयन न हो तो placeholder रखें।
 आज की तारीख, घटना की तारीख, शिकायतकर्ता, निरीक्षण, पूर्व नोटिस, फोन करने, बैंक खाता, सरकारी धन, जन्म/मृत्यु, जांच निष्कर्ष या संलग्नक का होना स्वयं न बनाएं। लिखित शिकायत और मौखिक/अस्पष्ट शिकायत में भेद रखें। आरोप को सिद्ध अपराध न लिखें।
 नियम, अधिनियम, धारा, शासनादेश, पात्रता, शुल्क, दंड, वसूली, वेतन रोकना, प्राथमिकी या बर्खास्तगी के दावे न लिखें। इनके लिए सक्षम अधिकारी द्वारा मूल प्रावधान की अलग पुष्टि चाहिए। पुराने नमूनों का तीन दिन का समय कभी स्वतः न लें।
-अज्ञात अनिवार्य जानकारी '[... भरें]' के रूप में रखें, खासकर पत्रांक, निर्गमन दिनांक, घटना की तिथियाँ, उत्तर की समय-सीमा और प्राप्तकर्ता। प्रमाणपत्र में अपुष्ट तथ्य के बदले '[अभिलेख सत्यापन के बाद तथ्य भरें]' रखें। बैठक में कोरम/सर्वसम्मति, जांच में निष्कर्ष, RTI में सूचना/छूट केवल वर्तमान साक्ष्य से लें। जन्म-मृत्यु के सहायक प्रमाण को वैधानिक पंजीकरण प्रमाणपत्र न कहें।
+अज्ञात अनिवार्य जानकारी मसौदे के अंदर न लिखें; उसे JSON की missing सूची में रखें, जैसे पत्रांक, निर्गमन दिनांक, घटना की तिथियाँ, उत्तर की समय-सीमा और प्राप्तकर्ता। प्रमाणपत्र में अपुष्ट तथ्य को प्रमाणित न करें; सत्यापन आवश्यक है यह missing में रखें। बैठक में कोरम/सर्वसम्मति, जांच में निष्कर्ष, RTI में सूचना/छूट केवल वर्तमान साक्ष्य से लें। जन्म-मृत्यु के सहायक प्रमाण को वैधानिक पंजीकरण प्रमाणपत्र न कहें।
 नोटिस में उपलब्ध शिकायत/अनुपस्थिति का उल्लेख करके साक्ष्य सहित स्पष्टीकरण माँगें, दोष या दंड तय न करें। सहायक/निवासी के लिए सक्षम अधिकारी को आवेदन/रिपोर्ट बनाएं, उनके नाम से अधिकारपूर्ण नोटिस न जारी करें।
+यदि उपयोगकर्ता का निर्देश सिर्फ “सचिव के रूप में ADO को पत्र बनाओ” जैसा छोटा है, तो प्राप्तकर्ता “सहायक विकास अधिकारी (पंचायत)” लिखें और profile से विकास खण्ड/जनपद/प्रेषक का नाम व पद इस्तेमाल करें। उपयोगकर्ता का वास्तविक विषय जो कहा गया है उसी के अनुरूप संक्षिप्त, पूरा, कार्यालयी मसौदा दें। बेहतर अनुच्छेद-विन्यास, औपचारिक समापन, आवश्यक सामान्य वाक्य AI अपने विवेक से जोड़ सकता है; घटना, आरोप, तारीख, राशि, बैठक, निरीक्षण, स्वीकृति, कार्यवाही हो चुकने या कानूनी अधिकार जैसे तथ्य कभी न गढ़े।
+किसी भी ड्राफ्ट में “[यहाँ नाम भरें]”, “[पता भरें]”, “आप अपना विवरण लिखें”, खाली अंडरस्कोर या निर्देशात्मक Placeholder बिल्कुल न दें। जहाँ नाम/पत्रांक/जारी दिनांक/पता आदि प्रमाणित नहीं है, उस पंक्ति को मसौदे से हटा दें और केवल JSON की missing सूची में लिखें। प्रेषक की Profile में जानकारी हो तो उसे स्वतः भरें। नए निर्देश मिलने पर Draft Editable रहेगा।
+प्रधान के स्वयं के नाम से भेजे पत्र में प्रेषक ग्राम प्रधान; ग्राम पंचायत कार्यालय की ओर से लिखे पत्र में कार्यालय ग्राम पंचायत रखें। Letterhead/PDF/Word का निर्णय ऐप करेगा, AI को उससे सम्बंधित चित्र/डेटा नहीं दिया जाएगा।
 आउटपुट: {"subject":"विषय", "recipient":"प्राप्तकर्ता और पता", "gpOverride":"निर्देश में स्पष्ट अलग GP या खाली", "salutation":"महोदय/महोदया अथवा खाली", "paragraphs":["मुख्य भाग"], "attachments":["वास्तव में उपलब्ध संलग्नक"], "copies":["केवल अनुरोध में निर्दिष्ट प्रतिलिपि"], "missing":["भरने योग्य विवरण"], "evidence":[{"quote":"वर्तमान निर्देश/संलग्नक का अक्षरशः अंश", "supports":"जिस तथ्य का आधार है"}]}.
 कर्मचारी अनुपस्थिति/कार्य नोटिस में अतिरिक्त staff={"name":"कर्मी का अक्षरशः नाम या खाली","post":"सफाईकर्मी अथवा पंचायत सहायक","absence":"अनुपस्थिति का अक्षरशः छोटा अंश या खाली","complaint":"शिकायत का अक्षरशः छोटा अंश या खाली","work":"काम न करने का अक्षरशः छोटा अंश या खाली","dates":"घटना की स्पष्ट अक्षरशः तिथियाँ या खाली","deadline":"उत्तर की स्पष्ट अक्षरशः अवधि या खाली"} दें। ये अंश केवल वर्तमान निर्देश/पाठ से हों, निर्देशात्मक 'बनाओ' आदि न लें।
 कोई HTML नहीं। दिये गए पद/GP के अनुसार सामान्य पत्र, नोटिस, प्रमाणपत्र, प्रस्ताव और आख्या की अलग संरचना रखें।
@@ -52,35 +55,71 @@ export function validate(payload,b={}) {
 }
 export function render(payload,b={}) {
  const check=validate(payload,b),c=context(b),gp=str(payload.gpOverride)||c.gp;
- const e=escapeHTML,p=t=>`<p>${e(t).replace(/\n/g,'<br>')}</p>`;
- const citizen=c.roleCode==='resident'||b.kind==='RTI आवेदन';
- const notice=/नोटिस|आदेश|प्रमाण/.test(str(b.kind)+' '+str(b.points))&&!citizen;
- const certificate=/प्रमाण/.test(str(b.kind))&&!/आवेदन/.test(str(b.kind));
- const minutes=/प्रस्ताव|कार्यवाही/.test(str(b.kind));
- const staffNotice=/नोटिस|notice/i.test(str(b.kind)+' '+str(b.points))&&/सफाई\s*कर्मी|पंचायत सहायक|safai|sahayak/i.test(str(b.points));
- const location=`ग्राम पंचायत — ${gp}, विकास खण्ड — ${c.block}, जनपद — ${c.district}`;
- const office=['ado','bdo'].includes(c.roleCode)?`विकास खण्ड — ${c.block}, जनपद — ${c.district}`:['dpro','adpro','ddo'].includes(c.roleCode)?`जनपद — ${c.district}`:location;
- let html=p(citizen?`प्रार्थी — ${c.name}\n[आवेदक का पता भरें]`:`कार्यालय — ${c.role}\n${office}`);
- html+=p(`पत्रांक: ${hole('पत्रांक')}                         दिनांक: ${hole('निर्गमन दिनांक')}`);
- if(!certificate&&!minutes)html+=p(`सेवा में,\n${str(payload.recipient)||hole('प्राप्तकर्ता और पता')}`);
- html+=`<p><b>${certificate||minutes?'':'विषय: '}${e(str(payload.subject)||hole('विषय'))}</b></p>`;
+ const e=escapeHTML,p=t=>'<p>'+e(t).replace(/\n/g,'<br>')+'</p>';
+ const kind=str(b.kind),requestText=str(b.points);
+ const citizen=c.roleCode==='resident'||kind==='RTI आवेदन';
+ const notice=/नोटिस|आदेश|प्रमाण/.test(kind+' '+requestText)&&!citizen;
+ const certificate=/प्रमाण/.test(kind)&&!/आवेदन/.test(kind);
+ const minutes=/प्रस्ताव|कार्यवाही/.test(kind);
+ const staffNotice=/नोटिस|notice/i.test(kind+' '+requestText)&&/सफाई\s*कर्मी|पंचायत सहायक|safai|sahayak/i.test(requestText);
+ const ownPradhanHead=c.roleCode==='pradhan'&&b.stationery==='pradhan_letterhead';
+ const gpOffice=c.roleCode==='pradhan'&&b.stationery==='gp_office';
+ const location=[
+   gp?'ग्राम पंचायत — '+gp:'',
+   c.block?'विकास खण्ड — '+c.block:'',
+   c.district?'जनपद — '+c.district:''
+ ].filter(Boolean).join(', ');
+ const office=['ado','bdo'].includes(c.roleCode)
+   ?[c.block?'विकास खण्ड — '+c.block:'',c.district?'जनपद — '+c.district:''].filter(Boolean).join(', ')
+   :['dpro','adpro','ddo'].includes(c.roleCode)
+     ?(c.district?'जनपद — '+c.district:'') : location;
+ const sender=gpOffice?'कार्यालय — ग्राम पंचायत'+(gp?' '+gp:''):'कार्यालय — '+c.role;
+ let html='';
+ if(citizen){if(c.name)html+=p('प्रार्थी — '+c.name);}
+ else if(!ownPradhanHead)html+=p(sender+(office?'\n'+office:''));
+ // A date/letter number is only rendered when the current user instruction
+ // supplies it. The profile does not justify inventing an official dispatch.
+ const knownNumber=str(payload.letterNumber);
+ const knownDate=str(payload.issueDate);
+ if(knownNumber&&requestText.includes(knownNumber))html+=p('पत्रांक: '+knownNumber);
+ if(knownDate&&requestText.includes(knownDate))html+=p('दिनांक: '+knownDate);
+ if(!certificate&&!minutes&&str(payload.recipient))
+   html+=p('सेवा में,\n'+str(payload.recipient));
+ if(str(payload.subject))html+='<p><b>'+(certificate||minutes?'':'विषय: ')+e(str(payload.subject))+'</b></p>';
  if(payload.salutation&&!certificate&&!minutes)html+=p(str(payload.salutation));
  if(staffNotice){
-  if(!payload.staff||!['सफाईकर्मी','पंचायत सहायक'].includes(payload.staff.post))throw Error('कर्मी का नाम और पद स्पष्ट लिखकर फिर बनाएं।');
-  const f=payload.staff,issuer=['gpa','gva','pradhan','prashasak','ado','bdo','dpro','adpro','ddo'].includes(c.roleCode);
-  // The important short-instruction notice uses only extractive facts, never model-written allegations.
-  const facts=[f.absence,f.complaint,f.work].filter(Boolean);
-  if(!facts.length)throw Error('नोटिस का कारण स्पष्ट लिखें।');
-  html=p(`कार्यालय — ${c.role}\n${office}`)+p(`पत्रांक: ${hole('पत्रांक')}                         दिनांक: ${hole('निर्गमन दिनांक')}`);
-  html+=p(`सेवा में,\n${issuer?(str(f.name)||hole('कर्मी का नाम'))+'\n'+f.post+'\n'+location:hole('सक्षम अधिकारी और कार्यालय')}`);
-  html+=`<p><b>विषय: ${e(f.post)} के कार्य / उपस्थिति के संबंध में ${issuer?'स्पष्टीकरण':'सूचना एवं परीक्षण का अनुरोध'}।</b></p>`;
-  html+=p(`उपलब्ध सूचना में ${str(f.name)||hole('कर्मी का नाम')} (${f.post}) के संबंध में निम्न विवरण बताया गया है:`);
-  html+=facts.map(t=>p('“'+t+'”')).join('');
-  html+=p(`संबंधित घटना / अनुपस्थिति की तिथियाँ: ${str(f.dates)||hole('तिथियाँ')}। शिकायत / उपस्थिति अभिलेख का विवरण: ${hole('स्रोत और विवरण')}।`);
-  html+=p(issuer?`उक्त के संबंध में अपना तथ्यात्मक स्पष्टीकरण तथा संबंधित साक्ष्य ${str(f.deadline)||hole('उत्तर की समय-सीमा')} में ${hole('उत्तर प्रस्तुत करने का कार्यालय / माध्यम')} पर प्रस्तुत करें। यह पत्र स्पष्टीकरण प्राप्त करने हेतु है; उपलब्ध सूचना का परीक्षण किया जाना शेष है।`:'कृपया उपर्युक्त सूचना एवं संबंधित अभिलेखों का परीक्षण कर अपने स्तर से आवश्यक कार्यवाही करने का कष्ट करें।');
- }else html+=payload.paragraphs.map(p).join('');
+   if(!payload.staff||!['सफाईकर्मी','पंचायत सहायक'].includes(payload.staff.post))
+     throw Error('संबंधित कर्मी का पद स्पष्ट होना चाहिए।');
+   const f=payload.staff,issuer=['gpa','gva','pradhan','prashasak','ado','bdo','dpro','adpro','ddo'].includes(c.roleCode);
+   const facts=[f.absence,f.complaint,f.work].filter(Boolean);
+   if(!facts.length)throw Error('नोटिस का कारण स्पष्ट लिखें।');
+   const target=[str(f.name),str(f.post),location].filter(Boolean).join('\n');
+   html='';
+   if(!ownPradhanHead)html+=p(sender+(office?'\n'+office:''));
+   html+=p('सेवा में,\n'+(issuer?target:'संबंधित सक्षम अधिकारी'));
+   html+='<p><b>विषय: '+e(str(f.post))+' के कार्य / उपस्थिति के संबंध में '+(issuer?'स्पष्टीकरण':'सूचना एवं परीक्षण का अनुरोध')+'।</b></p>';
+   html+=p('उपलब्ध सूचना के आधार पर निम्न विवरण के संबंध में तथ्यात्मक पक्ष अपेक्षित है:');
+   html+=facts.map(t=>p('“'+t+'”')).join('');
+   if(f.dates)html+=p('संबंधित अवधि/तिथियाँ: '+f.dates+'।');
+   html+=p(issuer?
+     'कृपया उक्त के संबंध में अपना तथ्यात्मक स्पष्टीकरण तथा उपलब्ध साक्ष्य संबंधित कार्यालय में प्रस्तुत करें। यह पत्र स्पष्टीकरण प्राप्त करने के लिए है; उपलब्ध सूचना का परीक्षण किया जाना शेष है।':
+     'कृपया उपर्युक्त सूचना एवं संबंधित अभिलेखों का परीक्षण कर अपने स्तर से आवश्यक कार्यवाही करने का कष्ट करें।');
+   if(f.deadline)html+=p('उत्तर प्रस्तुत करने की अवधि: '+f.deadline+'।');
+ }else html+=payload.paragraphs.map(par=>p(str(par))).join('');
  if(payload.attachments?.length)html+=p('संलग्नक:\n'+payload.attachments.join('\n'));
- html+=`<p style="text-align:right">${notice?'':citizen?'प्रार्थी<br>':'भवदीय<br>'}हस्ताक्षर: __________<br>${e(c.name)}<br>${e(citizen?'प्रार्थी':c.role)}<br>${e(citizen?'[आवेदक का पता भरें]':office)}</p>`;
+ const signRole=citizen?'प्रार्थी':gpOffice?'ग्राम प्रधान':c.role;
+ const signature=[c.name,signRole,citizen?'':(ownPradhanHead?'':office)].filter(Boolean).join('\n');
+ if(signature)html+='<p style="text-align:right">'+(citizen?'प्रार्थी':'भवदीय')+'<br>'+e(signature).replace(/\n/g,'<br>')+'</p>';
  if(payload.copies?.length)html+=p('प्रतिलिपि:\n'+payload.copies.join('\n'));
- return {html,refs:[],review:{required:true,missing:payload.missing||[],sourceIds:retrieve(b).map(t=>t.id),evidence:check.evidence,attachmentReview:check.attachmentReview}};
+ // Missing data belongs to the separate editable review panel, not to
+ // the actual letter. Never output "[यहाँ भरें]" inside an official draft.
+ html=html.replace(/\[[^\]\n]{1,100}(?:भरें|लिखें|जोड़ें|डालें)\]/g,'');
+ const missing=[...(payload.missing||[])];
+ if(!c.name)missing.push('प्रेषक का नाम');
+ if(!certificate&&!minutes&&!payload.recipient)missing.push('प्राप्तकर्ता एवं पता');
+ if(!knownNumber)missing.push('पत्रांक (यदि आवश्यक हो)');
+ if(!knownDate)missing.push('निर्गमन की तिथि');
+ if(!gp&&['gpa','gva','pradhan','prashasak'].includes(c.roleCode))missing.push('संबंधित ग्राम पंचायत');
+ return {html,refs:[],review:{required:true,missing:[...new Set(missing)].slice(0,25),
+   sourceIds:retrieve(b).map(t=>t.id),evidence:check.evidence,attachmentReview:check.attachmentReview}};
 }
