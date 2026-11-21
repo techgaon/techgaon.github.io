@@ -765,10 +765,15 @@ function rti(el) {
 }
 function requestedDraftKind(text, selected="") {
   if(selected)return selected;
-  if(/कैसे|क्या|कब|how|procedure/i.test(text))return "";
-  if(!/बना|बनाइ|बनाय|तैयार|लिख|draft|bana|likh|taiyar|prepare|create/i.test(text))return "";
+  if(/कैसे|क्या|कब|क्यों|के बारे में|जानकारी|समझाओ|बताइए|बताओ|how|procedure|explain/i.test(text))return "";
+  // Terse office commands (“सचिव की ओर से ADO को पत्र”, “BDO notice”) also mean draft intent.
+  const action=/बना|बनाइ|बनाय|तैयार|लिख|draft|bana|likh|taiyar|prepare|create/i.test(text);
+  const terse=text.trim().split(/\s+/u).length<=24 &&
+    /पत्र|लेटर|patra|letter|नोटिस|notice|spashti|स्पष्टीकरण|आख्या|aakhya|आदेश|order|प्रस्ताव|prastav|आवेदन|aavedan|application|rt[i]/i.test(text);
+  if(!action&&!terse)return "";
   if(/नोटिस|notice|notis/i.test(text))return "नोटिस";
   if(/स्पष्टीकरण|spashti|जवाब|प्रतिउत्तर/i.test(text))return "स्पष्टीकरण";
+  if(/आख्या|aakhya|report|जाँच\s*रिपोर्ट/i.test(text))return "आख्या";
   if(/आदेश|aadesh|order/i.test(text))return "कार्यालय आदेश";
   if(/प्रमाण|certificate|praman/i.test(text))return "प्रमाणपत्र";
   if(/प्रस्ताव|prastav/i.test(text))return "प्रस्ताव";
