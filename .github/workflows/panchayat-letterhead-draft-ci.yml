@@ -12,6 +12,9 @@ on:
       - 'panchayatai/letterhead.js'
       - 'panchayatai/docx-export.js'
       - 'panchayatai/draft-card.js'
+      - 'panchayatai/draft-workspace.js'
+      - 'panchayatai/workspace.css'
+      - 'panchayatai/config.js'
       - 'panchayatai/index.html'
       - '.github/workflows/panchayat-letterhead-draft-ci.yml'
 permissions:
@@ -28,7 +31,7 @@ jobs:
       - name: JavaScript syntax
         run: |
           set -e
-          for f in panchayatai/{app,letterhead,draft-card,docx-export,ux,editor,dashboard}.js panchayatai/ai.js panchayatai/{drafting-core,drafting-corpus,drafting.test}.mjs; do
+          for f in panchayatai/{app,letterhead,draft-card,draft-workspace,docx-export,ux,editor,dashboard}.js panchayatai/ai.js panchayatai/{drafting-core,drafting-corpus,drafting.test}.mjs; do
             test -s "$f"
             node --check "$f"
           done
@@ -48,5 +51,26 @@ jobs:
           assert 'gp_office' in app and 'gp_office' in head
           assert 'createBlob' in Path('panchayatai/docx-export.js').read_text()
           assert 'letterhead.css' in html and 'letterhead.js' in html
+          core=Path('panchayatai/drafting-core.mjs').read_text()
+          settings=Path('panchayatai/config.js').read_text()
+          workspace=Path('panchayatai/draft-workspace.js').read_text()
+          assert 'draft-workspace.js' in html and 'workspace.css' in html
+          assert 'PAI_DRAFT_WORKSPACE.mount' in app
+          assert 'S.view = "chat"' not in app[app.index('function draftEdit(el)'):app.index('function history(el)')]
+          assert 'id="paiStartNewChat"' in app and 'chat_archives_v1_' in app
+          assert 'News Chat' not in app and 'news-chat.js' not in html
+          assert 'freeLimitsEnabled===true' in app and 'if(limit===Infinity)return' in app
+          assert 'plusLimitsEnabled===true' in app
+          assert 'dailyChats: null, dailyDrafts: null' in settings
+          assert 'nameHindi' in app and 'name:str(p.nameHindi||p.name)' in core
+          assert 'charCodeAt(0)-2406' in core
+          assert 'id="dNameHindi"' in app
+          assert '<button class="btn-sm hidden" id="loginTop">' in html
+          assert 'S.authReady = !S.auth' in app
+          assert 'PAI_DRAFT_CARD.mount' in workspace
+          assert '<script src="draft-workspace.js' in html
+          assert 'mode' in head and 'gp_office' in head
+          assert 'new Function' not in workspace
+          print('Login, New Chat, unlimited quotas, Hindi name and Draft Studio gates OK')
           print('Letterhead UI and export integration checks OK')
           PY
