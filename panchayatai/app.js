@@ -289,7 +289,8 @@ function chrome() {
   $("#planBadge").classList.toggle("hidden", !isPlus()); $("#planBadge").textContent = "PLUS";
   const adminLink = $("#adminLink"); if (adminLink) adminLink.classList.toggle("hidden", !isAdmin());
   document.querySelectorAll("#drawer [data-go]").forEach(link => {
-    link.classList.toggle("hidden", isAdmin() ? !["admin","settings"].includes(link.dataset.go) : link.dataset.go === "admin");
+    link.classList.toggle("hidden", isAdmin() ? !["admin","settings"].includes(link.dataset.go) :
+      link.dataset.go==="admin" || (link.dataset.go==="letterhead" && (!S.user||S.profile?.role!=="pradhan")));
   });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
   document.body.classList.toggle("pai-admin-view", isAdmin());
@@ -315,12 +316,19 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
+  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
   stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
 }
 
+function letterheadScreen(el) {
+  if(!S.user)return go("login");
+  if(S.profile?.role!=="pradhan")return go("profile");
+  if(!window.PAI_LETTERHEAD?.mount){el.innerHTML='<div class="card">Letterhead उपलब्ध नहीं। Refresh करें।</div>';return;}
+  window.PAI_LETTERHEAD.mount(el,{profile:S.profile,user:S.user,db:S.db,
+    onSaved:()=>{LS.set("profile",S.profile);},toast});
+}
 function settingsScreen(el) {
   if (window.PAI_UX?.preferences) window.PAI_UX.preferences(el);
   else el.innerHTML = '<div class="card">Display Settings उपलब्ध नहीं हैं। पेज Reload करें।</div>';
@@ -492,7 +500,8 @@ function profile(el) {
    <p class="hint">अगर आप विभागीय अधिकारी, कर्मचारी या प्रधान हैं तो अपनी प्रोफ़ाइल पूरी करें और अपने काम — पत्र, स्पष्टीकरण आदि — 1 मिनट में निपटाएँ।</p>
    <label>Your post</label><select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
-   <div class="btn-row"><button class="btn" id="pSave">Save ✔</button><button class="btn alt" data-go="details">Edit name or mobile no</button></div></div>`;
+   <div class="btn-row"><button class="btn" id="pSave">Save ✔</button><button class="btn alt" data-go="details">Edit name or mobile no</button></div>
+   ${p.role==="pradhan"?'<div class="card" style="margin-top:15px"><b>🖋️ ग्राम प्रधान लेटरहेड</b><p class="hint">लेटरहेड बनाएँ या Upload करें, Preview/Edit करके Save करें।</p><button type="button" class="btn" data-go="letterhead">लेटरहेड बनाएँ / Upload करें</button></div>':""}</div>`;
   const area = $("#pArea");
   const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", clusters: (Array.isArray(p.clusters) ? p.clusters : p.cluster ? [p.cluster] : []).slice(0,3), gps: (Array.isArray(p.gps) ? p.gps : []).slice(0,25), clerkLevel: p.clerkLevel || "block", designation: p.designation || "" };
   let availableGpNames=[];
@@ -643,8 +652,9 @@ function chat(el) {
       const m=S.chat[Number(holder.dataset.draftMessage)];
       if(draftCards.has(m.id)){holder.appendChild(draftCards.get(m.id).card);return;}
       draftCards.set(m.id,window.PAI_DRAFT_CARD.mount(holder,{html:m.html,kind:m.kind,review:m.review,size:m.size||12,dirty:m.dirty,
+        stationery:m.stationery||"plain",letterhead:S.profile?.role==="pradhan"?S.profile?.letterhead:null,
         toast,onChange:change=>{Object.assign(m,change,{dirty:true});},onSave:change=>{
-          const list=LS.get("drafts")||[], entry={id:m.id,kind:m.kind,html:m.html,refs:m.refs||[],review:m.review,size:m.size||12,at:Date.now()};
+          const list=LS.get("drafts")||[], entry={id:m.id,kind:m.kind,html:m.html,stationery:m.stationery||"plain",refs:m.refs||[],review:m.review,size:m.size||12,at:Date.now()};
           const index=list.findIndex(x=>x.id&&x.id===m.id);if(index>=0)list[index]=entry;else list.unshift(entry);
           if(!LS.set("drafts",list.slice(0,50)))throw Error("फोन की जगह भर गई है। पत्र सहेजा नहीं जा सका।");
           Object.assign(m,change,{dirty:false});persistChat();
@@ -677,7 +687,9 @@ function chat(el) {
         const followup=revising;
         const source=followup?[{name:"पिछले मसौदे का संदर्भ",text:window.PAI_DRAFT_CARD.sanitize(previous.html).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ")}]:[];
         const r=await api("/draft",{kind,profile:S.profile,points:q,gp:$("#chatDraftGP")?.value.trim()||"",att:att.concat(source),refs:[]});
-        S.chat.push({r:"a",document:true,id:crypto.randomUUID(),kind,html:r.html,review:r.review,refs:r.refs||[],t:kind,question:q});
+        const detected=window.PAI_LETTERHEAD?.mode(S.profile,q,kind)||"plain";
+        const stationery=revising && previous?.stationery==="gp_office" && detected==="pradhan_letterhead"?"gp_office":detected;
+        S.chat.push({r:"a",document:true,id:crypto.randomUUID(),kind,html:r.html,review:r.review,stationery,refs:r.refs||[],t:kind,question:q});
       }else{
         const [r, originals] = await Promise.all([
           api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m=>({r:m.r,t:m.document?m.kind+" का मसौदा तैयार है।":m.t})), att }),
@@ -760,14 +772,14 @@ function draftEdit(el) {
   window.history.replaceState(null,"",location.pathname+"#chat");
   chat(el);
 }
-function showDraft(html,refs,kind,savedFontSize=12,review=null) {
-  S.chat.push({r:"a",document:true,id:crypto.randomUUID(),html,refs,kind,size:savedFontSize,review,t:kind});
+function showDraft(html,refs,kind,savedFontSize=12,review=null,stationery="plain") {
+  S.chat.push({r:"a",document:true,id:crypto.randomUUID(),html,refs,kind,size:savedFontSize,review,stationery,t:kind});
   S.draftMode=kind;go("chat");
 }
 function history(el) {
   const h = LS.get("drafts") || [];
   el.innerHTML = `<h2>My Drafts</h2>` + (h.length ? h.map((x, i) => `<div class="lib-item"><a data-i="${i}"><b>${esc(x.kind)}</b></a><small>${new Date(x.at).toLocaleString("hi-IN")}</small></div>`).join("") : `<p class="hint">No saved drafts yet.</p>`) + `<div id="out"></div>`;
-  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind, x.size||12, x.review); });
+  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind, x.size||12, x.review, x.stationery||"plain"); });
 }
 
 /* ---------- पंचायत न्यूज़ (Inshorts जैसी छोटी ख़बरें) ---------- */
