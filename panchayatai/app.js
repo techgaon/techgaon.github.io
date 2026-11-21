@@ -507,10 +507,10 @@ function profile(el) {
     h += sel("aDist", "District", G.districts, st.district, "");
     if (scope !== "district") h += sel("aBlock", "Block", blocks, st.block, "Type block name");
     if (scope === "gp") h += sel("aGp", role === "resident" ? "Your Gram Panchayat" : "Gram Panchayat", gpsAll, st.gps[0] || "", "Type Gram Panchayat name");
-    if (scope === "multigp") {
+    if (scope === "multigp" && st.block) {
       h += `<label for="aClusterTxt">Select Cluster name (अधिकतम 3)</label>
        <p class="hint" id="clusterHelp">Block चुनने के बाद Cluster का नाम चुनें या लिखकर जोड़ें। अधिकतम 3 Cluster।</p>
-       <div class="pai-cluster-add"><input id="aClusterTxt" list="paiKnownClusters" maxlength="100" autocomplete="off" placeholder="Cluster चुनें या नाम लिखें" aria-describedby="clusterHelp"><datalist id="paiKnownClusters">${(Array.isArray(p.clusters) ? p.clusters : []).filter(x => typeof x === "string").map(x => `<option value="${esc(x)}"></option>`).join("")}</datalist><button class="btn" id="aClusterBtn" type="button">+ Add</button></div>
+       <div class="pai-cluster-add"><input id="aClusterTxt" list="paiKnownClusters" maxlength="100" autocomplete="off" placeholder="Cluster चुनें या नाम लिखें" aria-describedby="clusterHelp"><datalist id="paiKnownClusters">${(p.block === st.block && Array.isArray(p.clusters) ? p.clusters : []).filter(x => typeof x === "string").map(x => `<option value="${esc(x)}"></option>`).join("")}</datalist><button class="btn" id="aClusterBtn" type="button">+ Add</button></div>
        <div class="gp-list" aria-label="चुने गए Cluster">${st.clusters.map((g,i)=>`<span class="chip">${esc(g)}<button type="button" aria-label="${esc(g)} Cluster हटाएँ" data-rm-cluster="${i}">✕</button></span>`).join("")}</div>
        <p class="hint">${st.clusters.length}/3 Cluster selected</p>
        <label>Gram Panchayats (max 25)</label><p class="hint">अपनी ग्राम पंचायतें चुनें। अधिकतम 25 GP जोड़ सकते हैं।</p>
@@ -518,6 +518,7 @@ function profile(el) {
         : `<div style="display:flex;gap:6px"><input id="aGpTxt" placeholder="Gram Panchayat name"><button class="btn" id="aGpBtn" type="button">Add</button></div>`}
        <div class="gp-list">${st.gps.map((g, i) => `<span class="chip">${esc(g)}<b data-rm="${i}">✕</b></span>`).join("")}</div><p class="hint">${st.gps.length}/25 selected</p>`;
     }
+    if (scope === "multigp" && !st.block) h += `<p class="hint">पहले Block चुनें, फिर अधिकतम 3 Cluster और 25 ग्राम पंचायतें जोड़ सकेंगे।</p>`;
     area.innerHTML = h;
     const on = (id, f) => { const x = $("#" + id); if (x) x.onchange = f; };
     on("aLvl", e => { st.clerkLevel = e.target.value; draw(); });
