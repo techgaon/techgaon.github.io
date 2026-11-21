@@ -2,7 +2,7 @@
 (() => {
  "use strict";
  const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
- function mount({paper,profile,role,toast}={}){
+ function mount({paper,profile,role,toast,docSize=12}={}){
    if(!paper||paper.dataset.editorReady)return;
    paper.dataset.editorReady="true";
    paper.setAttribute("contenteditable","true");
@@ -10,7 +10,9 @@
    paper.setAttribute("role","textbox");
    paper.setAttribute("aria-label","संपादन योग्य A4 सरकारी दस्तावेज़");
    paper.setAttribute("aria-multiline","true");
-   paper.dataset.docSize="12";
+   const initial=[11,12,13,14].includes(Number(docSize))?Number(docSize):12;
+   paper.dataset.docSize=String(initial);
+   paper.style.fontSize=initial+"pt";
    paper.closest(".card")?.classList.add("pai-doc-editor-shell");
    const toolbar=document.createElement("div");
    toolbar.className="pai-document-tools";
@@ -58,6 +60,7 @@
      });
    });
    const size=toolbar.querySelector("#pai-doc-size");
+   size.value=String(initial);
    size.onchange=()=>{
      paper.style.fontSize=size.value+"pt";
      paper.dataset.docSize=size.value;
