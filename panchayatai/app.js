@@ -704,7 +704,9 @@ function draftEdit(el) {
 function showDraft(html, refs, kind) {
   const out = $("#out");
   out.innerHTML = `<div class="card"><p class="hint">✏️ Tap the letter to edit it directly.</p><div class="paper" id="paper" contenteditable="true">${html}</div>
-   <div class="btn-row"><button class="btn" id="dcopy">📋 Copy</button><button class="btn" id="dpdf">⬇ PDF</button><button class="btn alt" id="dword">⬇ Word</button><button class="btn alt" id="dsave">💾 Save</button><button class="btn alt" id="dwa">WhatsApp</button></div>${refsHtml(refs)}</div>`;
+   <div class="btn-row"><button class="btn" id="dcopy">📋 Copy</button><button class="btn" id="dpdf">⬇ PDF</button><button class="btn alt" id="dword">⬇ Word (.docx)</button><button class="btn alt" id="dsave">💾 Save</button><button class="btn alt" id="dwa">WhatsApp</button></div>${refsHtml(refs)}</div>`;
+  const roleTitle = S.profile ? (ROLES[S.profile.role]?.n || S.profile.designation || "कार्यालय") : "कार्यालय";
+  window.PAI_EDITOR?.mount({paper:$("#paper"),profile:S.profile,role:roleTitle,toast});
   const name = kind + "_" + new Date().toISOString().slice(0, 10);
   $("#dcopy").onclick = async () => { const t = $("#paper").innerText; try { await navigator.clipboard.writeText(t); } catch { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); document.execCommand("copy"); x.remove(); } toast("Copied ✔"); };
   const makeLetterPdf = async () => {
@@ -739,10 +741,15 @@ function showDraft(html, refs, kind) {
     catch(e){toast("PDF error: "+(e.message||"Please retry"));console.error(e);}
     finally{button.disabled=false;}
   };
-  $("#dword").onclick = () => {
-    const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>@page{size:A4;margin:20mm}body{font-family:Mangal,"Noto Sans Devanagari";font-size:12pt;line-height:1.6}p,table,tr{page-break-inside:avoid}</style></head><body>${$("#paper").innerHTML}
-     <p style="font-size:8pt;color:#666;border-top:1px solid #ccc;margin-top:30px"><a href="${C.companyUrl}">${C.companyName}</a><span style="float:right"><a href="${C.appUrl}">${C.appName}</a></span></p></body></html>`;
-    saveBlob(new Blob(["﻿" + doc], { type: "application/msword" }), name + ".doc");
+  $("#dword").onclick = async () => {
+    const button=$("#dword");button.disabled=true;
+    try {
+      if(!window.PAI_DOCX?.exportPaper)throw Error("DOCX Generator लोड नहीं हुआ। पेज Reload करें।");
+      toast("Word (.docx) फ़ाइल तैयार हो रही है…");
+      await window.PAI_DOCX.exportPaper($("#paper"),name+".docx");
+      toast("DOCX तैयार ✓");
+    } catch(e) {console.error(e);toast("Word Error: "+(e.message||"फिर कोशिश करें"));}
+    finally{button.disabled=false;}
   };
   $("#dsave").onclick = () => { const h = LS.get("drafts") || []; h.unshift({ kind, html: $("#paper").innerHTML, refs, at: Date.now() }); LS.set("drafts", h.slice(0, 50)); toast("Saved ✔"); };
   $("#dwa").onclick = async () => {
