@@ -140,10 +140,12 @@
     if (!hero || hero.nextElementSibling?.classList.contains("pai-scene-showcase")) return;
     const section = document.createElement("section");
     section.className = "pai-scene-showcase pai-scene-on";
-    section.setAttribute("aria-label","पंचायत AI से काम आसान होने के दृश्य");
+    section.setAttribute("aria-label","पंचायत AI के 6 दृश्य, दाएँ-बाएँ स्वाइप करें");
+    section.setAttribute("aria-roledescription","carousel");
+    section.setAttribute("tabindex","0");
     const reduceMotion = () => document.body.classList.contains("pai-motion-off") ||
       (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    let index = 0;
+    let index = 0, lastManual = 0, pointerStart = null;
     const paint = () => {
       const scene = scenes[index];
       section.classList.remove("pai-scene-on");
@@ -152,20 +154,64 @@
         '<h2 class="pai-scene-title">'+scene.title+'</h2>'+
         '<p class="pai-scene-subtitle">'+scene.detail+'</p></div>'+
         '<div class="pai-scene-art" aria-hidden="true">'+scene.art+'</div></div>'+
-        '<div class="pai-scene-progress" aria-hidden="true">'+
-        scenes.map((_,i)=>'<i class="'+(i===index?'on':'')+'"></i>').join("")+'</div>';
-      // Restart entrance animation for the newly displayed frame.
+        '<div class="pai-scene-progress" aria-label="दृश्य चुनें">'+
+        scenes.map((_,i)=>'<button type="button" data-scene-index="'+i+'" class="'+(i===index?'on':'')+
+          '" aria-label="दृश्य '+(i+1)+' : '+scenes[i].title+'" aria-pressed="'+(i===index)+'"></button>').join("")+'</div>';
+      section.setAttribute("aria-label","पंचायत AI का दृश्य "+(index+1)+" / "+scenes.length+
+        " : "+scene.title+". आगे या पीछे स्वाइप करें");
       void section.offsetWidth;
       section.classList.add("pai-scene-on");
     };
+    const showScene = (next, manual=false, travel=1) => {
+      const nextIndex=(next+scenes.length)%scenes.length;
+      if(nextIndex===index)return;
+      index=nextIndex;
+      if(manual)lastManual=Date.now();
+      section.classList.remove("pai-swipe-enter");
+      section.style.setProperty("--pai-swipe-start",travel>0?"14px":"-14px");
+      paint();
+      if(manual && !reduceMotion()) {
+        void section.offsetWidth;
+        section.classList.add("pai-swipe-enter");
+      }
+    };
     paint();
     hero.insertAdjacentElement("afterend",section);
-    const interval = window.setInterval(() => {
-      if (!section.isConnected) {window.clearInterval(interval); return;}
-      if (document.hidden || reduceMotion()) return;
-      index = (index+1)%scenes.length;
-      paint();
-    }, 4600);
+    section.addEventListener("pointerdown",event => {
+      if(event.target.closest("button"))return;
+      if(event.pointerType==="mouse" && event.button!==0)return;
+      pointerStart={id:event.pointerId,x:event.clientX,y:event.clientY};
+    });
+    section.addEventListener("pointerup",event => {
+      if(!pointerStart || event.pointerId!==pointerStart.id)return;
+      const dx=event.clientX-pointerStart.x,dy=event.clientY-pointerStart.y;
+      pointerStart=null;
+      if(Math.abs(dx)<42 || Math.abs(dx)<Math.abs(dy)*1.2)return;
+      showScene(index+(dx<0?1:-1),true,dx<0?1:-1);
+    });
+    section.addEventListener("pointercancel",() => {pointerStart=null;});
+    section.addEventListener("click",event => {
+      const button=event.target.closest("button[data-scene-index]");
+      if(!button || !section.contains(button))return;
+      const selected=Number(button.dataset.sceneIndex);
+      if(!Number.isInteger(selected)||selected<0||selected>=scenes.length)return;
+      const previous=index;
+      showScene(selected,true,selected>=previous?1:-1);
+    });
+    section.addEventListener("keydown",event => {
+      if(event.key==="ArrowRight" || event.key==="ArrowLeft"){
+        event.preventDefault();
+        const step=event.key==="ArrowRight"?1:-1;
+        showScene(index+step,true,step);
+      }
+    });
+    section.addEventListener("mouseenter",() => {lastManual=Date.now();});
+    const interval=window.setInterval(() => {
+      if(!section.isConnected){window.clearInterval(interval);return;}
+      if(document.hidden || reduceMotion() || Date.now()-lastManual<8500)return;
+      if(section.matches(":hover") || section.matches(":focus-within"))return;
+      showScene(index+1,false,1);
+    },4600);
   }
 
   function mount(home,{user,design}={}) {
