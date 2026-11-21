@@ -55,3 +55,14 @@ body[data-theme="dark"] .pai-hindi-gp-row{background:#1b2b41;color:#edf3fb;borde
 .pai-chat-gp{display:grid;gap:6px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--bd,#c5d6e5);border-radius:12px;background:var(--card,#fff)}
 .pai-chat-gp label{font:650 12px/1.4 "Noto Sans Devanagari",sans-serif;color:var(--ink,#233956)}
 .pai-chat-gp select{width:100%;min-height:42px;font-family:"Noto Sans Devanagari",sans-serif}
+
+/* Document chooser: icon + heading only, with compact balanced cards. */
+#view .grid > .tile[data-k]{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; min-width:0; min-height:138px; padding:18px 10px;
+  font:700 20px/1.45 "Anek Devanagari","Noto Sans Devanagari",sans-serif;
+}
+#view .grid > .tile[data-k] .e{
+  display:block; margin:0; font-size:33px; line-height:1.3;
+}
+@media(max-width:390px){#view .grid > .tile[data-k]{min-height:128px;font-size:18px}}
