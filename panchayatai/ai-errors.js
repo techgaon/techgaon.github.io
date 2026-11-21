@@ -26,6 +26,22 @@
    function set(id,title,msg,action){
      result.code=id;result.title=title;result.message=msg;result.action=action;return result;
    }
+   if(/ai_backup_not_deployed|ai_backup_not_configured|ai_backup_disabled|free ai fallback सेटअप अधूरा/i.test(all))
+     return set("AI_BACKUP_SETUP","Gemini और Free AI बैकअप दोनों उपलब्ध नहीं",
+       "Gemini उपलब्ध नहीं है और Groq Worker का Deployment या API Key सेटअप अभी पूरा नहीं हुआ।",
+       "Admin: GitHub Repository → Actions Secrets में GROQ_API_KEY और Cloudflare credentials देकर Fallback Workflow चलाएँ।");
+   if(/backup_exhausted|ai_backup_http_503|ai_all_providers_failed/.test(all))
+     return set("AI_BACKUP_EXHAUSTED","सभी AI Providers की सीमा पूरी",
+       "Gemini और उपलब्ध Free Backup Providers ने इस अनुरोध को पूरा नहीं किया।",
+       "कुछ देर बाद प्रयास करें; Admin Groq/Cloudflare Free Tier की स्थिति जाँचें।");
+   if(/ai_backup_text_only/.test(all))
+     return set("AI_BACKUP_TEXT_ONLY","Free Backup केवल Text/Word के लिए",
+       "Gemini के बिना PDF/फोटो का सुरक्षित AI विश्लेषण संभव नहीं है।",
+       "संवेदनशील PDF/फोटो के लिए Gemini कनेक्शन ठीक होने पर पुनः प्रयास करें।");
+   if(/user_rate_limit/.test(all))
+     return set("AI_BACKUP_BURST_LIMIT","Free Backup के सुरक्षा अनुरोधों की सीमा",
+       "अचानक बहुत अधिक अनुरोध होने के कारण थोड़ी देर का सुरक्षा विराम लगा है।",
+       "करीब एक मिनट बाद फिर प्रयास करें।");
    if(/(?:ai could not load|module not loaded|module.*load|failed to load module|importing a module)/.test(all))
      return set("AI_MODULE_NOT_LOADED","AI मॉड्यूल लोड नहीं हुआ",
        "AI की आवश्यक Script पूरी तरह लोड नहीं हो सकी।",
