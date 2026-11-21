@@ -31,13 +31,31 @@ jobs:
             const page=await browser.newPage({locale:'hi-IN'});
             const errors=[];
             page.on('pageerror',e=>errors.push(String(e.message||e).slice(0,190).replace(/https?:\/\/\S+/g,'[URL]')));
+            page.on('requestfailed',r=>{
+              const u=r.url(),host=(()=>{try{return new URL(u).hostname}catch{return 'unknown'}})();
+              if(/gstatic|firebase|google|techgaon/.test(host))
+                console.log('FAILED_RESOURCE',host,r.failure()?.errorText||'unknown');
+            });
             page.on('response',r=>{
               if(/firebasevertexai\.googleapis\.com/.test(r.url()))
                 console.log('AI_HTTP_STATUS',r.status());
             });
             try{
               await page.goto('https://techgaon.in/panchayatai/',{waitUntil:'domcontentloaded',timeout:45000});
-              await page.waitForFunction(()=>Boolean(window.PAI_AI?.diagnose),{timeout:45000});
+              try{
+                await page.waitForFunction(()=>Boolean(window.PAI_AI?.diagnose),null,{timeout:22000});
+              }catch(e){
+                const snapshot=await page.evaluate(()=>({
+                  title:document.title,
+                  configProject:window.PAI_CONFIG?.firebase?.projectId||'missing',
+                  aiObject:!!window.PAI_AI,
+                  scripts:Array.from(document.scripts).filter(x=>/ai\.js|app\.js|ai-errors\.js/.test(x.src)).map(x=>new URL(x.src).pathname),
+                  renderText:(document.body?.innerText||'').slice(0,160)
+                }));
+                console.log('MODULE_NOT_READY',JSON.stringify(snapshot));
+                console.log('BROWSER_ERRORS',JSON.stringify(errors.slice(0,5)));
+                throw e;
+              }
               const t=await page.evaluate(()=>window.PAI_AI.diagnose());
               console.log('DIAGNOSTIC',JSON.stringify({
                 project:t.project,model:t.model,
