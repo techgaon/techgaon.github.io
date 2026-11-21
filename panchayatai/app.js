@@ -119,7 +119,7 @@ function effectiveDailyLimit(settings,kind,plus){
  // Everyone is unlimited unless admin explicitly activates the limit.
  const enabled=plus?settings?.plusLimitsEnabled===true:settings?.freeLimitsEnabled===true;
  if(!enabled)return Infinity;
- return Number.isInteger(settings?.[key])&&settings[key]>=0&&settings[key]<=100000
+ return Number.isInteger(settings?.[key])&&settings[key]>=0&&settings[key]<=1000
   ?settings[key]:(plus?200:(kind==="chat"?10:3));
 }
 async function useQuota(kind){
@@ -170,7 +170,7 @@ async function api(path, body) {
     await S.db.collection("payments").add({ uid: S.user.uid, email: S.user.email, name: S.profile.name, phone: S.profile.phone, plan: body.plan, utr: body.utr, ref: body.ref, status: "pending", at: Date.now() });
     return { ok: true };
   }
-  if (!isPlus() && body.att) body.att = body.att.slice(0, 1);
+  // No artificial Free attachment count cap while default is Unlimited.
   await aiReady();
   await useQuota(path === "/chat" ? "chat" : "draft");
   try { return await (path === "/chat" ? window.PAI_AI.chat(body) : window.PAI_AI.draft(body)); }
@@ -1071,7 +1071,7 @@ async function adminLimits(panel){
    wrap.hidden=!enabled;
    wrap.innerHTML=fields.filter(([key])=>key.startsWith(kind)).map(([key,label,def])=>
      '<label for="limit-'+key+'">'+label+'</label><input id="limit-'+key+
-     '" type="number" min="0" max="100000" step="1" inputmode="numeric" value="'+
+     '" type="number" min="0" max="1000" step="1" inputmode="numeric" value="'+
      (Number.isInteger(settings[key])&&settings[key]>=0?settings[key]:def)+'">').join("");
  }
  for(const kind of ["free","plus"]){
@@ -1089,7 +1089,7 @@ async function adminLimits(panel){
        const raw=panel.querySelector("#limit-"+key).value.trim();
        if(!/^\d+$/.test(raw))throw Error(label+": पूरा अंक भरें।");
        const value=Number(raw);
-       if(!Number.isSafeInteger(value)||value<0||value>100000)throw Error(label+": 0–100000 तक मान्य है।");
+       if(!Number.isSafeInteger(value)||value<0||value>1000)throw Error(label+": 0–1000 तक मान्य है।");
        update[key]=value;
      }
      button.disabled=true;
