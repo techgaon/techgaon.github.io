@@ -630,9 +630,45 @@ function profile(el) {
     });
     area.querySelectorAll("[data-rm-cluster]").forEach(x => x.onclick = () => { st.clusters.splice(Number(x.dataset.rmCluster),1); draw(); });
     area.querySelectorAll("[data-rm]").forEach(x => x.onclick = () => { st.gps.splice(+x.dataset.rm, 1); draw(); });
+    // Prefill editable Hindi spellings automatically without blocking the Profile.
+    Promise.resolve().then(()=>suggestHindi(false)).catch(e=>console.warn("Hindi suggestion",e));
   }
+  // Suggest Hindi spellings immediately as selections change; leave manually edited
+  // fields untouched. All spellings are reviewed and saved on this Profile screen.
+  async function suggestHindi(force=false){
+    if(!H)return;
+    const rawName=String(p.name||S.gInfo?.name||S.user.displayName||"").trim();
+    const raws=[rawName,st.block,...st.clusters,...st.gps].filter(Boolean);
+    const signature=raws.join("|");
+    if(!force&&signature===lastAutoSignature)return;
+    lastAutoSignature=signature;
+    const state=$("#pHindiStatus");
+    if(force&&state)state.textContent="हिंदी वर्तनी के सुझाव प्राप्त हो रहे हैं…";
+    const hints=await H.suggest(raws);
+    if(!el.isConnected)return;
+    const first=$("#pNameHindi");
+    if(first&&!touchedHindi.has("name")&&!p.nameHindi&&H.canUseHindi(hints[rawName])){
+      first.value=hints[rawName];
+    }
+    if(st.block&&!touchedHindi.has("block")&&!p.blockHindi&&H.canUseHindi(hints[st.block])){
+      st.blockHindi=hints[st.block];
+      const field=$("#aBlockHindi");if(field)field.value=st.blockHindi;
+    }
+    for(const raw of [...new Set([...st.clusters,...st.gps])]){
+      if(touchedHindi.has("gp:"+raw)||p.gpsHindi?.[raw])continue;
+      if(!H.canUseHindi(hints[raw]))continue;
+      st.gpsHindi[raw]=hints[raw];
+      area.querySelectorAll("[data-hindi-gp]").forEach(inp=>{
+        if(inp.dataset.hindiGp===raw)inp.value=hints[raw];
+      });
+      const single=$("#aGpHindi");if(single&&st.gps[0]===raw)single.value=hints[raw];
+    }
+    if(force&&state)state.textContent="सुझाव आ गए हैं। हिंदी वर्तनी जाँचें; गलत हो तो यहीं सुधारकर Save करें।";
+  }
+  $("#pNameHindi").oninput=()=>touchedHindi.add("name");
+  $("#pSuggestHindi").onclick=()=>suggestHindi(true);
   $("#pRole").onchange = draw; draw();
-  $("#pSave").onclick = () => {
+  $("#pSave").onclick = async () => {
     const role = $("#pRole").value; if (!role) return toast("Select your post");
     const v = id => { const x = $("#" + id); return x ? x.value.trim() : ""; };
     if ($("#aTeh")) st.tehsil = v("aTeh"); if ($("#aBlock")) st.block = v("aBlock"); if ($("#aGp")) st.gps = v("aGp") ? [v("aGp")] : [];
@@ -645,13 +681,47 @@ function profile(el) {
     if (scope === "multigp" && (!availableGpNames.length || st.clusters.some(name=>!availableGpNames.includes(name)))) return toast("Cluster केवल चुने गए Block की ग्राम पंचायत सूची से चुनें");
     if (scope === "multigp" && st.gps.length > 25) return toast("अधिकतम 25 Gram Panchayats");
     if (role !== "resident" && (scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
-    Object.assign(S.profile ||= {}, { role, state: "उत्तर प्रदेश", district: st.district, tehsil: scope.includes("gp") ? st.tehsil : "", block: scope === "district" ? "" : st.block,
-      clusters: scope === "multigp" ? st.clusters.slice(0,3) : [], gps: scope.includes("gp") ? st.gps.slice(0,25) : [], clerkLevel: role === "clerk" ? st.clerkLevel : "",
-      designation: role === "other_staff" ? st.designation : "", sign: role === "other_staff" && st.designation ? st.designation : ROLES[role].n, profileComplete: true });
-    S.needsProfileSetup=false;
-    saveProfile(); toast("Profile saved ✔"); const n = S.after || "home"; S.after = null;
-    if(role==="pradhan"&&!S.profile.letterhead&&!LS.get("pradhanLetterheadSeen_"+S.user.uid))go("letterhead");
-    else go(n);
+    const nh=$("#pNameHindi").value.trim().replace(/\\s+/gu," ");
+    const rawPhone=$("#pPhone").value.replace(/\\D/g,"");
+    const phone=rawPhone.slice(-10);
+    if(!H?.canUseHindi(nh)){toast("अपना पूरा नाम हिंदी में सुधारकर Save करें।");$("#pNameHindi").focus();return;}
+    if(rawPhone&&phone.length!==10){toast("मोबाइल नंबर 10 अंकों का होना चाहिए।");$("#pPhone").focus();return;}
+    const blockHindi=st.block?String(st.blockHindi||hintFor(st.block)).trim():"";
+    if(st.block&&!H.canUseHindi(blockHindi))return toast("विकास खण्ड का नाम हिंदी में लिखें");
+    const selected=[...new Set([...st.clusters,...st.gps])];
+    const mapping={};
+    for(const raw of selected){
+      const text=String(st.gpsHindi[raw]||hintFor(raw)).trim();
+      if(!H.canUseHindi(text))return toast(raw+" का सही हिंदी नाम लिखें");
+      mapping[raw]=text;
+    }
+    const previousProfile={...(S.profile||{})};
+    const nextProfile={...previousProfile,role,state:"उत्तर प्रदेश",
+      nameHindi:nh,phone:phone||previousProfile.phone||"",district:st.district,districtHindi:st.districtHindi||st.district,
+      tehsil:scope.includes("gp")?st.tehsil:"",block:scope==="district"?"":st.block,
+      blockHindi:scope==="district"?"":blockHindi,
+      gpsHindi:mapping,
+      clusters:scope==="multigp"?st.clusters.slice(0,3):[],
+      gps:scope.includes("gp")?st.gps.slice(0,25):[],
+      clerkLevel:role==="clerk"?st.clerkLevel:"",
+      designation:role==="other_staff"?st.designation:"",
+      sign:role==="other_staff"&&st.designation?st.designation:ROLES[role].n,
+      hindiProfileReviewed:true,profileComplete:true};
+    S.profile=nextProfile;
+    const btn=$("#pSave");btn.disabled=true;
+    try{
+      await saveProfile();
+      S.needsProfileSetup=false;
+      toast("प्रोफ़ाइल हिंदी नामों के साथ Save हुई ✓");
+      const n=S.after||"home";S.after=null;
+      if(role==="pradhan"&&!S.profile.letterhead&&!LS.get("pradhanLetterheadSeen_"+S.user.uid))go("letterhead");
+      else go(n);
+    }catch(e){
+      S.profile=previousProfile;
+      $("#pHindiStatus").textContent="Save नहीं हुआ: "+(e.message||"Network error");
+      btn.disabled=false;
+    }
+    return;
   };
 }
 
@@ -892,10 +962,7 @@ function requestedDraftKind(text, selected="") {
 }
 function draftEdit(el) {
   if(needLogin("draftEdit"))return;
-  const hindiName=String(S.profile?.nameHindi || S.profile?.name || "").trim();
-  if(!/[\u0900-\u097f]/u.test(hindiName)||/[A-Za-z]/.test(hindiName)){
-    S.after="draftEdit";toast("पत्र में सही हिंदी नाम के लिए Profile अपडेट करें।");go("details");return;
-  }
+  // Hindi spelling was confirmed in Profile; never interrupt drafting for it.
   const choices=RTI_DRAFTS.concat(draftsFor(S.profile.role));
   const type=choices.find(x=>x.k===S.draftType)||BASE_DRAFTS[0];
   S.draftType=type.k;
