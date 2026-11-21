@@ -23,8 +23,10 @@
     <path d="M82 111l29 9" stroke="#dba884" stroke-width="12" stroke-linecap="round" class="pai-typing-hand"/>
     <path d="M119 91h82a8 8 0 0 1 8 8v46h-90z" fill="#294b76"/>
     <rect x="125" y="97" width="78" height="42" rx="4" fill="#dcf5fa"/>
-    <path d="M134 109h37m-37 8h57m-57 8h43" stroke="#58aabb" stroke-width="3.5" stroke-linecap="round" class="pai-laptop-lines"/>
-    <circle cx="189" cy="109" r="6" fill="#38afa9" opacity=".8"/>
+    <rect x="129" y="100" width="70" height="36" rx="3" fill="#e4faff"/>
+    <text x="164" y="115" text-anchor="middle" fill="#1d5879" font-family="Noto Sans Devanagari,Anek Devanagari,sans-serif" font-size="10" font-weight="800">पंचायत AI</text>
+    <path d="M138 123h52m-52 5h34" stroke="#58aabb" stroke-width="2.5" stroke-linecap="round" class="pai-laptop-lines"/>
+    <circle cx="189" cy="129" r="4" fill="#38afa9" opacity=".8"/>
     <path d="M112 145h105l-10 7h-85z" fill="#7395ac"/>
     <g class="pai-orbit-a"><circle cx="207" cy="45" r="25" fill="#ffffff" stroke="#69c6c4" stroke-width="2.5"/>
       <path d="M207 32v8m0 10v8m-13-13h8m10 0h8" stroke="#328d9a" stroke-width="3" stroke-linecap="round"/>
@@ -38,7 +40,7 @@
     const extra = symbol === "village"
       ? `<path d="M178 94l18-17 19 17v23h-37z" fill="#79bca6"/><path d="M174 95l22-23 22 23" fill="none" stroke="#427b96" stroke-width="5" stroke-linejoin="round"/><rect x="192" y="102" width="10" height="15" fill="#f3fbff"/>`
       : symbol === "help"
-      ? `<rect x="180" y="81" width="33" height="40" rx="5" fill="#e8fbfd" stroke="#72b9cc" stroke-width="2"/><path d="M189 92h16m-16 7h16m-16 7h10" stroke="#69a3b4" stroke-width="3" stroke-linecap="round"/>`
+      ? `<g class="pai-phone-handheld"><rect x="183" y="72" width="47" height="69" rx="10" fill="#294b76" stroke="#86c9cc" stroke-width="2"/><rect x="188" y="79" width="37" height="52" rx="5" fill="#ecffff"/><rect x="200" y="75" width="12" height="2.5" rx="1.2" fill="#c2dce4"/><circle cx="206.5" cy="136.2" r="2.6" fill="#bce4e6"/><text x="206.5" y="100" text-anchor="middle" fill="#1b557c" font-family="Noto Sans Devanagari,Anek Devanagari,sans-serif" font-size="9.2" font-weight="800">पंचायत</text><text x="206.5" y="115" text-anchor="middle" fill="#1a9d98" font-family="Manrope,sans-serif" font-size="13.5" font-weight="800">AI</text><path d="M195 122h23" stroke="#82c8ca" stroke-width="2" stroke-linecap="round"/></g>`
       : `<path d="M183 83h31v38h-31z" fill="#f5fdff" stroke="#78bac8" stroke-width="2"/><path d="M189 93h20m-20 7h20m-20 7h11" stroke="#6ca9b9" stroke-width="2.5" stroke-linecap="round"/>`;
     return `<svg viewBox="0 0 260 178" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
       <circle cx="137" cy="86" r="76" fill="#c6e9f1" opacity=".59"/>
@@ -96,7 +98,7 @@
       const scene = scenes[index];
       section.classList.remove("pai-scene-on");
       section.innerHTML = '<div class="pai-scene-inner">'+
-        '<div class="pai-scene-copy"><span class="pai-scene-kicker">'+scene.tag+'</span>'+
+        '<div class="pai-scene-copy"><span class="pai-scene-brand">✦ पंचायत AI</span><span class="pai-scene-kicker">'+scene.tag+'</span>'+
         '<h2 class="pai-scene-title">'+scene.title+'</h2>'+
         '<p class="pai-scene-subtitle">'+scene.detail+'</p></div>'+
         '<div class="pai-scene-art" aria-hidden="true">'+scene.art+'</div></div>'+
