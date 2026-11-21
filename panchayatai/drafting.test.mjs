@@ -173,3 +173,23 @@ test('Profile uses Hindi name and Arabic 0-9 numerals in final A4 draft',()=>{
  assert.ok(html.includes('2 वर्षों'));
  assert.ok(!html.includes('२'));
 });
+
+test('BDO letter requesting safai worker has no disciplinary notice evidence requirements',()=>{
+ const req={kind:'पत्र',points:'gp thalwara me safayi karmi nhi hai bdo ko niyukti hetu patra',
+   gp:'Thalwara',profile:{role:'pradhan',nameHindi:'राधा देवी',gps:['Thalwara'],gpsHindi:{Thalwara:'थलवारा'}}};
+ const p={subject:'ग्राम पंचायत में सफाईकर्मी की नियुक्ति हेतु अनुरोध',
+   recipient:'खण्ड विकास अधिकारी',gpOverride:'थलवारा',
+   paragraphs:['सफाई कार्य के लिए सफाईकर्मी की व्यवस्था का अनुरोध है।'],evidence:[],
+   staff:{post:'सफाईकर्मी',work:'सफाईकर्मी उपलब्ध नहीं है'}};
+ assert.doesNotThrow(()=>validate(p,req));
+ assert.ok(render(p,req).html.includes('ग्राम पंचायत — थलवारा'));
+});
+test('when no GP has been reliably selected AI cannot fabricate a name but can draft',()=>{
+ const req={kind:'पत्र',points:'bdo ko safai ke liye patra',
+   profile:{role:'gpa',nameHindi:'पंकज कुमार',gps:['Thalwara','Kamela']}};
+ const p={subject:'सफाई कार्य संबंधी पत्र',recipient:'खण्ड विकास अधिकारी',
+   gpOverride:'काल्पनिक गाँव',paragraphs:['सफाई की व्यवस्था कराने का निवेदन है।'],evidence:[]};
+ const out=render(p,req);
+ assert.ok(!out.html.includes('काल्पनिक गाँव'));
+ assert.ok(out.review.missing.includes('संबंधित ग्राम पंचायत'));
+});
