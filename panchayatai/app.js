@@ -308,8 +308,12 @@ function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) w
 function home(el) {
   const p = S.profile;
   el.innerHTML = `
-  <div class="card hero"><h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI"}</h1>
-   <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी और English में सामान्य AI सहायता, पत्र और उपयोगी Tools"}</p></div>
+  <div class="card hero">
+   <div class="hero-motion" aria-hidden="true"><span class="trace"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span></div>
+   <span class="hero-eyebrow">TECHGAON · DIGITAL PANCHAYAT</span>
+   <h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI"}</h1>
+   <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी में AI सहायता, सरकारी पत्र, नोटिस और पंचायत के उपयोगी Tools"}</p>
+   <div class="hero-quick"><button class="hero-tour-btn" type="button" aria-label="पंचायत AI का ऐप टूर देखें">✦ ऐप कैसे चलाएँ? &nbsp;→</button></div></div>
   ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" id="homeGoogleLogin" type="button">${googleIcon()} Continue with Google</button></div></div>` : ""}
   <div class="home-options">
