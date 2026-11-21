@@ -1,16 +1,17 @@
 /* Panchayat AI — first-use, repeatable, accessible guided home tour. */
 (() => {
   "use strict";
-  const KEY = "pai_design_tour_2026";
+  const KEY = "pai_design_tour_2026_v2";
   const $ = s => document.querySelector(s);
   const tutorial = [
     {selector:".top .brand",title:"पंचायत AI में स्वागत है",description:"यह आपका डिजिटल पंचायत सहायक है। सरकारी पत्राचार और उपयोगी AI Tools एक ही जगह मिलेंगे।"},
+    {selector:"#paiBottomNav",title:"चार मुख्य सुविधाएँ, एक Tap पर",description:"नीचे होम, AI Help, पत्र बनाएँ और AI Tools के चार स्थायी बटन हैं। किसी भी Screen से सीधे इन पर जा सकते हैं।"},
     {selector:"#homeGoogleLogin",title:"Google से सुरक्षित Login",description:"पहले इसी बटन से Login करें। फिर अपनी पदवार Profile पूरी करें, ताकि पत्रों में सही पदनाम और कार्यालय विवरण आएँ।"},
     {selector:".home-feature-pair [data-go='chat']",title:"AI Help — सवाल पूछें",description:"उत्तर प्रदेश के पंचायत कार्यों, प्रक्रियाओं और नियमों पर प्रश्न पूछें। महत्वपूर्ण कानूनी जानकारी को मूल शासनादेश से जरूर मिलाएँ।"},
     {selector:".home-feature-pair [data-go='tools']",title:"AI Tools",description:"फोटो से केवल टेक्स्ट निकालें, फ़ाइलें कन्वर्ट करें और दूसरे डिजिटल टूल इस्तेमाल करें।"},
     {selector:".home-options [data-draft='patra']",title:"सरकारी पत्र तैयार करें",description:"पत्र, नोटिस, स्पष्टीकरण और कार्यालय आदेश बनाने के लिए किसी भी Draft Tile पर जाएँ।"},
     {selector:".home-news-estimate [data-go='estimate']",title:"Estimate और MB Calculator",description:"पंचायत कार्यों से जुड़ी गणना और Estimate Tools यहाँ मिलते हैं।"},
-    {selector:"#menuBtn",title:"बाकी सुविधाएँ यहाँ",description:"मेनू से Profile, RTI, Saved Drafts और Plus खोलें। टूर कभी भी दोबारा देखने के लिए मेनू का ‘ऐप टूर’ चुनें।"}
+    {selector:"#menuBtn",title:"बाकी सुविधाएँ यहाँ",description:"मेनू से Profile, RTI, Saved Drafts और Plus खोलें। टूर दोबारा देखने के लिए मेनू का ‘ऐप टूर’ चुनें। रंग, Dark Mode और Font Size भी मेनू से बदल सकते हैं।"}
   ];
   let layer = null, steps = [], at = 0, before = null, started = false, pending = false;
   let frame = 0, lastScroll = 0;
