@@ -1,4 +1,4 @@
-import { request as draftRequest, render as renderDraft } from './drafting-core.mjs?v=20261121-hindi-numerals4';
+import { request as draftRequest, render as renderDraft } from './drafting-core.mjs?v=20261121-gp-alias-fixed5';
 /* पंचायत AI — Gemini (Firebase AI Logic, Spark/निःशुल्क प्लान पर चलता है; API key Firebase में सुरक्षित) */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-ai.js";
