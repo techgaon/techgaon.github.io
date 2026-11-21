@@ -22,11 +22,15 @@ try {
   initializationError=error;
   console.warn("Panchayat AI initialization failed",window.PAI_AI_ERRORS?.explain(error,"initialization")?.code||"AI_INIT");
 }
+function limited(promise,milliseconds,reason){
+  let timeout;
+  return Promise.race([promise,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error(reason)),milliseconds);})]).finally(()=>clearTimeout(timeout));
+}
 async function checkAppCheck(){
   if(initializationError)throw initializationError;
   if(!appCheck)throw Error("App Check प्रारंभ नहीं हुआ");
   try{
-    const response=await getToken(appCheck,false);
+    const response=await limited(getToken(appCheck,false),18000,"App Check token timeout");
     if(!response?.token||typeof response.token!=="string")throw Error("App Check ने कोई Token नहीं दिया");
     return true; // Never log or save the token.
   }catch(error){
@@ -199,7 +203,7 @@ async function diagnose(){
   };
   try{
     result.appCheck=await checkAppCheck();
-    const res=await model("Respond with only the word OK.",false).generateContent("OK");
+    const res=await limited(model("Respond with only the word OK.",false).generateContent("OK"),25000,"AI diagnostic network timeout");
     if(!String(res.response.text()||"").trim())throw Error("AI ने रिक्त उत्तर दिया।");
     result.ai=true;return result;
   }catch(error){
