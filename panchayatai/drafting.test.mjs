@@ -130,3 +130,46 @@ test('training abstractions never embed phone/account/identity from uploaded sou
  assert.ok(!content.includes('नारायण द्विवेदी'));
  assert.ok(!content.includes('राजेश कुमारी'));
 });
+
+test('Roman Hindi "gp thalwara" and Hindi AI alias are the same selected GP',()=>{
+ const req={kind:'पत्र',points:'gp karyalay thalwara ki taraf se bdo ko patra banaye safai karmi ki niyukti ke liye',
+   profile:{role:'pradhan',nameHindi:'राधा देवी',block:'Haidargarh',blockHindi:'हैदरगढ़',
+      district:'बाराबंकी',gps:['Thalwara'],gpsHindi:{Thalwara:'थलवारा'}},
+   gp:'Thalwara',stationery:'gp_office'};
+ const p={subject:'सफाईकर्मी की नियुक्ति का अनुरोध',recipient:'खण्ड विकास अधिकारी, हैदरगढ़',
+   gpOverride:'थलवारा',paragraphs:['ग्राम पंचायत में सफाईकर्मी का पद रिक्त होने संबंधी सूचना संज्ञानार्थ प्रस्तुत है।'],evidence:[]};
+ const draft=render(p,req);
+ assert.ok(draft.html.includes('ग्राम पंचायत थलवारा'),draft.html);
+ assert.ok(draft.html.includes('हैदरगढ़'),draft.html);
+ assert.doesNotThrow(()=>validate(p,req));
+});
+test('GP explicitly selected cannot silently be replaced by ungrounded AI suggestion',()=>{
+ const req={kind:'पत्र',points:'iska patra banao gp thalwara karyalay ki taraf se',
+    gp:'Thalwara',profile:{role:'pradhan',nameHindi:'राधा देवी',
+      gps:['Thalwara'],gpsHindi:{Thalwara:'थलवारा'}}};
+ const p={subject:'सफाई व्यवस्था',recipient:'खण्ड विकास अधिकारी',
+    gpOverride:'किसी और गाँव',paragraphs:['सफाई व्यवस्था हेतु आवश्यक अनुरोध।'],evidence:[]};
+ const out=render(p,req);
+ assert.ok(out.html.includes('ग्राम पंचायत — थलवारा'));
+ assert.ok(!out.html.includes('किसी और गाँव'));
+ assert.ok(out.review.missing.some(v=>v.includes('चुनी ग्राम पंचायत')));
+});
+test('User can expressly choose another listed GP for a different office letter',()=>{
+ const req={kind:'पत्र',points:'ग्राम पंचायत Kamela की ओर से BDO को पत्र',
+    gp:'Thalwara',profile:{role:'pradhan',nameHindi:'राधा देवी',gps:['Thalwara','Kamela'],
+      gpsHindi:{Thalwara:'थलवारा',Kamela:'कमेला'}}};
+ const p={subject:'प्रस्ताव',recipient:'खण्ड विकास अधिकारी',gpOverride:'Kamela',
+   paragraphs:['अवगत कराने हेतु पत्र प्रस्तुत है।'],evidence:[]};
+ assert.ok(render(p,req).html.includes('ग्राम पंचायत — कमेला'));
+});
+test('Profile uses Hindi name and Arabic 0-9 numerals in final A4 draft',()=>{
+ const req={kind:'पत्र',points:'पिछले 2 वर्षों की रिपोर्ट',gp:'Thalwara',
+    profile:{role:'gpa',name:'Radha Devi',nameHindi:'राधा देवी',gps:['Thalwara'],
+      gpsHindi:{Thalwara:'थलवारा'}}};
+ const p={subject:'रिपोर्ट',recipient:'सहायक विकास अधिकारी (पंचायत)',
+   paragraphs:['पिछले २ वर्षों का विवरण प्रस्तुत है।'],evidence:[]};
+ const html=render(p,req).html;
+ assert.ok(html.includes('राधा देवी'));
+ assert.ok(html.includes('2 वर्षों'));
+ assert.ok(!html.includes('२'));
+});
