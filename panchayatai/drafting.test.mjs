@@ -46,8 +46,14 @@ test('assistant work notice accepts only request quotes',()=>{
  const p=payload();p.gpOverride='';p.evidence=[];p.staff={name:'',post:'पंचायत सहायक',work:'काम न किए जाने'};
  assert.ok(!render(p,req).html.includes('[कर्मी का नाम भरें]'));
 });
-test('invented GP, evidence, dates, names, deadlines fail closed',()=>{
- for(const update of [{gpOverride:'मनगढ़ंतपुर'},{evidence:[{quote:'काल्पनिक शिकायत',supports:'शिकायत'}]},{paragraphs:['दिनांक 01/01/2030']},{staff:{...payload().staff,name:'अन्य नाम'}},{staff:{...payload().staff,deadline:'तीन दिन'}}])assert.throws(()=>render({...payload(),...update},b));
+test('invented evidence, dates, employee names and deadlines fail closed',()=>{
+ for(const update of [{evidence:[{quote:'काल्पनिक शिकायत',supports:'शिकायत'}]},{paragraphs:['दिनांक 01/01/2030']},{staff:{...payload().staff,name:'अन्य नाम'}},{staff:{...payload().staff,deadline:'तीन दिन'}}])
+   assert.throws(()=>render({...payload(),...update},b));
+});
+test('unverified AI GP suggestion never appears as a fabricated GP in final draft',()=>{
+ const out=render({...payload(),gpOverride:'मनगढ़ंतपुर'},b);
+ assert.ok(!out.html.includes('मनगढ़ंतपुर'));
+ assert.ok(out.review.missing.includes('संबंधित ग्राम पंचायत'));
 });
 test('unsupported legal or punitive statements rejected',()=>{
  for(const text of ['वेतन रोक दिया जाएगा।','वसूली होगी।','प्राथमिकी दर्ज होगी।','शासनादेश के अनुसार।','बर्खास्त किया जाएगा।'])assert.throws(()=>render({...payload(),paragraphs:[text]},b));
