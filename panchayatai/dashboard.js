@@ -158,7 +158,7 @@
         '<div class="pai-scene-progress" aria-label="दृश्य चुनें">'+
         scenes.map((_,i)=>'<button type="button" data-scene-index="'+i+'" class="'+(i===index?'on':'')+
           '" aria-label="दृश्य '+(i+1)+' : '+scenes[i].title+'" aria-pressed="'+(i===index)+'"></button>').join("")+'</div>'+
-        '<button class="pai-scene-pause" type="button" aria-label="'+(paused?'दृश्य चलाएँ':'दृश्य रोकें')+'" aria-pressed="'+paused+'">'+(paused?'▶ चलाएँ':'Ⅱ रोकें')+'</button>';
+        '<button class="pai-scene-pause" type="button" title="'+(paused?'दृश्य चलाएँ':'दृश्य रोकें')+'" aria-label="'+(paused?'दृश्य चलाएँ':'दृश्य रोकें')+'" aria-pressed="'+paused+'">'+(paused?'▶':'⏸')+'</button>';
       section.classList.toggle('pai-scenes-paused',paused);
       section.setAttribute("aria-label","पंचायत AI का दृश्य "+(index+1)+" / "+scenes.length+
         " : "+scene.title);
@@ -197,7 +197,8 @@
       if(event.target.closest('.pai-scene-pause')){
         paused=!paused;
         const button=section.querySelector('.pai-scene-pause');
-        button.textContent=paused?'▶ चलाएँ':'Ⅱ रोकें';
+        button.textContent=paused?'▶':'⏸';
+        button.title=paused?'दृश्य चलाएँ':'दृश्य रोकें';
         button.setAttribute('aria-label',paused?'दृश्य चलाएँ':'दृश्य रोकें');
         button.setAttribute('aria-pressed',String(paused));
         section.classList.toggle('pai-scenes-paused',paused);
