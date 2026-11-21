@@ -203,3 +203,16 @@ body.pai-motion-off .pai-scene-showcase.pai-swipe-enter .pai-scene-inner{
 body[data-theme="dark"] .pai-scene-showcase .pai-scene-pause{
   background:#264960;color:#e4f8ff;border-color:#56889d
 }
+
+/* The same single pause/play control also freezes looping home visuals. */
+body.pai-animations-paused .hero::before,
+body.pai-animations-paused .hero-motion .particle,
+body.pai-animations-paused .hero-motion .trace,
+body.pai-animations-paused .hero-eyebrow::before,
+body.pai-animations-paused .home-options .new-pulse,
+body.pai-animations-paused .home-options .pai-tile-svg,
+body.pai-animations-paused .home-options .pai-tile-svg *,
+body.pai-animations-paused .pai-holo-ring,
+body.pai-animations-paused .pai-holo-ring-reverse {
+ animation-play-state:paused!important;
+}
