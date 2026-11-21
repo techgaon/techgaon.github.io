@@ -424,9 +424,12 @@ async function afterLogin() {
   S.blocked = S.profile.blocked === true;
   if (needsDefaults && !S.blocked) await saveProfile();
   const scope=ROLES[S.profile.role]?.scope||"gp";
-  const completed=S.profile.profileComplete===true||
+  const selectedClusters=Array.isArray(S.profile.clusters) ? S.profile.clusters.filter(Boolean).length : (S.profile.cluster ? 1 : 0);
+  const selectedGps=Array.isArray(S.profile.gps) ? S.profile.gps.filter(Boolean).length : 0;
+  const secretaryAreaComplete=scope!=="multigp" || (selectedClusters>=1&&selectedClusters<=3&&selectedGps>=1&&selectedGps<=25);
+  const completed=secretaryAreaComplete && (S.profile.profileComplete===true||
     (Boolean(previous)&&!needsDefaults&&Boolean(previous.phone)&&Boolean(previous.district)&&
-      (scope==="district"||Boolean(previous.block)));
+      (scope==="district"||Boolean(previous.block))));
   S.needsProfileSetup=!completed;
   const next=S.after||"home";
   if(!completed&&!S.blocked){S.after=next;go("profile");}
