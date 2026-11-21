@@ -1,20 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {context,retrieve,request,render,validate} from './drafting-core.mjs';
-import {corpus} from './drafting-corpus.mjs';
+import {corpus,sourceAudit} from './drafting-corpus.mjs';
 const b={kind:'नोटिस',points:'ग्राम पंचायत रामपुर की तरफ से सफाईकर्मी दिनेश को दो दिन अनुपस्थित रहने और ग्रामीण शिकायत पर नोटिस बनाओ',profile:{role:'gpa',name:'[सचिव का नाम]',gps:['दूसरी पंचायत','तीसरी पंचायत']}};
 const payload=()=>({subject:'अनुपस्थिति पर स्पष्टीकरण',recipient:'दिनेश, सफाईकर्मी',gpOverride:'रामपुर',paragraphs:['अपना स्पष्टीकरण प्रस्तुत करें।'],attachments:[],copies:[],missing:['अनुपस्थिति की तिथियाँ','उत्तर की समय-सीमा'],evidence:[{quote:'दो दिन अनुपस्थित',supports:'अनुपस्थिति'}],staff:{name:'दिनेश',post:'सफाईकर्मी',absence:'दो दिन अनुपस्थित रहने',complaint:'ग्रामीण शिकायत',work:''}});
-test('all 53 sources accounted for without publishing excluded private records',()=>{
- const ids=new Set(corpus.flatMap(t=>t.sourceIds));
- for(let i=1;i<=53;i++)assert.equal(ids.has(`SRC-${String(i).padStart(3,'0')}`),![8,23,33].includes(i));
- assert.equal(corpus.length,17);
+test('all 53 uploaded documents audited with privacy-safe learning status',()=>{
+ assert.equal(sourceAudit.length,53);
+ assert.equal(sourceAudit.filter(x=>x.format==='docx').length,41);
+ assert.equal(sourceAudit.filter(x=>x.format==='pdf').length,12);
+ assert.equal(corpus.length,36);
+ const all=new Set(sourceAudit.map(s=>s.id));
+ const patterns=new Set(corpus.flatMap(t=>t.sourceIds));
+ for(let i=1;i<=53;i++)assert.ok(all.has(`SRC-${String(i).padStart(3,'0')}`));
+ assert.equal(sourceAudit.find(x=>x.id==='SRC-006').handling,'excluded_private');
+ assert.equal(sourceAudit.find(x=>x.id==='SRC-031').handling,'excluded_private');
+ for(const src of sourceAudit.filter(x=>!['excluded_private','layout_only'].includes(x.handling)))
+   assert.ok(patterns.has(src.id),src.id);
+ for(const src of sourceAudit.filter(x=>x.handling==='excluded_private'))
+   assert.ok(!patterns.has(src.id),'No private source in exemplar corpus');
 });
 test('multi GP has no silent first GP; explicit selection and one GP work',()=>{
  assert.equal(context(b).gp,'');
  assert.equal(context({...b,gp:'रामपुर'}).gp,'रामपुर');
  assert.equal(context({profile:{gps:['एक पंचायत']}}).gp,'एक पंचायत');
 });
-test('staff notice retrieves actual historical notice abstractions',()=>assert.equal(retrieve(b)[0].id,'staff-notice'));
+test('staff notice retrieves sanitised sanitation-worker template',()=>assert.equal(retrieve(b)[0].id,'showcause-sanitation'));
 test('short notice preserves facts and leaves unknown mandatory details blank',()=>{
  const result=render(payload(),b);
  for(const text of ['रामपुर','दिनेश','दो दिन अनुपस्थित रहने','ग्रामीण शिकायत','पंचायत सचिव (ग्राम पंचायत अधिकारी)'])assert.ok(result.html.includes(text),text);
@@ -100,4 +110,23 @@ test('pradhan own-letterhead draft contains body but not duplicated personal hea
  const result=render(p,req);
  assert.ok(!result.html.includes('कार्यालय — ग्राम प्रधान'));
  assert.ok(result.html.includes('राधा देवी'));
+});
+
+test('53-source corpus contains exact recipient-role-specific patterns',()=>{
+ const ids=new Set(corpus.map(x=>x.id));
+ for(const id of ['department-ado','department-bdo','department-dpro','rti-reply',
+  'disciplinary-reply','birth-inquiry','death-inquiry','showcause-housing',
+  'gram-sabha-proceedings','bank-statement','tender-invite'])
+  assert.ok(ids.has(id),id);
+});
+test('brief ADO request retrieves ADO-specific corpus pattern',()=>{
+ const r=retrieve({kind:'पत्र',points:'ADO को पत्र बना दो',profile:{role:'gpa'}});
+ assert.equal(r[0]?.id,'department-ado');
+});
+test('training abstractions never embed phone/account/identity from uploaded sources',()=>{
+ const content=JSON.stringify(corpus);
+ assert.ok(!/\b(?:\d[ -]?){10,18}\b/.test(content));
+ assert.ok(!content.includes('चंद्र भानु'));
+ assert.ok(!content.includes('नारायण द्विवेदी'));
+ assert.ok(!content.includes('राजेश कुमारी'));
 });
