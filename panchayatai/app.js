@@ -89,6 +89,7 @@ try {
 } catch (e) { console.warn(e); }
 // Wait for Firebase to restore its saved session before showing guest/login UI.
 S.authReady = !S.auth;
+S.authRestoring = false;
 // Show the home screen even if Firebase session restoration is slow.
 // Late auth callbacks are still processed normally; no session or token is fabricated.
 let authWaitTimer = null;
@@ -354,13 +355,13 @@ function needLogin(next) {
 }
 function render() {
   S.chatCleanup?.(); S.chatCleanup=null;
-  if (!S.authReady) {
-    // Never block the whole app behind an auth splash.
+  if (!S.authReady || S.authRestoring) {
+    // Keep the app hidden until the user's saved session and profile are resolved.
+    // Rendering a public Home here causes a one-second guest banner flash.
     document.body.classList.add("pai-auth-pending");
     const composer=document.getElementById("composerWrap");if(composer)composer.remove();
     const view=document.getElementById("view");
-    if (view) { view.innerHTML=""; home(view); }
-    const login=document.getElementById("loginTop");if(login)login.classList.add("hidden");
+    if (view) view.replaceChildren();
     return;
   }
   document.body.classList.remove("pai-auth-pending");
@@ -518,6 +519,7 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
   if((u?.uid||"")!==(S.chatOwner||"")){S.chat=[];S.att=[];S.chatOwner=u?.uid||null;}
   S.user = u;
   S.authReady = true;
+  S.authRestoring = !!u;
   clearTimeout(authWaitTimer);
   if (u) {
     try {
@@ -530,11 +532,13 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
       });
     } catch (e) { toast("Account could not load. Please try again."); go("login"); }
   } else { S.blocked = false; S.profile = null; }
+  S.authRestoring = false;
   S.authReady = true;
   render();
 }, e => {
   console.warn("Auth session restore error",e);
   S.authReady = true;
+  S.authRestoring = false;
   clearTimeout(authWaitTimer);
   document.body.classList.remove("pai-auth-pending");
   render();
