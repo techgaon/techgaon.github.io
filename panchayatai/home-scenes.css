@@ -109,7 +109,7 @@ body.pai-motion-off .pai-scene-showcase *,
 body.pai-motion-off .pai-scene-on .pai-scene-copy,
 body.pai-motion-off .pai-scene-on .pai-scene-art{animation:none!important;transition:none!important}
 
-/* The first AI Help card uses a dedicated sharp SVG brand mark, not an emoji. */
+/* AI Help tile: generic AI orbital emblem, not the Panchayat AI app logo. */
 .home-feature-pair .pai-ai-logo{
   display:flex;align-items:center;justify-content:center;
   width:61px;height:61px;min-height:61px;margin:0 auto 7px;
@@ -121,6 +121,12 @@ body.pai-motion-off .pai-scene-on .pai-scene-art{animation:none!important;transi
   border:1px solid rgba(68,184,186,.26);
   box-shadow:0 5px 16px rgba(26,98,153,.16);
 }
+.home-feature-pair .pai-ai-logo::after{
+  content:"";position:absolute;inset:-3px;
+  border:1px dashed rgba(52,157,193,.42);border-radius:50%;pointer-events:none;
+  animation:pai-ai-orbit-glow 5.2s linear infinite;
+}
+@keyframes pai-ai-orbit-glow{to{transform:rotate(360deg)}}
 .home-feature-pair .pai-ai-logo img{
   display:block;width:55px;height:55px;max-width:100%;object-fit:contain;
   transform-origin:center;
@@ -132,6 +138,6 @@ body.pai-motion-off .pai-scene-on .pai-scene-art{animation:none!important;transi
   50%{transform:translateY(-3px)}
 }
 @media(prefers-reduced-motion:reduce){
-  .home-feature-pair .pai-ai-logo img{animation:none!important}
+  .home-feature-pair .pai-ai-logo img,.home-feature-pair .pai-ai-logo::after{animation:none!important}
 }
-body.pai-motion-off .home-feature-pair .pai-ai-logo img{animation:none!important}
+body.pai-motion-off .home-feature-pair .pai-ai-logo img,body.pai-motion-off .home-feature-pair .pai-ai-logo::after{animation:none!important}
