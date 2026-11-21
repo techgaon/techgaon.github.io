@@ -1,0 +1,205 @@
+/* Premium Panchayat AI home — navy + teal, accessible motion and responsive tiles. */
+:root{
+  --pai-premium-navy:#103464;
+  --pai-premium-blue:#276aa3;
+  --pai-premium-teal:#25b5b3;
+}
+.top{
+  background:linear-gradient(120deg,#112e59 0%,#1b507f 64%,#246e94 100%);
+  border-bottom:1px solid rgba(163,240,248,.23);
+  box-shadow:0 5px 24px rgba(8,49,92,.19);
+}
+.brand .brand-logo{
+  filter:drop-shadow(0 2px 8px rgba(103,222,229,.16));
+}
+.brand>div b{letter-spacing:-.018em}
+.top-r .avatar{border:2px solid rgba(132,231,240,.55)}
+.pai-bottom-nav{
+  background:rgba(249,253,255,.97);
+  border-top:1px solid #cbebf6;
+  box-shadow:0 -5px 22px rgba(24,77,125,.10)
+}
+.pai-bottom-nav a.on{
+  color:#1c5a94;background:linear-gradient(145deg,#e8f9ff,#e4efff);
+  border-color:#c1e2f4
+}
+.pai-bottom-nav .nav-symbol{transition:transform .25s ease}
+.hero{border-color:rgba(164,245,246,.24);box-shadow:0 12px 26px rgba(21,60,110,.16)}
+.hero .hero-tour-btn{border-color:rgba(155,235,240,.55);box-shadow:0 0 12px rgba(93,211,226,.12)}
+.hero .hero-tour-btn:hover{background:rgba(147,233,247,.18)}
+
+/* Carousel: swipeable top illustrations, keyboard and clickable pagination. */
+.pai-scene-showcase{
+  position:relative;touch-action:pan-y;user-select:none;
+  background:linear-gradient(137deg,#f7fdff 2%,#eaf8ff 52%,#def2f7);
+  border:1px solid #b9e4f2;border-radius:22px;
+  box-shadow:0 7px 26px rgba(24,86,131,.13), inset 0 1px rgba(255,255,255,.9);
+}
+.pai-scene-showcase:focus-visible{
+  outline:3px solid #37a9bb;outline-offset:3px
+}
+.pai-scene-showcase::after{
+  content:"‹  स्वाइप करें  ›";position:absolute;right:11px;bottom:7px;
+  font:700 10px/1.4 "Noto Sans Devanagari",sans-serif;
+  color:#437e98;opacity:.82;pointer-events:none
+}
+.pai-scene-progress{gap:6px;bottom:10px;left:15px}
+.pai-scene-progress button{
+  display:block;flex:none;width:9px;height:7px;min-width:9px;padding:0;
+  border:0;border-radius:10px;background:#a3c9da;cursor:pointer;
+  transition:width .25s ease,background .25s ease;
+}
+.pai-scene-progress button.on{width:25px;background:#208fa8}
+.pai-scene-progress button:focus-visible{outline:2px solid #178ba7;outline-offset:3px}
+.pai-scene-showcase .pai-scene-art{filter:drop-shadow(0 5px 12px rgba(31,109,150,.08))}
+.pai-scene-showcase .pai-scene-brand{
+  background:linear-gradient(105deg,#175789,#21a4aa);
+  box-shadow:0 2px 8px rgba(36,130,157,.16)
+}
+@keyframes pai-carousel-swipe-in{
+  from{opacity:.48;transform:translateX(var(--pai-swipe-start,12px))}
+  to{opacity:1;transform:translateX(0)}
+}
+.pai-scene-showcase.pai-swipe-enter .pai-scene-inner{animation:pai-carousel-swipe-in .28s ease-out both}
+
+/* All Home tiles are premium illustrated cards, maintaining their existing actions. */
+.home-options.pai-home-premium{gap:13px;margin-top:3px}
+.pai-home-section-label{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  padding:9px 3px 1px;margin:1px 0 0
+}
+.pai-home-section-label>span{
+  font:800 17px/1.5 "Anek Devanagari","Noto Sans Devanagari",sans-serif;color:#1f426d
+}
+.pai-home-section-label>small{
+  font:600 11px/1.4 "Noto Sans Devanagari",sans-serif;color:#6594a6;white-space:nowrap
+}
+.home-options.pai-home-premium>.grid{gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.home-options .tile.pai-home-tile{
+  box-sizing:border-box;min-width:0;width:100%;min-height:172px;
+  position:relative;isolation:isolate;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;padding:14px 10px 18px;text-align:center;
+  background:linear-gradient(150deg,#fafdff 0%,#eef8ff 65%,#e6f6fa 100%);
+  border:1px solid #b9dcee;border-radius:20px;
+  box-shadow:inset 0 1px rgba(255,255,255,.98),0 6px 17px rgba(35,95,155,.10);
+  color:#193f69;transform:translateZ(0);
+  transition:transform .23s ease,box-shadow .23s ease,border-color .23s ease;
+}
+.home-options .tile.pai-home-tile::before{
+  content:"";position:absolute;right:-27px;top:-39px;width:95px;height:95px;
+  border:1px solid rgba(59,168,194,.13);border-radius:50%;
+  box-shadow:0 0 0 14px rgba(111,209,231,.05),0 0 0 26px rgba(111,209,231,.035);
+  pointer-events:none;z-index:-1
+}
+.home-options .tile.pai-home-tile::after{
+  content:"";position:absolute;inset:auto 17% 0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(61,191,215,.65),transparent);
+  opacity:.8;pointer-events:none
+}
+.home-options .tile.pai-home-tile:hover{
+  background:linear-gradient(145deg,#fff,#e8f9ff);border-color:#80c9e7;
+  box-shadow:0 10px 24px rgba(34,101,164,.17);transform:translateY(-3px)
+}
+.home-options .tile.pai-home-tile:active{transform:scale(.975)}
+.home-options .tile.pai-home-tile:focus-visible{
+  outline:3px solid #39a8bc;outline-offset:2px
+}
+.home-options .tile.pai-home-tile .e.pai-home-icon{
+  box-sizing:border-box;position:relative;display:grid;place-items:center;
+  width:76px;height:76px;min-width:76px;flex:none;margin:0 auto 5px;
+  border-radius:21px;background:linear-gradient(155deg,rgba(255,255,255,.90),rgba(181,231,250,.30));
+  border:1px solid rgba(176,213,235,.46);
+  filter:drop-shadow(0 5px 7px rgba(47,108,161,.14));
+  line-height:1;transition:transform .23s ease;
+}
+.home-options .tile.pai-home-tile .pai-tile-svg{
+  width:66px;height:66px;max-width:100%;display:block;overflow:visible;
+  animation:pai-icon-gentle-float 4s ease-in-out infinite
+}
+.home-options .tile.pai-home-tile:nth-child(even) .pai-tile-svg{animation-delay:-1.3s}
+.home-options .tile.pai-home-tile b{
+  color:#1b4774;font:800 16px/1.4 "Anek Devanagari","Noto Sans Devanagari",sans-serif;
+  overflow-wrap:anywhere;max-width:100%;
+}
+.home-options .tile.pai-home-tile small{
+  margin-top:3px;color:#647f98;font:500 11px/1.4 "Noto Sans Devanagari",sans-serif;
+  overflow-wrap:anywhere;max-width:100%
+}
+.home-options .tile.pai-home-tile .pai-home-arrow{
+  display:grid;place-items:center;position:absolute;right:9px;top:10px;
+  width:21px;height:21px;border-radius:9px;background:#e3f3fa;
+  color:#4c8caa;font:700 18px/1 Manrope,sans-serif;opacity:.8;
+  transition:transform .22s ease
+}
+.home-options .tile.pai-home-tile:hover .pai-home-arrow{transform:translateX(3px)}
+.home-options .tile.pai-home-tile--chat{
+  background:radial-gradient(circle at 45% 32%,#17689b 0%,#0d4579 56%,#0a2a52 100%);
+  border:1px solid #4ddff0;
+  box-shadow:0 8px 25px rgba(17,84,145,.22),inset 0 0 20px rgba(92,221,252,.10);
+}
+.home-options .tile.pai-home-tile--chat:hover{
+  background:radial-gradient(circle at 45% 32%,#1b75a5,#0e4b7d 58%,#08284e);
+  border-color:#80f4ff;box-shadow:0 10px 26px rgba(16,95,161,.27),inset 0 0 27px #53f4fa20
+}
+.home-options .tile.pai-home-tile--chat .e.pai-home-icon{
+  background:transparent;border-color:transparent;filter:drop-shadow(0 0 9px rgba(103,241,255,.5));
+  width:88px;height:88px;margin-bottom:1px
+}
+.home-options .tile.pai-home-tile--chat .pai-tile-svg{width:82px;height:82px}
+.home-options .tile.pai-home-tile--chat b{color:#fff;font-size:18px}
+.home-options .tile.pai-home-tile--chat small{color:#d4eef8}
+.home-options .tile.pai-home-tile--chat .pai-home-arrow{background:#1a608c;color:#b5f7fe}
+.home-options .tile.pai-home-tile--chat::before{border-color:#8ae4f225;box-shadow:0 0 0 16px #8ae4f20b}
+.home-options .tile.pai-home-tile--chat::after{background:linear-gradient(90deg,transparent,#80f5fa,transparent)}
+.home-options .tile.pai-home-tile--tools{background:linear-gradient(145deg,#ebfcfa,#e6f3ff)}
+.home-options .tile.pai-home-tile--plans{background:linear-gradient(145deg,#fffdf4,#e8f4ff);border-color:#e0d6ae}
+.home-options .tile.pai-home-tile--notice{background:linear-gradient(145deg,#fff8f9,#eef7ff)}
+.home-options .tile.pai-home-tile--rti{background:linear-gradient(145deg,#f7f8ff,#eaf6ff)}
+.home-options .tile.pai-home-tile--estimate{background:linear-gradient(145deg,#f4fbff,#e8fcf9)}
+.home-options .tile.pai-home-tile .pai-holo-ring{
+  transform-origin:48px 39px;animation:pai-holo-rotation 9s linear infinite
+}
+.home-options .tile.pai-home-tile .pai-holo-ring-reverse{
+  transform-origin:48px 39px;animation:pai-holo-rotation 15s linear reverse infinite
+}
+.home-options .tile.pai-home-tile .pai-icon-spark{
+  transform-origin:48px 45px;animation:pai-icon-glow 2.5s ease-in-out infinite alternate
+}
+@keyframes pai-holo-rotation{to{transform:rotate(360deg)}}
+@keyframes pai-icon-glow{from{opacity:.5}to{opacity:1}}
+@keyframes pai-icon-gentle-float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-3px)}
+}
+.home-options .tile.pai-home-tile:hover .pai-home-icon{transform:translateY(-2px)}
+.home-options .new-pulse{z-index:2}
+body[data-theme="dark"] .pai-home-section-label>span{color:#e7f7ff}
+body[data-theme="dark"] .pai-home-section-label>small{color:#a9c8d3}
+body[data-theme="dark"] .home-options .tile.pai-home-tile:not(.pai-home-tile--chat){
+  background:linear-gradient(145deg,#213955,#1c334e);
+  border-color:#3c5f79;color:#e7f3ff
+}
+body[data-theme="dark"] .home-options .tile.pai-home-tile:not(.pai-home-tile--chat) b{color:#e8f6ff}
+body[data-theme="dark"] .home-options .tile.pai-home-tile:not(.pai-home-tile--chat) small{color:#bad0df}
+body[data-theme="dark"] .pai-scene-showcase{background:linear-gradient(145deg,#173252,#1c425b)}
+body[data-theme="dark"] .pai-bottom-nav{background:rgba(19,40,63,.98);border-color:#355f7a}
+body[data-theme="dark"] .pai-bottom-nav a.on{background:#254665;color:#d3f6ff}
+@media(max-width:370px){
+  .home-options .tile.pai-home-tile{min-height:158px;padding:10px 7px 13px;border-radius:17px}
+  .home-options .tile.pai-home-tile .e.pai-home-icon{width:69px;height:69px;min-width:69px}
+  .home-options .tile.pai-home-tile .pai-tile-svg{width:60px;height:60px}
+  .home-options .tile.pai-home-tile--chat .e.pai-home-icon{height:80px;width:80px}
+  .home-options .tile.pai-home-tile--chat .pai-tile-svg{height:76px;width:76px}
+  .home-options .tile.pai-home-tile b{font-size:15px}
+  .home-options .tile.pai-home-tile small{font-size:10.4px}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-options .tile.pai-home-tile *, .pai-scene-showcase.pai-swipe-enter .pai-scene-inner{
+    animation:none!important;transition:none!important
+  }
+}
+body.pai-motion-off .home-options .tile.pai-home-tile *,
+body.pai-motion-off .pai-scene-showcase.pai-swipe-enter .pai-scene-inner{
+  animation:none!important;transition:none!important
+}
