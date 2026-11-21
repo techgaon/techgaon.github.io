@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {webcrypto} from "node:crypto";
 import worker from "../src/index.js";
-globalThis.crypto=webcrypto;
+// Node 22 already exposes the WebCrypto global.
 const pubKeys=await webcrypto.subtle.generateKey({name:"RSASSA-PKCS1-v1_5",modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:"SHA-256"},true,["sign","verify"]);
 const pub=await webcrypto.subtle.exportKey("jwk",pubKeys.publicKey);pub.kid="testkey2026";pub.alg="RS256";pub.use="sig";
 const b64=x=>Buffer.from(typeof x==="string"?x:JSON.stringify(x)).toString("base64url");
