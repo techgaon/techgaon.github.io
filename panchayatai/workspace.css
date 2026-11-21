@@ -51,3 +51,7 @@ body[data-theme="dark"] .pai-writing-hint{background:#253b58}
 .pai-hindi-gp-row input{flex:1;min-width:120px;width:auto;max-width:100%;margin:0!important;background:var(--card,#fff)}
 #pArea select option{font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
 body[data-theme="dark"] .pai-hindi-gp-row{background:#1b2b41;color:#edf3fb;border-color:#425b75}
+
+.pai-chat-gp{display:grid;gap:6px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--bd,#c5d6e5);border-radius:12px;background:var(--card,#fff)}
+.pai-chat-gp label{font:650 12px/1.4 "Noto Sans Devanagari",sans-serif;color:var(--ink,#233956)}
+.pai-chat-gp select{width:100%;min-height:42px;font-family:"Noto Sans Devanagari",sans-serif}
