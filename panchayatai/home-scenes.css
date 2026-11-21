@@ -108,3 +108,30 @@ body.pai-motion-off .hero .pai-greeting-emoji,
 body.pai-motion-off .pai-scene-showcase *,
 body.pai-motion-off .pai-scene-on .pai-scene-copy,
 body.pai-motion-off .pai-scene-on .pai-scene-art{animation:none!important;transition:none!important}
+
+/* The first AI Help card uses a dedicated sharp SVG brand mark, not an emoji. */
+.home-feature-pair .pai-ai-logo{
+  display:flex;align-items:center;justify-content:center;
+  width:61px;height:61px;min-height:61px;margin:0 auto 7px;
+  line-height:1;position:relative;filter:none;
+  transform:translateZ(0);
+}
+.home-feature-pair .pai-ai-logo::before{
+  content:"";position:absolute;inset:2px;border-radius:17px;
+  border:1px solid rgba(68,184,186,.26);
+  box-shadow:0 5px 16px rgba(26,98,153,.16);
+}
+.home-feature-pair .pai-ai-logo img{
+  display:block;width:55px;height:55px;max-width:100%;object-fit:contain;
+  transform-origin:center;
+  animation:pai-ai-logo-float 3.6s ease-in-out infinite;
+}
+.home-feature-pair .ai-tile:hover .pai-ai-logo img{animation-play-state:paused;transform:scale(1.06)}
+@keyframes pai-ai-logo-float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-3px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-feature-pair .pai-ai-logo img{animation:none!important}
+}
+body.pai-motion-off .home-feature-pair .pai-ai-logo img{animation:none!important}
