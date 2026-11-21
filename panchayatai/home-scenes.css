@@ -37,9 +37,16 @@
 }
 .pai-scene-inner{
   position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.06fr);
-  align-items:center;gap:3px;min-height:147px;z-index:1
+  align-items:center;gap:3px;min-height:161px;z-index:1
 }
 .pai-scene-copy{min-width:0;align-self:center;padding:2px 0 10px}
+.pai-scene-brand{
+  display:table;white-space:nowrap;max-width:100%;box-sizing:border-box;
+  margin-bottom:5px;padding:3px 9px 2px;
+  border-radius:999px;background:linear-gradient(115deg,#205785,#258d9b);
+  color:#fff;font:800 10px/1.65 "Noto Sans Devanagari",Manrope,sans-serif;
+  box-shadow:0 3px 9px rgba(29,102,132,.14)
+}
 .pai-scene-kicker{
   display:inline-flex;align-items:center;gap:6px;color:#178680;
   font:800 10px/1.35 Manrope,"Noto Sans Devanagari",sans-serif;letter-spacing:.07em;
@@ -88,8 +95,8 @@ body[data-theme="dark"] .pai-scene-kicker{color:#80e0d6}
 @media(max-width:390px){
  .hero .pai-greeting-emoji{right:17px;top:43px;width:65px;height:65px;font-size:29px}
  .hero.pai-hero-greeting h1{padding-right:76px;font-size:21px}
- .pai-scene-showcase{padding:13px 12px 20px;min-height:174px}
- .pai-scene-inner{min-height:139px;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
+ .pai-scene-showcase{padding:13px 12px 20px;min-height:187px}
+ .pai-scene-inner{min-height:153px;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
  .pai-scene-title{font-size:17px}
  .pai-scene-subtitle{font-size:11px;line-height:1.6}
  .pai-scene-progress{left:12px;bottom:9px}
