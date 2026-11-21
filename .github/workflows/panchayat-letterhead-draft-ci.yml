@@ -28,7 +28,7 @@ jobs:
       - name: JavaScript syntax
         run: |
           set -e
-          for f in panchayatai/{app,letterhead,draft-card,docx-export,ux,editor,dashboard}.js panchayatai/{ai,drafting-core,drafting-corpus,drafting.test}.mjs; do
+          for f in panchayatai/{app,letterhead,draft-card,docx-export,ux,editor,dashboard}.js panchayatai/ai.js panchayatai/{drafting-core,drafting-corpus,drafting.test}.mjs; do
             test -s "$f"
             node --check "$f"
           done
