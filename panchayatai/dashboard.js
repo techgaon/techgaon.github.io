@@ -1,95 +1,155 @@
-/* Panchayat AI role-aware work dashboard and admin-driven homepage content. */
+/* Panchayat AI homepage. Preserve admin banner controls; replace the redundant
+   role dashboard with a lightweight, self-playing illustrated story strip. */
 (() => {
- "use strict";
- const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
- const options={
-  chat:["✦","AI से पूछें","पंचायत नियम व प्रक्रिया","chat",null],
-  draft:["✉","नया पत्र","पत्र व नोटिस","draft",null],
-  tools:["▦","AI Tools","फाइल व टेक्स्ट","tools",null],
-  estimate:["▤","Estimate / MB","गणना के Tools","estimate",null],
-  history:["▱","पुराने Drafts","सुरक्षित दस्तावेज़","history",null],
-  rti:["ⓘ","RTI","सूचना अधिकार","rti",null],
-  notice:["☷","कारण बताओ नोटिस","नोटिस बनाएँ",null,"notice"],
-  spasht:["✍","स्पष्टीकरण","नोटिस का उत्तर",null,"spasht"],
-  aakhya:["▣","जाँच आख्या","आख्या / रिपोर्ट",null,"aakhya"],
-  prastav:["✦","पंचायत प्रस्ताव","ग्राम पंचायत",null,"prastav"],
-  karyavahi:["▤","बैठक कार्यवाही","बैठक कार्यवृत्त",null,"karyavahi"]
- };
- const byRole={
-  gpa:["notice","spasht","aakhya","draft"],
-  gva:["spasht","aakhya","draft","rti"],
-  ado:["aakhya","notice","draft","rti"],
-  bdo:["aakhya","draft","estimate","rti"],
-  dpro:["notice","draft","rti","estimate"],
-  adpro:["aakhya","notice","draft","rti"],
-  ddo:["aakhya","draft","rti","estimate"],
-  pradhan:["prastav","karyavahi","draft","chat"],
-  prashasak:["prastav","karyavahi","draft","chat"],
-  sahayak:["aakhya","chat","draft","tools"],
-  clerk:["draft","spasht","history","chat"],
-  resident:["chat","draft","rti","tools"],
-  other_staff:["draft","spasht","chat","tools"]
- };
- function actionHTML(id){
-   const o=options[id];if(!o)return "";
-   return '<button type="button"'+(o[4]?' data-draft="'+o[4]+'"':' data-go="'+o[3]+'"')+
-     '><span class="pai-dash-icon" aria-hidden="true">'+o[0]+'</span><span>'+
-     '<span class="pai-dash-label">'+esc(o[1])+'</span><small>'+esc(o[2])+'</small></span></button>';
- }
- function mount(home,{profile,user,drafts,roleName,design,history,saved}={}){
-   if(!home)return;
-   const conf=design||{};
-   const hero=home.querySelector(".hero");
-   if(hero&&conf.bannerImage){
-     try{
-       const url=new URL(conf.bannerImage);
-       if(url.protocol==="https:"&&url.hostname==="techgaon.in"&&/\.(png|jpg|jpeg|webp)$/i.test(url.pathname)){
-         hero.style.backgroundImage='linear-gradient(115deg,rgba(19,44,81,.94),rgba(23,67,106,.76)),url("'+url.href+'")';
-         hero.style.backgroundSize="cover";
-         hero.style.backgroundPosition="center";
-       }
-     }catch(e){console.warn("Invalid banner image",e);}
-   }
-   const heroLabel=home.querySelector(".hero-eyebrow");
-   if(heroLabel&&conf.label)heroLabel.textContent=String(conf.label).slice(0,45);
-   if(!user){
-     if(conf.title)home.querySelector(".hero h1").textContent=String(conf.title).slice(0,70);
-     if(conf.subtitle)home.querySelector(".hero p").textContent=String(conf.subtitle).slice(0,180);
-   } else if(conf.subtitle){
-     const desc=home.querySelector(".hero p");
-     if(desc)desc.textContent+=" · "+String(conf.subtitle).slice(0,180);
-   }
-   if(conf.showNews===false)home.querySelector('.home-news-estimate a[href*="karmcharinews"]')?.remove();
-   if(conf.showEstimate===false)home.querySelector(".home-news-estimate .home-estimate")?.remove();
-   if(conf.showPlus===false)home.querySelector(".home-final-pair .plus-tile")?.remove();
-   for(const row of home.querySelectorAll(".home-news-estimate,.home-final-pair")){
-     if(row.children.length===0)row.remove();
-     else if(row.children.length===1)row.style.gridTemplateColumns="minmax(0,1fr)";
-   }
-   if(!profile || !user)return;
-   const valid=new Set((drafts||[]).map(d=>d.k));
-   const initial=[conf.featured||"chat",...(byRole[profile.role]||byRole.resident),"chat","draft","tools","estimate"];
-   const actions=[...new Set(initial)].filter(id=>
-     options[id] && (!options[id][4] || valid.has(options[id][4]))).slice(0,4);
-   const last=(history||[]).find(h=>options[h.view]||Object.values(options).some(o=>o[4]===h.draft));
-   const previous=last&&(last.draft?Object.keys(options).find(k=>options[k][4]===last.draft):last.view);
-   const recent=previous&&options[previous]?
-     '<button type="button"'+(options[previous][4]?' data-draft="'+options[previous][4]+'"':' data-go="'+options[previous][3]+'"')+
-     '>↗ '+esc(options[previous][1])+' फिर खोलें</button>':
-     '<button type="button" data-go="draft">पहला Draft बनाएँ →</button>';
-   const locations=[profile.block,profile.district,...(profile.gps||[]).slice(0,1)].filter(Boolean);
-   const tags=locations.map(l=>'<span>'+esc(l)+'</span>').join("");
-   const section=document.createElement("section");
-   section.className="pai-dashboard";
-   section.setAttribute("aria-label","आपका Smart Dashboard");
-   section.innerHTML='<div class="pai-dash-top"><div><span class="pai-dash-kicker">MY WORKSPACE</span>'+
-     '<h2>आपका कार्य डैशबोर्ड</h2></div><span class="pai-dash-status">● तैयार</span></div>'+
-     '<p class="pai-dash-intro">'+esc(roleName||"पंचायत उपयोगकर्ता")+
-     ' के लिए खास सुविधाएँ · '+(Number(saved)||0)+' सुरक्षित Drafts</p>'+
-     (tags?'<div class="pai-dash-context">'+tags+'</div>':"")+
-     '<div class="pai-dash-shortcuts">'+actions.map(actionHTML).join("")+'</div>'+
-     '<div class="pai-dash-recent"><span>हाल में इस्तेमाल की गई सुविधा</span>'+recent+'</div></section>';
-   hero?.insertAdjacentElement("afterend",section);
- }
- window.PAI_DASH={mount};
+  "use strict";
+
+  const workingSecretary = `<svg viewBox="0 0 260 178" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+    <defs><linearGradient id="pai-office-window" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c4f1f4"/><stop offset="1" stop-color="#eafafe"/></linearGradient></defs>
+    <rect x="7" y="12" width="246" height="152" rx="22" fill="#c8eaf2" opacity=".45"/>
+    <rect x="19" y="24" width="86" height="70" rx="9" fill="url(#pai-office-window)" stroke="#a0c9e1"/>
+    <path d="M24 77L45 61 57 68 78 51 100 66v21H24z" fill="#79c6ad" opacity=".75"/>
+    <path d="M30 78V68l13-11 13 11v10m6 0V61l13-10 15 11v16" fill="none" stroke="#4f899d" stroke-width="2"/>
+    <path d="M54 25v69M20 59h84" stroke="#ffffff" stroke-width="3" opacity=".7"/>
+    <ellipse cx="116" cy="158" rx="108" ry="7" fill="#86bfd0" opacity=".25"/>
+    <path d="M26 135h211" stroke="#5e91ae" stroke-width="8" stroke-linecap="round"/>
+    <path d="M37 140v22m189-22v22" stroke="#7493a8" stroke-width="6" stroke-linecap="round"/>
+    <path d="M49 110Q45 103 57 94L76 92Q91 93 98 115L98 138H43z" fill="#376f9e"/>
+    <path d="M55 98L66 113 77 98" fill="#f5fbff" opacity=".93"/>
+    <ellipse cx="70" cy="69" rx="22" ry="26" fill="#deb08a"/>
+    <path d="M48 66Q45 44 62 39Q85 34 93 57L92 66 85 57Q63 50 48 66" fill="#253a55"/>
+    <path d="M50 64Q43 75 50 86" fill="none" stroke="#253a55" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="63" cy="70" r="1.7" fill="#223752"/><circle cx="79" cy="70" r="1.7" fill="#223752"/>
+    <path d="M66 82q7 4 13-1" fill="none" stroke="#965d4a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M82 111l29 9" stroke="#dba884" stroke-width="12" stroke-linecap="round" class="pai-typing-hand"/>
+    <path d="M119 91h82a8 8 0 0 1 8 8v46h-90z" fill="#294b76"/>
+    <rect x="125" y="97" width="78" height="42" rx="4" fill="#dcf5fa"/>
+    <path d="M134 109h37m-37 8h57m-57 8h43" stroke="#58aabb" stroke-width="3.5" stroke-linecap="round" class="pai-laptop-lines"/>
+    <circle cx="189" cy="109" r="6" fill="#38afa9" opacity=".8"/>
+    <path d="M112 145h105l-10 7h-85z" fill="#7395ac"/>
+    <g class="pai-orbit-a"><circle cx="207" cy="45" r="25" fill="#ffffff" stroke="#69c6c4" stroke-width="2.5"/>
+      <path d="M207 32v8m0 10v8m-13-13h8m10 0h8" stroke="#328d9a" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="207" cy="45" r="6" fill="#34aaa5"/><circle cx="207" cy="45" r="2.5" fill="#fff"/></g>
+    <g class="pai-orbit-b"><rect x="149" y="22" width="36" height="22" rx="9" fill="#e6fffa" stroke="#7ccdc3"/>
+      <path d="M158 31h19m-19 5h12" stroke="#3da8a4" stroke-width="2" stroke-linecap="round"/></g>
+    <circle cx="230" cy="87" r="5" fill="#38babb" opacity=".75"/><circle cx="221" cy="114" r="3" fill="#69b2c6"/>
+  </svg>`;
+
+  function happyPerson(shirt, symbol) {
+    const extra = symbol === "village"
+      ? `<path d="M178 94l18-17 19 17v23h-37z" fill="#79bca6"/><path d="M174 95l22-23 22 23" fill="none" stroke="#427b96" stroke-width="5" stroke-linejoin="round"/><rect x="192" y="102" width="10" height="15" fill="#f3fbff"/>`
+      : symbol === "help"
+      ? `<rect x="180" y="81" width="33" height="40" rx="5" fill="#e8fbfd" stroke="#72b9cc" stroke-width="2"/><path d="M189 92h16m-16 7h16m-16 7h10" stroke="#69a3b4" stroke-width="3" stroke-linecap="round"/>`
+      : `<path d="M183 83h31v38h-31z" fill="#f5fdff" stroke="#78bac8" stroke-width="2"/><path d="M189 93h20m-20 7h20m-20 7h11" stroke="#6ca9b9" stroke-width="2.5" stroke-linecap="round"/>`;
+    return `<svg viewBox="0 0 260 178" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+      <circle cx="137" cy="86" r="76" fill="#c6e9f1" opacity=".59"/>
+      <path d="M22 153q114-20 217 0" fill="none" stroke="#a2d3da" stroke-width="4" stroke-linecap="round" opacity=".75"/>
+      <ellipse cx="131" cy="161" rx="90" ry="9" fill="#76b9c7" opacity=".18"/>
+      <path d="M69 153v-25q2-30 37-38h39q43 10 43 40v23z" fill="${shirt}"/>
+      <path d="M105 96l24 23 22-23" fill="#f3faff" opacity=".97"/>
+      <path d="M109 108l19 20 20-20" fill="none" stroke="#ffffff" stroke-opacity=".30" stroke-width="2"/>
+      <path d="M98 57q-4-29 21-33 34-6 45 20l-1 22-14 17h-39z" fill="#263c5a"/>
+      <ellipse cx="132" cy="67" rx="32" ry="35" fill="#dca682"/>
+      <path d="M99 63Q94 40 113 31Q146 21 164 49l-1 12q-9-17-20-18-17 16-44 20" fill="#263c5a"/>
+      <circle cx="122" cy="68" r="2" fill="#233752"/><circle cx="145" cy="68" r="2" fill="#233752"/>
+      <path d="M122 82q11 10 24 0" fill="none" stroke="#a25d4c" stroke-width="3" stroke-linecap="round"/>
+      <path d="M79 119l-19-21" stroke="#dca682" stroke-width="13" stroke-linecap="round"/>
+      <path d="M57 97l-6-14m6 14l7-16" stroke="#dca682" stroke-width="7" stroke-linecap="round"/>
+      <path d="M175 120l17-17" stroke="#dca682" stroke-width="12" stroke-linecap="round"/>
+      <circle cx="200" cy="46" r="22" fill="#eafff8" stroke="#6bc9b2" stroke-width="2.5" class="pai-orbit-a"/>
+      <path d="M190 46l7 7 13-16" fill="none" stroke="#19a88e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" class="pai-orbit-a"/>
+      <g class="pai-happy-spark"><path d="M68 32l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#ffc96c"/></g>
+      <g class="pai-happy-spark"><path d="M227 122l2.5 7 7 2.5-7 2.5-2.5 7-2.5-7-7-2.5 7-2.5z" fill="#5fc6c8"/></g>
+      ${extra}
+    </svg>`;
+  }
+
+  const scenes = [
+    {tag:"स्मार्ट पंचायत",title:"सचिव के साथ पंचायत AI",detail:"कंप्यूटर पर काम करता सचिव, चारों ओर AI की सहायता।",art:workingSecretary},
+    {tag:"काम हुआ आसान",title:"खुश हैं पंचायत सचिव",detail:"पत्र, नोटिस और आख्या तैयार—काम तेज़, मुस्कान बरकरार।",art:happyPerson("#467fae","paper")},
+    {tag:"डिजिटल ग्राम पंचायत",title:"खुश हैं ग्राम प्रधान",detail:"योजनाएँ, प्रस्ताव और जानकारी अब समझना आसान।",art:happyPerson("#438b87","village")},
+    {tag:"हर साथी की मदद",title:"खुश हैं पंचायत सहायक",detail:"दैनिक कार्यालयी काम में AI बना उपयोगी साथी।",art:happyPerson("#805f9e","help")}
+  ];
+
+  function addGreetingEmblem(hero) {
+    const h = hero?.querySelector("h1");
+    if (!h || !/🙏\s*$/u.test(h.textContent || "")) return;
+    const previous = h.textContent.replace(/\s*🙏\s*$/u,"");
+    h.textContent = previous;
+    hero.classList.add("pai-hero-greeting");
+    const emoji = document.createElement("span");
+    emoji.className = "pai-greeting-emoji";
+    emoji.textContent = "🙏";
+    emoji.setAttribute("aria-label","प्रणाम");
+    emoji.setAttribute("role","img");
+    hero.appendChild(emoji);
+  }
+
+  function addAutoStories(hero) {
+    if (!hero || hero.nextElementSibling?.classList.contains("pai-scene-showcase")) return;
+    const section = document.createElement("section");
+    section.className = "pai-scene-showcase pai-scene-on";
+    section.setAttribute("aria-label","पंचायत AI से काम आसान होने के दृश्य");
+    const reduceMotion = () => document.body.classList.contains("pai-motion-off") ||
+      (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    let index = 0;
+    const paint = () => {
+      const scene = scenes[index];
+      section.classList.remove("pai-scene-on");
+      section.innerHTML = '<div class="pai-scene-inner">'+
+        '<div class="pai-scene-copy"><span class="pai-scene-kicker">'+scene.tag+'</span>'+
+        '<h2 class="pai-scene-title">'+scene.title+'</h2>'+
+        '<p class="pai-scene-subtitle">'+scene.detail+'</p></div>'+
+        '<div class="pai-scene-art" aria-hidden="true">'+scene.art+'</div></div>'+
+        '<div class="pai-scene-progress" aria-hidden="true">'+
+        scenes.map((_,i)=>'<i class="'+(i===index?'on':'')+'"></i>').join("")+'</div>';
+      // Restart entrance animation for the newly displayed frame.
+      void section.offsetWidth;
+      section.classList.add("pai-scene-on");
+    };
+    paint();
+    hero.insertAdjacentElement("afterend",section);
+    const interval = window.setInterval(() => {
+      if (!section.isConnected) {window.clearInterval(interval); return;}
+      if (document.hidden || reduceMotion()) return;
+      index = (index+1)%scenes.length;
+      paint();
+    }, 4600);
+  }
+
+  function mount(home,{user,design}={}) {
+    if (!home) return;
+    const conf=design||{};
+    const hero=home.querySelector(".hero");
+    if(hero&&conf.bannerImage) {
+      try {
+        const url=new URL(conf.bannerImage);
+        if(url.protocol==="https:"&&url.hostname==="techgaon.in"&&/\.(png|jpg|jpeg|webp)$/i.test(url.pathname)){
+          hero.style.backgroundImage='linear-gradient(115deg,rgba(19,44,81,.94),rgba(23,67,106,.76)),url("'+url.href+'")';
+          hero.style.backgroundSize="cover";
+          hero.style.backgroundPosition="center";
+        }
+      }catch(e){console.warn("Invalid banner image",e);}
+    }
+    const label=home.querySelector(".hero-eyebrow");
+    if(label&&conf.label)label.textContent=String(conf.label).slice(0,45);
+    if(!user){
+      if(conf.title&&hero?.querySelector("h1"))hero.querySelector("h1").textContent=String(conf.title).slice(0,70);
+      if(conf.subtitle&&hero?.querySelector("p"))hero.querySelector("p").textContent=String(conf.subtitle).slice(0,180);
+    }else if(conf.subtitle){
+      const desc=hero?.querySelector("p");
+      if(desc)desc.textContent+=" · "+String(conf.subtitle).slice(0,180);
+    }
+    if(conf.showNews===false)home.querySelector('.home-news-estimate a[href*="karmcharinews"]')?.remove();
+    if(conf.showEstimate===false)home.querySelector(".home-news-estimate .home-estimate")?.remove();
+    if(conf.showPlus===false)home.querySelector(".home-final-pair .plus-tile")?.remove();
+    for(const row of home.querySelectorAll(".home-news-estimate,.home-final-pair")){
+      if(row.children.length===0)row.remove();
+      else if(row.children.length===1)row.style.gridTemplateColumns="minmax(0,1fr)";
+    }
+    addGreetingEmblem(hero);
+    addAutoStories(hero);
+    // Deliberately do not render the removed "MY WORKSPACE" dashboard.
+    // All routes and existing home-options continue to work.
+  }
+  window.PAI_DASH={mount};
 })();
