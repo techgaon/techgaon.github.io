@@ -39,6 +39,17 @@
  function mount(home,{profile,user,drafts,roleName,design,history,saved}={}){
    if(!home)return;
    const conf=design||{};
+   const hero=home.querySelector(".hero");
+   if(hero&&conf.bannerImage){
+     try{
+       const url=new URL(conf.bannerImage);
+       if(url.protocol==="https:"&&url.hostname==="techgaon.in"&&/\.(png|jpg|jpeg|webp)$/i.test(url.pathname)){
+         hero.style.backgroundImage='linear-gradient(115deg,rgba(19,44,81,.94),rgba(23,67,106,.76)),url("'+url.href+'")';
+         hero.style.backgroundSize="cover";
+         hero.style.backgroundPosition="center";
+       }
+     }catch(e){console.warn("Invalid banner image",e);}
+   }
    const heroLabel=home.querySelector(".hero-eyebrow");
    if(heroLabel&&conf.label)heroLabel.textContent=String(conf.label).slice(0,45);
    if(!user){
@@ -78,7 +89,6 @@
      (tags?'<div class="pai-dash-context">'+tags+'</div>':"")+
      '<div class="pai-dash-shortcuts">'+actions.map(actionHTML).join("")+'</div>'+
      '<div class="pai-dash-recent"><span>हाल में इस्तेमाल की गई सुविधा</span>'+recent+'</div></section>';
-   const hero=home.querySelector(".hero");
    hero?.insertAdjacentElement("afterend",section);
  }
  window.PAI_DASH={mount};
