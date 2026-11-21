@@ -2,12 +2,13 @@
 (() => {
  "use strict";
  const FONT="Noto Sans Devanagari";
+ let activeHalfPoints=24;
  const text=n=>String(n?.textContent||"").replace(/\u00a0/g," ");
  function runs(node,d,format={}){
    if(node.nodeType===3){
      const t=node.nodeValue?.replace(/\u00a0/g," ")||"";
      return t?[new d.TextRun({text:t,bold:!!format.bold,italics:!!format.italic,
-       underline:format.underline?{}:undefined,font:FONT,size:format.size||24})]:[];
+       underline:format.underline?{}:undefined,font:FONT,size:format.size||activeHalfPoints})]:[];
    }
    if(node.nodeType!==1)return [];
    const tag=node.tagName.toLowerCase();
@@ -33,13 +34,13 @@
  }
  function elements(n,d){
    if(n.nodeType===3){
-     const s=n.nodeValue?.trim();return s?[new d.Paragraph({children:[new d.TextRun({text:s,font:FONT,size:24})]})]:[];
+     const s=n.nodeValue?.trim();return s?[new d.Paragraph({children:[new d.TextRun({text:s,font:FONT,size:activeHalfPoints})]})]:[];
    }
    if(n.nodeType!==1)return [];
    const tag=n.tagName.toLowerCase();
    if(["p","h1","h2","h3","h4"].includes(tag))return [paragraph(n,d)];
    if(tag==="ul"||tag==="ol")return Array.from(n.children).filter(c=>c.tagName==="LI").map((li,i)=>
-     new d.Paragraph({children:[new d.TextRun({text:tag==="ol"?(i+1)+". ":"• ",font:FONT,size:24}),...runs(li,d)],
+     new d.Paragraph({children:[new d.TextRun({text:tag==="ol"?(i+1)+". ":"• ",font:FONT,size:activeHalfPoints}),...runs(li,d)],
        indent:{left:400,hanging:220},spacing:{after:105,line:330}}));
    if(tag==="table"){
      const rows=Array.from(n.querySelectorAll("tr")).slice(0,150).map(tr=>
@@ -80,11 +81,13 @@
    if(!d?.Document||!d?.Packer||!d?.Paragraph)
      throw Error("DOCX लाइब्रेरी नहीं मिली। Internet जाँचें और पेज Reload करें।");
    if(!paper?.textContent?.trim())throw Error("पहले पत्र तैयार करें।");
+   const selected=Number(paper.dataset.docSize || 12);
+   activeHalfPoints=Number.isFinite(selected)?Math.round(Math.min(16,Math.max(10,selected))*2):24;
    const children=Array.from(paper.childNodes).flatMap(n=>elements(n,d));
    if(!children.length)throw Error("Word फाइल के लिए कोई टेक्स्ट नहीं मिला।");
    const doc=new d.Document({
      creator:"Panchayat AI — TechGaon AI Services",title:filename,
-     styles:{default:{document:{run:{font:FONT,size:24},
+     styles:{default:{document:{run:{font:FONT,size:activeHalfPoints},
        paragraph:{spacing:{line:330,after:130}}}}},
      sections:[{properties:{page:{size:{width:11906,height:16838},
        margin:{top:1134,right:1134,bottom:1134,left:1134}}},children}]
