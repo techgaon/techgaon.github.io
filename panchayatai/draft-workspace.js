@@ -33,7 +33,8 @@
        '<button class="btn alt" type="button" data-go="draft">प्रकार बदलें</button>'+
        '<button class="btn alt" type="button" data-ai-health>◉ AI कनेक्शन जाँचें</button></div>'+
      '<p class="pai-ai-status" role="status" aria-live="polite" hidden></p>'+
-     '<p id="paiWriteStatus" class="hint" role="status" aria-live="polite"></p></section>'+
+     '<p id="paiWriteStatus" class="hint" role="status" aria-live="polite"></p>'+
+     '<p class="hint">Gemini विफल होने पर लिखित प्रश्न और आवश्यक Profile संदर्भ Groq / Cloudflare AI को भेजा जा सकता है। Free Backup में PDF/फोटो का AI विश्लेषण नहीं होता।</p></section>'+
      '<section id="paiWritingOutput" aria-live="polite"></section></section>';
    const matter=$("#paiMatter",el),submit=$("#paiWrite",el),status=$("#paiWriteStatus",el);
    const target=$("#paiWritingOutput",el),input=$("#paiWritingFile",el);
@@ -88,7 +89,7 @@
            await save({...last,at:Date.now()});
          }
        });
-       status.textContent="✓ मसौदा तैयार है। नीचे Preview देखें, ज़रूरत हो तो Edit करें और फिर Save/Word/PDF करें।";
+       status.textContent=(result.fallback?"✓ Gemini उपलब्ध नहीं था; "+(result.provider||"Free AI")+" से मसौदा तैयार हुआ। सभी विवरण जाँचें। ":"✓ मसौदा तैयार है। ")+ "नीचे Preview देखें, ज़रूरत हो तो Edit करें और फिर Save/Word/PDF करें।";
        const ref=document.createElement("div");ref.className="pai-writing-revise";
        ref.innerHTML='<label for="paiRevision">मसौदे में कुछ बदलना है?</label>'+
          '<textarea id="paiRevision" rows="2" placeholder="जैसे: दूसरे अनुच्छेद को संक्षिप्त करें"></textarea>'+
