@@ -1,0 +1,90 @@
+name: Panchayat AI Groq Cloudflare Free Fallback
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'panchayatai/ai-fallback-worker/**'
+      - '.github/workflows/panchayat-ai-fallback-deploy.yml'
+permissions:
+  contents: read
+
+jobs:
+  test-fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Worker JavaScript
+        run: node --check panchayatai/ai-fallback-worker/src/index.js
+      - name: Test Firebase login, Groq and Cloudflare switching
+        run: node --test panchayatai/ai-fallback-worker/test/*.test.mjs
+      - name: Validate public client and no secrets in static files
+        run: |
+          node --check panchayatai/ai-fallback-client.js
+          python3 - <<'PY'
+          from pathlib import Path
+          c=Path("panchayatai/ai-fallback-client.js").read_text()
+          w=Path("panchayatai/ai-fallback-worker/src/index.js").read_text()
+          app=Path("panchayatai/ai.js").read_text()
+          assert "GROQ_API_KEY" not in c
+          assert "api.groq.com" not in c
+          assert "PAI_FREE_FALLBACK.complete" in app
+          assert '["Groq",groq]' in w
+          assert "Cloudflare Workers AI" in w
+          assert "verifyFirebase" in w
+          print("Secure multi-provider fallback checks passed")
+          PY
+
+  deploy:
+    needs: test-fallback
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Cloudflare and Groq configuration
+        id: ready
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$GROQ_API_KEY" ]; then
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice:: Deployment pending. Add CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and GROQ_API_KEY in repository Actions secrets."
+          else
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy Worker route only
+        if: steps.ready.outputs.ready == 'yes'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy --config panchayatai/ai-fallback-worker/wrangler.toml
+      - name: Configure private Groq secret in Cloudflare
+        if: steps.ready.outputs.ready == 'yes'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          printf '%s' "$GROQ_API_KEY" | npx --yes wrangler@4 secret put GROQ_API_KEY --config panchayatai/ai-fallback-worker/wrangler.toml
+      - name: Verify live routing and Groq configuration
+        if: steps.ready.outputs.ready == 'yes'
+        run: |
+          for attempt in 1 2 3 4; do
+            result=$(curl --fail --silent --show-error --max-time 12 -H 'Accept: application/json' https://techgaon.in/panchayatai/api/ai-health || true)
+            if echo "$result" | node -e 'let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{try{const j=JSON.parse(s);process.exit(j.status==="online"&&j.configured?.groq===true?0:1)}catch{process.exit(1)}})'; then
+              echo "Free AI backup Worker routing verified."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Cloudflare Worker route/health not active; check techgaon.in DNS proxy and route."
+          exit 1
