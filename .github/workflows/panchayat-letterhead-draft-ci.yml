@@ -1,0 +1,52 @@
+name: Panchayat AI Draft and Letterhead Tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'panchayatai/app.js'
+      - 'panchayatai/ai.js'
+      - 'panchayatai/drafting-core.mjs'
+      - 'panchayatai/drafting.test.mjs'
+      - 'panchayatai/drafting-corpus.mjs'
+      - 'panchayatai/letterhead.js'
+      - 'panchayatai/docx-export.js'
+      - 'panchayatai/draft-card.js'
+      - 'panchayatai/index.html'
+      - '.github/workflows/panchayat-letterhead-draft-ci.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          set -e
+          for f in panchayatai/{app,letterhead,draft-card,docx-export,ux,editor,dashboard}.js panchayatai/{ai,drafting-core,drafting-corpus,drafting.test}.mjs; do
+            test -s "$f"
+            node --check "$f"
+          done
+      - name: Pure drafting regression tests
+        run: node --test panchayatai/drafting.test.mjs
+      - name: Review UI integration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          app=Path('panchayatai/app.js').read_text()
+          html=Path('panchayatai/index.html').read_text()
+          card=Path('panchayatai/draft-card.js').read_text()
+          head=Path('panchayatai/letterhead.js').read_text()
+          assert '<a data-go="letterhead"' in html
+          assert 'letterhead:letterheadScreen' in app
+          assert 'PAI_LETTERHEAD' in card
+          assert 'gp_office' in app and 'gp_office' in head
+          assert 'createBlob' in Path('panchayatai/docx-export.js').read_text()
+          assert 'letterhead.css' in html and 'letterhead.js' in html
+          print('Letterhead UI and export integration checks OK')
+          PY
