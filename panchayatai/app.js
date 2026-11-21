@@ -726,10 +726,9 @@ function showDraft(html, refs, kind) {
     const total=pdf.internal.getNumberOfPages();
     if(!total)throw Error("PDF contains no pages.");
     for(let page=1;page<=total;page++){
-      pdf.setPage(page);pdf.setFont("helvetica","normal");pdf.setFontSize(8);pdf.setTextColor(60,95,73);
-      pdf.text("TechGaon AI Services",14,287);
-      pdf.text("PANCHAYAT AI",196,287,{align:"right"});
-      pdf.setDrawColor(185,207,191);pdf.line(14,282,196,282);
+      pdf.setPage(page);pdf.setFont("helvetica","normal");pdf.setFontSize(8);pdf.setTextColor(110,125,141);
+      pdf.text("Page "+page+" / "+total,196,286,{align:"right"});
+      pdf.setDrawColor(212,223,237);pdf.line(14,282,196,282);
     }
     const bytes=pdf.output("arraybuffer");
     if(!bytes||bytes.byteLength<900)throw Error("Generated PDF is unexpectedly empty.");
