@@ -362,6 +362,7 @@ function home(el) {
     design:liveSettings?.design||{},history:LS.get("navHistory")||[],
     saved:(LS.get("drafts")||[]).length
   });
+  window.PAI_HOME_UI?.enhance(el);
   el.querySelectorAll("[data-draft]").forEach(t => t.onclick = () => { if (needLogin("draft")) return; S.draftType = t.dataset.draft; go("draftEdit"); });
   el.querySelectorAll("[data-ask]").forEach(t => t.onclick = () => { if (needLogin("chat")) return; S.pendingAsk = t.dataset.ask; go("chat"); });
 }
