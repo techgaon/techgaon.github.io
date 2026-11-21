@@ -117,15 +117,23 @@
   function addGreetingEmblem(hero) {
     const h = hero?.querySelector("h1");
     if (!h || !/🙏\s*$/u.test(h.textContent || "")) return;
-    const previous = h.textContent.replace(/\s*🙏\s*$/u,"");
-    h.textContent = previous;
+    const previous = h.textContent.replace(/\s*🙏\s*$/u,"").trimEnd();
+    const words = previous.match(/^([\s\S]*\s)(\S+)$/u);
+    h.textContent = words ? words[1] : "";
     hero.classList.add("pai-hero-greeting");
+    // Keep the final greeting word and namaste emoji together even on narrow phones.
+    const tail = document.createElement("span");
+    tail.className = "pai-greeting-tail";
+    const finalWord = document.createElement("span");
+    finalWord.textContent = words ? words[2] : previous;
+    tail.appendChild(finalWord);
     const emoji = document.createElement("span");
     emoji.className = "pai-greeting-emoji";
     emoji.textContent = "🙏";
     emoji.setAttribute("aria-label","प्रणाम");
     emoji.setAttribute("role","img");
-    hero.appendChild(emoji);
+    tail.appendChild(emoji);
+    h.appendChild(tail);
   }
 
   function addAutoStories(hero) {
