@@ -5,7 +5,7 @@
   --pai-premium-teal:#25b5b3;
 }
 .top{
-  background:linear-gradient(120deg,#112e59 0%,#1b507f 64%,#246e94 100%);
+  background:linear-gradient(120deg,var(--pai-header-start,#112e59) 0%,var(--pai-header-end,#246e94) 100%);
   border-bottom:1px solid rgba(163,240,248,.23);
   box-shadow:0 5px 24px rgba(8,49,92,.19);
 }
@@ -203,3 +203,32 @@ body.pai-motion-off .home-options .tile.pai-home-tile *,
 body.pai-motion-off .pai-scene-showcase.pai-swipe-enter .pai-scene-inner{
   animation:none!important;transition:none!important
 }
+
+/* Harmonize the surrounding app without touching editor, AI, security or data logic. */
+body:not([data-theme="dark"]){
+  background:linear-gradient(170deg,#f5faff 0%,#f8fcff 52%,#f0f7fb 100%)
+}
+#view>.card:not(.hero),#view>.card:not(.hero) .lib-item{
+  border-color:#d0e5f2
+}
+#view>.card:not(.hero){
+  border-radius:19px;
+  box-shadow:0 5px 18px rgba(26,75,128,.065)
+}
+#view .btn:not(.alt):not(.saf){
+  background:linear-gradient(118deg,#24538d,#3079b3);
+  border-radius:12px;
+  box-shadow:0 4px 14px rgba(31,87,151,.16)
+}
+#view .btn:not(.alt):not(.saf):hover:not(:disabled){
+  box-shadow:0 8px 18px rgba(31,87,151,.24)
+}
+#view input:focus-visible,#view select:focus-visible,#view textarea:focus-visible{
+  outline:2px solid rgba(31,166,187,.72);
+  outline-offset:1px;border-color:#56b4ce
+}
+.drawer{background:linear-gradient(180deg,#fbfeff 0%,#f2f9ff 100%)}
+.drawer a{border-bottom:1px solid rgba(138,188,211,.12)}
+.drawer a:hover,.drawer a:focus-visible{background:#e7f6ff;border-left-color:#20a7b1}
+body[data-theme="dark"] .drawer{background:linear-gradient(180deg,#192b42,#1c3249)}
+body[data-theme="dark"] #view>.card:not(.hero){border-color:#36526a;box-shadow:0 5px 17px #0002}
