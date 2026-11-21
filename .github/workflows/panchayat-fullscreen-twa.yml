@@ -33,7 +33,7 @@ jobs:
           unzip -q /tmp/panchayat-transfer.zip -d /tmp/panchayat-original
           unzip -q /tmp/panchayat-original/PanchayatAI-Android-source.zip
           test -f panchayat-android/app/src/main/AndroidManifest.xml
-      - name: Configure signed-release v1.0.7 package and Trusted Web Activity
+      - name: Configure signed-release v1.0.8 package and Trusted Web Activity
         shell: bash
         run: |
           python3 - <<'PY'
@@ -46,8 +46,8 @@ jobs:
           assert "versionName '1.0.0'" in code
           code=code.replace("applicationId 'in.techgaon.panchayatai'",
                             "applicationId 'in.techgaon.panchayatai.fresh'")
-          code=code.replace("versionCode 1","versionCode 8")
-          code=code.replace("versionName '1.0.0'","versionName '1.0.7'")
+          code=code.replace("versionCode 1","versionCode 9")
+          code=code.replace("versionName '1.0.0'","versionName '1.0.8'")
           code=code.replace("dependencies {",
               "dependencies {\n implementation 'androidx.browser:browser:1.8.0';")
           gradle.write_text(code,encoding="utf-8")
@@ -115,10 +115,10 @@ jobs:
           APK=panchayat-android/app/build/outputs/apk/release/app-release-unsigned.apk
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" > out/manifest-info.txt
           grep -F "name='in.techgaon.panchayatai.fresh'" out/manifest-info.txt
-          grep -F "versionCode='8'" out/manifest-info.txt
+          grep -F "versionCode='9'" out/manifest-info.txt
           grep -F "launchable-activity: name='in.techgaon.panchayatai.MainActivity'" out/manifest-info.txt
           unzip -l "$APK" | grep "classes.dex"
-          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f 4 "$APK" out/PanchayatAI-v1.0.7-Fullscreen-TWA-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -P 16 -f 4 "$APK" out/PanchayatAI-v1.0.8-Fullscreen-TWA-unsigned.apk
           sha256sum out/*apk > out/SHA256SUMS.txt
           # For local private-key signing after downloading this unsigned build.
           # The signing key is never sent to GitHub.
@@ -127,6 +127,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: PanchayatAI-v1.0.7-Fullscreen-TWA
+          name: PanchayatAI-v1.0.8-Fullscreen-TWA
           path: out/*
           retention-days: 30
