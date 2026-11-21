@@ -114,5 +114,21 @@ async function news(area) {
   }
   const d = { area, items, at: Date.now() }; try { localStorage.setItem(key, JSON.stringify(d)); } catch {} return d;
 }
-window.PAI_AI = { chat, draft, news };
+// Best-effort Hindi spelling suggestions for editable profile fields.
+async function hindiNames(names) {
+  const originals=Array.isArray(names)?[...new Set(names.filter(n=>typeof n==="string"&&n.length<120))].slice(0,30):[];
+  if(!originals.length)return {};
+  const sys="आप उत्तर प्रदेश के स्थाननाम और भारतीय व्यक्तिनामों के देवनागरी लिप्यंतरण विशेषज्ञ हैं। दिए गए Roman नाम का हिंदी उच्चारण के अनुसार सही रूप लिखें। केवल JSON object लौटाएँ जिसमें मूल नाम अक्षरशः key और हिंदी वर्तनी value हो। व्यक्ति, गांव, जनपद, स्थान का अनुमान बदलकर किसी दूसरे नाम में न बदलें। संदिग्ध वर्तनी का सुझाव दें जिसे उपयोगकर्ता स्वयं सुधार सके; अतिरिक्त जानकारी न जोड़ें।";
+  const res=await model(sys,false).generateContent("इन नामों को देवनागरी हिंदी में बदलें: "+JSON.stringify(originals));
+  const raw=res.response.text().trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
+  const data=JSON.parse(raw);
+  if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Hindi suggestions format");
+  const result={};
+  for(const key of originals){
+    const value=data[key];
+    if(typeof value==="string"&&value.length<=150&&/[\u0900-\u097f]/u.test(value)&&!/[A-Za-z]/.test(value))result[key]=value.trim();
+  }
+  return result;
+}
+window.PAI_AI = { chat, draft, news, hindiNames };
 window.dispatchEvent(new Event("pai-ai-ready"));
