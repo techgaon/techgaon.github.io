@@ -1,0 +1,44 @@
+/* Panchayat AI: dedicated Draft Workspace, New Chat and auth restore splash */
+#loginTop.hidden{display:none!important}
+.pai-auth-loading{display:flex;min-height:58vh;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--ink);padding:30px 15px}
+.pai-auth-loading-icon{display:grid;place-items:center;border-radius:20px;width:69px;height:69px;font:bold 25px/1 "Anek Devanagari",sans-serif;background:linear-gradient(145deg,#1f4f81,#2c9fa5);color:white;box-shadow:0 8px 30px #154b7f37;animation:pai-auth-glow 2.6s ease-in-out infinite}
+.pai-auth-loading strong{font-family:"Anek Devanagari",sans-serif;font-size:21px}
+.pai-auth-loading p{color:var(--mut);margin:0;font-size:12px}
+@keyframes pai-auth-glow{50%{box-shadow:0 8px 38px #189eaa55}}
+.pai-chat-mode{display:flex;gap:8px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
+.pai-chat-mode button{font:700 12px/1.4 "Noto Sans Devanagari",sans-serif;border:1px solid var(--bd);color:var(--ink);background:var(--card);border-radius:11px;padding:10px 15px;cursor:pointer;min-height:42px;box-shadow:0 2px 10px #16365110}
+.pai-chat-mode button.on{color:#fff;background:linear-gradient(115deg,#224d83,#3079a7);border-color:transparent;cursor:default}
+.pai-chat-mode button:not(.on):hover{background:var(--gl)}
+.pai-chat-archive{display:flex;gap:9px;align-items:center;margin:0 0 14px;background:var(--card);border:1px solid var(--bd);padding:8px 10px;border-radius:12px;max-width:100%;flex-wrap:wrap}
+.pai-chat-archive label{font-size:12px;color:var(--mut);margin:0;white-space:nowrap}
+.pai-chat-archive select{flex:1;max-width:100%;min-width:140px;min-height:37px;font-size:12px}
+.pai-writing-workspace{display:grid;gap:14px;padding-bottom:14px}
+.pai-writing-heading{display:flex;align-items:center;gap:12px;background:linear-gradient(110deg,#172f58,#286d91);color:#fff;border-radius:18px;padding:17px 15px;box-shadow:0 10px 25px #18396128}
+.pai-writing-symbol{background:#ffffff21;border:1px solid #ffffff44;display:grid;place-items:center;font-size:24px;width:46px;min-width:46px;height:46px;border-radius:14px}
+.pai-writing-heading small{font:800 9px/1.3 "Manrope",sans-serif;letter-spacing:1px;color:#a9eee9}
+.pai-writing-heading h2{font:800 21px/1.3 "Anek Devanagari",sans-serif;margin:3px 0 0;color:#fff}
+.pai-writing-heading p{font-size:11px;color:#d6e5f5;margin:3px 0}
+.pai-writing-form{display:grid;gap:10px;padding:15px}
+.pai-writing-form label,.pai-writing-revise label{font-size:13px;color:var(--ink);font-weight:700;margin:0}
+.pai-writing-hint{font-size:12px;line-height:1.6;color:var(--mut);background:var(--gl);border:1px solid var(--bd);border-radius:10px;padding:9px;margin:0}
+.pai-writing-form textarea,.pai-writing-revise textarea{width:100%;resize:vertical;box-sizing:border-box;min-height:100px;font-size:14px;line-height:1.65}
+.pai-writing-form select{width:100%;min-height:42px}
+.pai-writing-suggestions{display:flex;flex-wrap:wrap;gap:6px}
+.pai-writing-suggestions button{font:600 11px/1.5 "Noto Sans Devanagari",sans-serif;cursor:pointer;background:var(--gl);border:1px solid #b8d8ec;color:var(--ink);padding:7px 9px;border-radius:99px;text-align:left}
+.pai-writing-suggestions button:hover{border-color:#79c4cb}
+.pai-writing-attach{border:1px dashed var(--bd);border-radius:10px;padding:9px;display:grid;gap:4px}
+.pai-writing-attach input{font-size:12px}
+.pai-writing-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pai-writing-actions .btn{margin:0}
+.pai-writing-revise{display:grid;gap:8px;border:1px solid var(--bd);border-radius:13px;padding:12px;background:var(--card)}
+.pai-writing-revise button{justify-self:start}
+#paiWritingOutput{min-width:0}
+#paiWritingOutput .inline-draft-card{max-width:100%;box-sizing:border-box}
+#paiWritingOutput .inline-draft-paper{line-height:1.85}
+body[data-theme="dark"] .pai-writing-form,
+body[data-theme="dark"] .pai-writing-revise{background:#1b2b41;border-color:#324c6b}
+body[data-theme="dark"] .pai-chat-archive{background:#1b2b41}
+body[data-theme="dark"] .pai-writing-suggestions button{background:#263f60;color:#e8f2fb;border-color:#45627d}
+body[data-theme="dark"] .pai-writing-hint{background:#253b58}
+@media(max-width:400px){.pai-writing-actions .btn{flex:1}.pai-writing-heading{padding:13px}.pai-writing-heading h2{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.pai-auth-loading-icon{animation:none}}
