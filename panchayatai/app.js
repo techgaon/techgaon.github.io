@@ -274,7 +274,7 @@ $("#menuBtn").onclick = () => { $("#drawer").classList.add("open"); $("#scrim").
 $("#scrim").onclick = closeDrawer;
 $("#backBtn").onclick = () => go("home");
 $("#loginTop").onclick = startGoogleLogin;
-$("#logoutBtn").onclick = async () => { if (S.auth) await S.auth.signOut(); S.user = null; S.profile = null; LS.set("profile", null); go("home"); };
+$("#logoutBtn").onclick = async () => { if (S.auth) await S.auth.signOut(); S.user = null; S.profile = null; S.chat=[];S.att=[];S.chatOwner=null;LS.set("profile", null); go("home"); };
 
 const isPlus = () => { const p = S.profile && S.profile.plan; return p && p.until && p.until > Date.now(); };
 // FoodGaon जैसा: लिंग के अनुसार भैया / बहन
@@ -469,6 +469,7 @@ async function afterLogin() {
 }
 if (S.auth) S.auth.onAuthStateChanged(async u => {
   if (S.userWatch) S.userWatch();
+  if((u?.uid||"")!==(S.chatOwner||"")){S.chat=[];S.att=[];S.chatOwner=u?.uid||null;}
   S.user = u;
   if (u) {
     try {
@@ -877,12 +878,12 @@ function draftEdit(el) {
     if(!LS.set("drafts",list.slice(0,50)))throw Error("फ़ोन में Draft सुरक्षित नहीं हो सका");
     toast("पत्र सुरक्षित ✓");
   };
+  const previous=S.draftRestore||(S.draftSeed?{question:S.draftSeed}:null);
   const workspace=window.PAI_DRAFT_WORKSPACE.mount(el,{
     kind:type.n,code:type.k,description:type.d||"",profile:S.profile,user:S.user,
-    api,letterhead:window.PAI_LETTERHEAD,toast,save,
-    previous:S.draftRestore||null
+    api,letterhead:window.PAI_LETTERHEAD,toast,save,previous
   });
-  S.draftRestore=null;
+  S.draftRestore=null;S.draftSeed=null;
   S.chatCleanup=()=>workspace?.destroy();
 }
 function history(el) {
@@ -1165,7 +1166,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'settings'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'settings'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
