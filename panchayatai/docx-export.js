@@ -56,8 +56,27 @@
    }
    return text(n).trim()?[paragraph(n,d)]:[];
  }
+ async function loadDocx(){
+   if(window.docx?.Document)return window.docx;
+   const sources=[
+     "https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.umd.cjs",
+     "https://unpkg.com/docx@9.5.1/dist/index.umd.cjs"
+   ];
+   for(const source of sources){
+     try{
+       await new Promise((resolve,reject)=>{
+         const script=document.createElement("script");
+         script.src=source;script.async=true;
+         script.onload=resolve;script.onerror=()=>reject(new Error("DOCX CDN unreachable"));
+         document.head.appendChild(script);
+       });
+       if(window.docx?.Document)return window.docx;
+     }catch(e){console.warn("DOCX library source failed",source,e);}
+   }
+   throw Error("DOCX लाइब्रेरी लोड नहीं हुई। Internet जाँचकर फिर कोशिश करें।");
+ }
  async function exportPaper(paper,filename){
-   const d=window.docx;
+   const d=await loadDocx();
    if(!d?.Document||!d?.Packer||!d?.Paragraph)
      throw Error("DOCX लाइब्रेरी नहीं मिली। Internet जाँचें और पेज Reload करें।");
    if(!paper?.textContent?.trim())throw Error("पहले पत्र तैयार करें।");
