@@ -188,7 +188,6 @@ async function draft(b) {
 }
 // पंचायत न्यूज़ — Google समाचार RSS (निःशुल्क) → Gemini से 60 शब्द का हिन्दी सार (केवल दिए गए पाठ से)
 async function news(area) {
-  await checkAppCheck();
   const key = "pai_news3_" + area, c = JSON.parse(localStorage.getItem(key) || "null");
   if (c && Date.now() - c.at < 3 * 3600e3 && c.items.length) return c;
   const q = area === "उत्तर प्रदेश" ? "उत्तर प्रदेश ग्राम पंचायत OR पंचायती राज OR ग्राम प्रधान OR पंचायत सचिव when:7d"
@@ -202,22 +201,28 @@ async function news(area) {
   });
   if (items.length) {
     try {
-      const r = await model("आप हिन्दी समाचार संपादक हैं। केवल दिए गए शीर्षक/अंश से ही सार लिखें, नई बात न जोड़ें। केवल JSON array लौटाएँ।", false)
-        .generateContent("हर ख़बर का 60-80 शब्द का सरल, जानकारी-भरा हिन्दी सार बनाएँ (क्या, कहाँ, कौन, कब, आगे क्या), उसी क्रम में, JSON array of strings:\n" + JSON.stringify(items.map(i => i.title + " — " + i.summary)));
-      const sums = JSON.parse(r.response.text().replace(/^[^\[]*/, "").replace(/[^\]]*$/, ""));
-      items = items.map((it, i) => ({ ...it, summary: sums[i] || it.summary }));
+      const sys='आप हिन्दी समाचार संपादक हैं। केवल दिए गए शीर्षक/अंश से सार लिखें; कोई नया तथ्य न जोड़ें। केवल JSON object {"summaries":["..."]} लौटाएँ।';
+      const prompt="इन खबरों का 60-80 शब्दों में क्रमवार तथ्यात्मक हिन्दी सार JSON object में लिखें: "+
+        JSON.stringify(items.map(i=>i.title+" — "+i.summary));
+      const generated=await withFreeFallback("chat",sys,[{role:"user",content:prompt}],[],
+        async()=>{await checkAppCheck();return model(sys,false).generateContent(prompt);});
+      const obj=JSON.parse(generated.raw.replace(/^\x60\x60\x60(?:json)?\s*/i,"").replace(/\s*\x60\x60\x60$/,""));
+      const summaries=Array.isArray(obj.summaries)?obj.summaries:[];
+      items=items.map((it,i)=>({...it,summary:typeof summaries[i]==="string"&&summaries[i].trim()?
+        summaries[i].slice(0,800):it.summary}));
     } catch (e) { console.warn("summary", e); }
   }
   const d = { area, items, at: Date.now() }; try { localStorage.setItem(key, JSON.stringify(d)); } catch {} return d;
 }
 // Best-effort Hindi spelling suggestions for editable profile fields.
 async function hindiNames(names) {
-  await checkAppCheck();
   const originals=Array.isArray(names)?[...new Set(names.filter(n=>typeof n==="string"&&n.length<120))].slice(0,30):[];
   if(!originals.length)return {};
   const sys="आप उत्तर प्रदेश के स्थाननाम और भारतीय व्यक्तिनामों के देवनागरी लिप्यंतरण विशेषज्ञ हैं। दिए गए Roman नाम का हिंदी उच्चारण के अनुसार सही रूप लिखें। केवल JSON object लौटाएँ जिसमें मूल नाम अक्षरशः key और हिंदी वर्तनी value हो। व्यक्ति, गांव, जनपद, स्थान का अनुमान बदलकर किसी दूसरे नाम में न बदलें। संदिग्ध वर्तनी का सुझाव दें जिसे उपयोगकर्ता स्वयं सुधार सके; अतिरिक्त जानकारी न जोड़ें।";
-  const res=await model(sys,false).generateContent("इन नामों को देवनागरी हिंदी में बदलें: "+JSON.stringify(originals));
-  const raw=res.response.text().trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
+  const prompt="इन नामों को देवनागरी हिंदी में बदलें: "+JSON.stringify(originals);
+  const generated=await withFreeFallback("hindi",sys,[{role:"user",content:prompt}],[],
+    async()=>{await checkAppCheck();return model(sys,false).generateContent(prompt);});
+  const raw=generated.raw.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
   const data=JSON.parse(raw);
   if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Hindi suggestions format");
   const result={};
@@ -230,7 +235,9 @@ async function hindiNames(names) {
 async function diagnose(){
   const result={
     project:C?.firebase?.projectId||"unconfigured",
-    model:MODEL,provider:"Gemini Developer API",appCheck:false,ai:false
+    model:MODEL,provider:"Gemini Developer API",appCheck:false,ai:false,
+    backup:window.PAI_FREE_FALLBACK?.enabled?.()?
+      await window.PAI_FREE_FALLBACK.health().catch(()=>({ready:false,code:"AI_BACKUP_UNAVAILABLE"})):null
   };
   try{
     result.appCheck=await checkAppCheck();
