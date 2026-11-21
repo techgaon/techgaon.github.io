@@ -1,0 +1,40 @@
+name: Panchayat AI UX Smoke and Preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/panchayat-ux-smoke.yml
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Javascript syntax and new UI files
+        run: |
+          set -euo pipefail
+          for f in panchayatai/{app,ux,dashboard,editor,docx-export,tour,sw}.js; do
+            node --check "$f"
+            echo "PASS JavaScript: $f"
+          done
+          for f in panchayatai/{ux,theme,app,mobile,tour}.css; do
+            test -s "$f"
+            echo "PASS CSS: $f"
+          done
+          grep -Fq 'id="paiBottomNav"' panchayatai/index.html
+          grep -Fq 'design:adminDesign' panchayatai/app.js
+          grep -Fq 'PAI_DOCX.exportPaper' panchayatai/app.js
+          ! grep -Fq 'application/msword' panchayatai/app.js
+          echo 'PASS UX integration gates'
+      - name: Package browser testing snapshot
+        run: |
+          zip -qr /tmp/PanchayatAI-UX-Preview.zip panchayatai
+          unzip -t /tmp/PanchayatAI-UX-Preview.zip | tail -1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PanchayatAI-UX-Preview
+          path: /tmp/PanchayatAI-UX-Preview.zip
+          retention-days: 5
