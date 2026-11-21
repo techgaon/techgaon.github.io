@@ -296,7 +296,7 @@ function chrome() {
   });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
   document.body.classList.toggle("pai-admin-view", isAdmin());
-  const selected = S.view === "draftEdit" ? "draft" : S.view;
+  const selected = S.view === "draftEdit" ? "draft" : S.view === "newsChat" ? "chat" : S.view;
   document.querySelectorAll("#paiBottomNav a[data-go]").forEach(a => {
     const active = a.dataset.go === selected;
     a.classList.toggle("on", active);
@@ -802,19 +802,37 @@ function requestedDraftKind(text, selected="") {
 }
 function draftEdit(el) {
   if(needLogin("draftEdit"))return;
-  const d=RTI_DRAFTS.concat(draftsFor(S.profile.role)).find(x=>x.k===S.draftType)||BASE_DRAFTS[0];
-  S.draftMode=d.n;S.view="chat";
-  window.history.replaceState(null,"",location.pathname+"#chat");
-  chat(el);
-}
-function showDraft(html,refs,kind,savedFontSize=12,review=null,stationery="plain") {
-  S.chat.push({r:"a",document:true,id:crypto.randomUUID(),html,refs,kind,size:savedFontSize,review,stationery,t:kind});
-  S.draftMode=kind;go("chat");
+  const choices=RTI_DRAFTS.concat(draftsFor(S.profile.role));
+  const type=choices.find(x=>x.k===S.draftType)||BASE_DRAFTS[0];
+  S.draftType=type.k;
+  S.draftMode="";
+  if(!window.PAI_DRAFT_WORKSPACE?.mount){
+    el.innerHTML='<div class="card">पत्र बनाने वाला Workspace उपलब्ध नहीं है। ऐप Reload करें।</div>';
+    return;
+  }
+  const save=async entry=>{
+    const list=LS.get("drafts")||[];
+    const draft={id:entry.id||crypto.randomUUID(),kind:entry.kind||type.n,html:entry.html,
+      refs:entry.refs||[],review:entry.review||{},stationery:entry.stationery||"plain",
+      size:entry.size||12,question:entry.question||"",at:Date.now()};
+    const i=list.findIndex(x=>x.id===draft.id);
+    if(i>=0)list[i]=draft;else list.unshift(draft);
+    if(!LS.set("drafts",list.slice(0,50)))throw Error("फ़ोन में Draft सुरक्षित नहीं हो सका");
+    toast("पत्र सुरक्षित ✓");
+  };
+  const workspace=window.PAI_DRAFT_WORKSPACE.mount(el,{
+    kind:type.n,code:type.k,description:type.d||"",profile:S.profile,user:S.user,
+    api,letterhead:window.PAI_LETTERHEAD,toast,save,
+    previous:S.draftRestore||null
+  });
+  S.draftRestore=null;
+  S.chatCleanup=()=>workspace?.destroy();
 }
 function history(el) {
   const h = LS.get("drafts") || [];
   el.innerHTML = `<h2>My Drafts</h2>` + (h.length ? h.map((x, i) => `<div class="lib-item"><a data-i="${i}"><b>${esc(x.kind)}</b></a><small>${new Date(x.at).toLocaleString("hi-IN")}</small></div>`).join("") : `<p class="hint">No saved drafts yet.</p>`) + `<div id="out"></div>`;
-  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; showDraft(x.html, x.refs, x.kind, x.size||12, x.review, x.stationery||"plain"); });
+  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; S.draftType=([...RTI_DRAFTS,...draftsFor(S.profile?.role||"resident")].find(d=>d.n===x.kind)?.k)||"patra";
+    S.draftRestore=x;go("draftEdit"); });
 }
 
 /* ---------- पंचायत न्यूज़ (Inshorts जैसी छोटी ख़बरें) ---------- */
