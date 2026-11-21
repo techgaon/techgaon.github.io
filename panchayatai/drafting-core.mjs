@@ -51,7 +51,8 @@ function resolveGp(payload,b={}) {
  if(known)return {gp:known,chosen:known,ignored:false};
  // If a GP was selected, model-generated spellings cannot override it.
  if(selected)return {gp:selected,chosen:selected,ignored:true};
- throw Error('निर्देश में जिस ग्राम पंचायत का उल्लेख है, उसे Profile से चुनकर फिर प्रयास करें।');
+ // No reliable GP was identified; keep it blank and flag review instead of crashing.
+ return {gp:'',chosen:'',ignored:true};
 }
 function displayGp(raw,b={}) {
  const dict=b.profile?.gpsHindi||{};
