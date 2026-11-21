@@ -454,7 +454,10 @@ async function afterLogin() {
   const selectedClusters=Array.isArray(S.profile.clusters) ? S.profile.clusters.filter(Boolean).length : (S.profile.cluster ? 1 : 0);
   const selectedGps=Array.isArray(S.profile.gps) ? S.profile.gps.filter(Boolean).length : 0;
   const secretaryAreaComplete=scope!=="multigp" || (selectedClusters>=1&&selectedClusters<=3&&selectedGps>=1&&selectedGps<=25);
-  const completed=secretaryAreaComplete && (S.profile.profileComplete===true||
+  // Verify Hindi names once during Profile completion, never at draft time.
+  const verifiedHindi=S.profile.hindiProfileReviewed===true &&
+    !!window.PAI_HINDI?.canUseHindi(S.profile.nameHindi);
+  const completed=secretaryAreaComplete && verifiedHindi && (S.profile.profileComplete===true||
     (Boolean(previous)&&!needsDefaults&&Boolean(previous.phone)&&Boolean(previous.district)&&
       (scope==="district"||Boolean(previous.block))));
   S.needsProfileSetup=!completed;
@@ -531,15 +534,32 @@ async function loadDistrict(d) {
 }
 function profile(el) {
   if (!S.user) return go("login");
-  const p = S.profile || { role: "resident" };
-  el.innerHTML = `<div class="card"><h2 style="margin-top:0">Your profile</h2>
-   <p class="hint">अगर आप विभागीय अधिकारी, कर्मचारी या प्रधान हैं तो अपनी प्रोफ़ाइल पूरी करें और अपने काम — पत्र, स्पष्टीकरण आदि — 1 मिनट में निपटाएँ।</p>
-   <label>Your post</label><select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
+  const p = S.profile || { role: "resident" },H=window.PAI_HINDI;
+  const initialName=String(p.nameHindi||H?.guess(p.name||S.user.displayName||"")||"");
+  el.innerHTML = `<div class="card"><h2 style="margin-top:0">अपनी प्रोफ़ाइल पूरी करें</h2>
+   <p class="hint">नाम और स्थानों की हिंदी वर्तनी जाँचें। कोई नाम गलत हो तो यहीं सुधारकर Save करें। पत्र लिखते समय दोबारा नहीं पूछा जाएगा।</p>
+   <label for="pNameHindi">आपका पूरा नाम (हिंदी में)</label>
+   <input id="pNameHindi" lang="hi" maxlength="80" value="${esc(initialName)}" placeholder="जैसे: चंद्र भानु पांडेय">
+   <label for="pPhone">मोबाइल नंबर</label>
+   <input id="pPhone" inputmode="tel" maxlength="13" value="${esc(p.phone||S.user.phoneNumber||"")}" placeholder="10 अंकों का मोबाइल नंबर">
+   <label for="pRole">आपका पद</label>
+   <select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
-   <div class="btn-row"><button class="btn" id="pSave">Save ✔</button><button class="btn alt" data-go="details">Edit name or mobile no</button></div>
+   <div class="btn-row"><button class="btn alt" id="pSuggestHindi" type="button">✦ हिंदी वर्तनी के सुझाव</button>
+   <button class="btn" id="pSave">✓ प्रोफ़ाइल Save करें</button></div>
+   <p class="hint" id="pHindiStatus" role="status">नाम और स्थान की वर्तनी बदल सकते हैं। सही करके Save करें।</p>
    ${p.role==="pradhan"?'<div class="card" style="margin-top:15px"><b>🖋️ ग्राम प्रधान लेटरहेड</b><p class="hint">लेटरहेड बनाएँ या Upload करें, Preview/Edit करके Save करें।</p><button type="button" class="btn" data-go="letterhead">लेटरहेड बनाएँ / Upload करें</button></div>':""}</div>`;
   const area = $("#pArea");
-  const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", clusters: (Array.isArray(p.clusters) ? p.clusters : p.cluster ? [p.cluster] : []).slice(0,3), gps: (Array.isArray(p.gps) ? p.gps : []).slice(0,25), clerkLevel: p.clerkLevel || "block", designation: p.designation || "" };
+  const st = { district:p.district||"",tehsil:p.tehsil||"",block:p.block||"",
+    districtHindi:p.districtHindi||p.district||"",blockHindi:p.blockHindi||"",
+    gpsHindi:{...(p.gpsHindi||{})},
+    clusters:(Array.isArray(p.clusters)?p.clusters:p.cluster?[p.cluster]:[]).slice(0,3),
+    gps:(Array.isArray(p.gps)?p.gps:[]).slice(0,25),
+    clerkLevel:p.clerkLevel||"block",designation:p.designation||"" };
+  const touchedHindi=new Set();
+  const hindiName=raw=>H?.label(raw,st.gpsHindi)||raw;
+  const hintFor=raw=>H?.guess(raw)||raw;
+  let lastAutoSignature="";
   let availableGpNames=[];
   let drawEpoch=0;
   async function draw() {
