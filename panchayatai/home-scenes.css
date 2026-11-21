@@ -1,26 +1,38 @@
 /* Panchayat AI — greeting alignment and auto-playing role stories (21 Nov 2026). */
 .hero.pai-hero-greeting{min-height:172px}
+/* Name and emoji share the text flow, so the emoji stays immediately after "जी". */
 .hero.pai-hero-greeting h1{
-  position:relative;padding-right:87px;max-width:100%;overflow-wrap:break-word;
+  position:relative;padding-right:0;max-width:100%;overflow-wrap:break-word;
   font-size:clamp(20px,5.2vw,25px);line-height:1.42;
 }
+.hero .pai-greeting-tail{
+  display:inline-flex;align-items:center;gap:8px;vertical-align:middle;
+  white-space:nowrap;max-width:100%;
+}
 .hero .pai-greeting-emoji{
-  box-sizing:border-box;position:absolute;right:25px;top:41px;
+  box-sizing:border-box;position:relative;flex:none;
   width:73px;height:73px;border-radius:50%;
-  display:grid;place-items:center;
+  display:inline-grid;place-items:center;vertical-align:middle;
   font-family:"Noto Color Emoji","Segoe UI Emoji",sans-serif;
   font-size:33px;line-height:1;
   background:radial-gradient(circle at 38% 30%,rgba(247,255,255,.25),rgba(35,109,153,.30) 60%,rgba(10,42,92,.34));
   border:1px solid rgba(170,244,247,.6);
   box-shadow:inset 0 0 0 5px rgba(180,236,250,.09),0 5px 22px rgba(3,25,62,.18);
-  transform:translateZ(0);isolation:isolate;overflow:hidden;z-index:1;
+  isolation:isolate;overflow:hidden;z-index:1;
   animation:pai-welcome-wave 2.8s ease-in-out 1 both;
 }
+/* Only the circular ring rotates; the folded-hands emoji stays upright. */
 .hero .pai-greeting-emoji::before{
-  content:"";position:absolute;inset:7px;border:1px dashed rgba(224,254,255,.35);
-  border-radius:50%;pointer-events:none
+  content:"";position:absolute;inset:6px;
+  border:2px dashed rgba(224,254,255,.76);
+  border-radius:50%;pointer-events:none;
+  animation:pai-greeting-ring-spin 7s linear infinite;
 }
+@keyframes pai-greeting-ring-spin{to{transform:rotate(360deg)}}
 @keyframes pai-welcome-wave{0%{transform:scale(.82) rotate(-9deg);opacity:.15}40%{transform:scale(1.04) rotate(5deg);opacity:1}70%{transform:scale(.99) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
+/* Remove both separate orbit decorations beside the greeting. */
+.hero.pai-hero-greeting::before{content:none!important;animation:none!important}
+.hero.pai-hero-greeting .hero-motion .trace{display:none!important;animation:none!important}
 
 .pai-scene-showcase{
   box-sizing:border-box;position:relative;isolation:isolate;overflow:hidden;
@@ -93,8 +105,9 @@ body[data-theme="dark"] .pai-scene-title{color:#edf9ff}
 body[data-theme="dark"] .pai-scene-subtitle{color:#bfd4e5}
 body[data-theme="dark"] .pai-scene-kicker{color:#80e0d6}
 @media(max-width:390px){
- .hero .pai-greeting-emoji{right:17px;top:43px;width:65px;height:65px;font-size:29px}
- .hero.pai-hero-greeting h1{padding-right:76px;font-size:21px}
+ .hero .pai-greeting-emoji{width:65px;height:65px;font-size:29px}
+ .hero.pai-hero-greeting h1{padding-right:0;font-size:21px}
+ .hero .pai-greeting-tail{gap:6px}
  .pai-scene-showcase{padding:13px 12px 20px;min-height:187px}
  .pai-scene-inner{min-height:153px;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
  .pai-scene-title{font-size:17px}
@@ -102,9 +115,10 @@ body[data-theme="dark"] .pai-scene-kicker{color:#80e0d6}
  .pai-scene-progress{left:12px;bottom:9px}
 }
 @media(prefers-reduced-motion:reduce){
- .hero .pai-greeting-emoji,.pai-scene-showcase *, .pai-scene-on .pai-scene-copy,.pai-scene-on .pai-scene-art{animation:none!important;transition:none!important}
+ .hero .pai-greeting-emoji,.hero .pai-greeting-emoji::before,.pai-scene-showcase *, .pai-scene-on .pai-scene-copy,.pai-scene-on .pai-scene-art{animation:none!important;transition:none!important}
 }
 body.pai-motion-off .hero .pai-greeting-emoji,
+body.pai-motion-off .hero .pai-greeting-emoji::before,
 body.pai-motion-off .pai-scene-showcase *,
 body.pai-motion-off .pai-scene-on .pai-scene-copy,
 body.pai-motion-off .pai-scene-on .pai-scene-art{animation:none!important;transition:none!important}
