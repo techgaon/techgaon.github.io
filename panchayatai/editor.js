@@ -1,7 +1,7 @@
 /* Panchayat AI — in-app A4 government draft editor */
 (() => {
  "use strict";
- const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;":"&quot;","'":"&#39;"}[c]));
+ const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  function mount({paper,profile,role,toast}={}){
    if(!paper||paper.dataset.editorReady)return;
    paper.dataset.editorReady="true";
