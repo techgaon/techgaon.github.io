@@ -308,13 +308,18 @@ $("#loginTop").onclick = startGoogleLogin;
 $("#logoutBtn").onclick = async () => { if (S.auth) await S.auth.signOut(); S.user = null; S.profile = null; S.chat=[];S.att=[];S.chatOwner=null;LS.set("profile", null); go("home"); };
 
 const isPlus = () => { const p = S.profile && S.profile.plan; return p && p.until && p.until > Date.now(); };
-// FoodGaon जैसा: लिंग के अनुसार भैया / बहन
-const sib = () => S.profile && S.profile.gender === "महिला" ? "बहन" : "भैया";
-const callName = () => S.profile ? ((S.profile.name || "").split(" ")[0] + " " + sib() + " जी") : "";
-// Home greeting uses exactly the first two meaningful name words (no surname after two).
-const greetingName = () => String(S.profile?.nameHindi || S.profile?.name || S.user?.displayName || "साथी").trim().split(/\s+/u).filter(Boolean).slice(0,2).join(" ");
-// Use the saved profile gender for the home greeting; avoid assuming gender when unspecified.
+// Address users with first + middle name, or first + last name when no middle exists.
+// Prefer the verified Hindi profile, but never truncate the address to first name alone
+// if another saved name has a second word.
+const greetingName = () => {
+  const candidates = [S.profile?.nameHindi, S.profile?.name, S.user?.displayName]
+    .map(value => String(value || "").trim().split(/\s+/u).filter(Boolean));
+  const parts = candidates.find(words => words.length >= 2) || candidates.find(words => words.length);
+  return parts ? parts.slice(0, 2).join(" ") : "साथी";
+};
+// The saved gender determines the honorific; do not infer it from a name.
 const greetingHonorific = () => S.profile?.gender === "पुरुष" ? "भैया जी" : S.profile?.gender === "महिला" ? "दीदी जी" : "जी";
+const callName = () => S.profile ? greetingName() + " " + greetingHonorific() : "";
 
 function chrome() {
   $("#loginTop").classList.toggle("hidden", !!S.user);
@@ -954,7 +959,7 @@ function chat(el) {
 /* ---------- ड्राफ्ट ---------- */
 function draft(el) {
   if (needLogin("draft")) return;
-  el.innerHTML = `<h2>What shall we draft, ${esc(callName())}?</h2><div class="grid">${draftsFor(S.profile.role).map(d => `<div class="tile" data-k="${d.k}"><span class="e">${d.e}</span>${d.n}</div>`).join("")}</div>`;
+  el.innerHTML = `<h2>कौन-सा पत्र या दस्तावेज़ बनाएँ, ${esc(callName())}?</h2><div class="grid">${draftsFor(S.profile.role).map(d => `<div class="tile" data-k="${d.k}"><span class="e">${d.e}</span>${d.n}</div>`).join("")}</div>`;
   el.querySelectorAll("[data-k]").forEach(t => t.onclick = () => { S.draftType = t.dataset.k; go("draftEdit"); });
 }
 /* Short, selectable examples for drafting: one Hindi + two Roman Hindi. */
