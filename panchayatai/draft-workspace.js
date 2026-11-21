@@ -30,7 +30,9 @@
        '<input id="paiWritingFile" type="file" accept=".docx,.pdf,image/jpeg,image/png" multiple>'+
        '<span id="paiFilesInfo" class="hint">Word, PDF या फोटो से संदर्भ दे सकते हैं।</span></div>'+
      '<div class="pai-writing-actions"><button id="paiWrite" class="btn" type="button">✨ पूरा मसौदा बनाएँ</button>'+
-       '<button class="btn alt" type="button" data-go="draft">प्रकार बदलें</button></div>'+
+       '<button class="btn alt" type="button" data-go="draft">प्रकार बदलें</button>'+
+       '<button class="btn alt" type="button" data-ai-health>◉ AI कनेक्शन जाँचें</button></div>'+
+     '<p class="pai-ai-status" role="status" aria-live="polite" hidden></p>'+
      '<p id="paiWriteStatus" class="hint" role="status" aria-live="polite"></p></section>'+
      '<section id="paiWritingOutput" aria-live="polite"></section></section>';
    const matter=$("#paiMatter",el),submit=$("#paiWrite",el),status=$("#paiWriteStatus",el);
