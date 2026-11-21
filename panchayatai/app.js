@@ -681,8 +681,8 @@ function profile(el) {
     if (scope === "multigp" && (!availableGpNames.length || st.clusters.some(name=>!availableGpNames.includes(name)))) return toast("Cluster केवल चुने गए Block की ग्राम पंचायत सूची से चुनें");
     if (scope === "multigp" && st.gps.length > 25) return toast("अधिकतम 25 Gram Panchayats");
     if (role !== "resident" && (scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
-    const nh=$("#pNameHindi").value.trim().replace(/\\s+/gu," ");
-    const rawPhone=$("#pPhone").value.replace(/\\D/g,"");
+    const nh=$("#pNameHindi").value.trim().replace(/\s+/gu," ");
+    const rawPhone=$("#pPhone").value.replace(/\D/g,"");
     const phone=rawPhone.slice(-10);
     if(!H?.canUseHindi(nh)){toast("अपना पूरा नाम हिंदी में सुधारकर Save करें।");$("#pNameHindi").focus();return;}
     if(rawPhone&&phone.length!==10){toast("मोबाइल नंबर 10 अंकों का होना चाहिए।");$("#pPhone").focus();return;}
