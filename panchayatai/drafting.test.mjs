@@ -10,15 +10,15 @@ test('all 53 sources accounted for without publishing excluded private records',
  assert.equal(corpus.length,17);
 });
 test('multi GP has no silent first GP; explicit selection and one GP work',()=>{
- assert.equal(context(b).gp,'[ग्राम पंचायत भरें]');
+ assert.equal(context(b).gp,'');
  assert.equal(context({...b,gp:'रामपुर'}).gp,'रामपुर');
  assert.equal(context({profile:{gps:['एक पंचायत']}}).gp,'एक पंचायत');
 });
 test('staff notice retrieves actual historical notice abstractions',()=>assert.equal(retrieve(b)[0].id,'staff-notice'));
 test('short notice preserves facts and leaves unknown mandatory details blank',()=>{
  const result=render(payload(),b);
- for(const text of ['रामपुर','दिनेश','दो दिन अनुपस्थित रहने','ग्रामीण शिकायत','[तिथियाँ भरें]','[निर्गमन दिनांक भरें]','[उत्तर की समय-सीमा भरें]','पंचायत सचिव (ग्राम पंचायत अधिकारी)'])assert.ok(result.html.includes(text),text);
- assert.ok(!/2025|2026|तीन दिवस|वेतन|निरीक्षण|बर्खास्त/.test(result.html));
+ for(const text of ['रामपुर','दिनेश','दो दिन अनुपस्थित रहने','ग्रामीण शिकायत','पंचायत सचिव (ग्राम पंचायत अधिकारी)'])assert.ok(result.html.includes(text),text);
+ assert.ok(!/2025|2026|तीन दिवस|वेतन|निरीक्षण|बर्खास्त|\[[^\]]+भरें\]/.test(result.html));
  assert.equal(result.review.required,true);
 });
 test('staff notice ignores generative allegations in main body',()=>{
@@ -34,7 +34,7 @@ test('sahayak and resident do not acquire secretary notice power',()=>{
 test('assistant work notice accepts only request quotes',()=>{
  const req={...b,points:'पंचायत सहायक द्वारा काम न किए जाने का नोटिस बनाओ'};
  const p=payload();p.gpOverride='';p.evidence=[];p.staff={name:'',post:'पंचायत सहायक',work:'काम न किए जाने'};
- assert.ok(render(p,req).html.includes('[कर्मी का नाम भरें]'));
+ assert.ok(!render(p,req).html.includes('[कर्मी का नाम भरें]'));
 });
 test('invented GP, evidence, dates, names, deadlines fail closed',()=>{
  for(const update of [{gpOverride:'मनगढ़ंतपुर'},{evidence:[{quote:'काल्पनिक शिकायत',supports:'शिकायत'}]},{paragraphs:['दिनांक 01/01/2030']},{staff:{...payload().staff,name:'अन्य नाम'}},{staff:{...payload().staff,deadline:'तीन दिन'}}])assert.throws(()=>render({...payload(),...update},b));
@@ -72,4 +72,32 @@ test('numeric facts use current instruction not template history',()=>{
 });
 test('copies require explicit current instruction, never sample recipients',()=>{
  assert.throws(()=>render({...payload(),copies:['खंड विकास अधिकारी']},b));
+});
+
+test('minimal ADO letter uses complete profile and no blank placeholders',()=>{
+ const req={kind:'पत्र',points:'एडीओ पंचायत को पत्र बनाओ',profile:{role:'gpa',name:'पंकज कुमार',block:'हैदरगढ़',district:'बाराबंकी',gps:['कमेला']}};
+ const p={subject:'आवश्यक सूचना प्रेषित करने के संबंध में।',recipient:'सहायक विकास अधिकारी (पंचायत), विकास खण्ड हैदरगढ़, बाराबंकी',paragraphs:['उपरोक्त विषयक आवश्यक सूचना आपके अवलोकनार्थ प्रेषित है।'],evidence:[],missing:[]};
+ const result=render(p,req);
+ assert.ok(result.html.includes('पंकज कुमार'));
+ assert.ok(result.html.includes('सहायक विकास अधिकारी'));
+ assert.ok(result.html.includes('हैदरगढ़'));
+ assert.ok(!/\[[^\]]+भरें\]/.test(result.html));
+ assert.ok(!result.html.includes('____________'));
+});
+test('pradhan official GP office letter suppresses personal header',()=>{
+ const req={kind:'पत्र',points:'ग्राम पंचायत कार्यालय की ओर से BDO को पत्र बनाओ',stationery:'gp_office',
+   profile:{role:'pradhan',name:'राधा देवी',district:'बाराबंकी',block:'हैदरगढ़',gps:['कमेला']}};
+ const p={subject:'ग्राम पंचायत कार्य संबंधी पत्र',recipient:'खण्ड विकास अधिकारी, हैदरगढ़',paragraphs:['विषयक आवश्यक कार्यवाही करने का कष्ट करें।'],evidence:[]};
+ const result=render(p,req);
+ assert.ok(result.html.includes('कार्यालय — ग्राम पंचायत कमेला'));
+ assert.ok(result.html.includes('राधा देवी'));
+ assert.ok(!/\[[^\]]+भरें\]/.test(result.html));
+});
+test('pradhan own-letterhead draft contains body but not duplicated personal header',()=>{
+ const req={kind:'पत्र',points:'बीडीओ को पत्र बनाओ',stationery:'pradhan_letterhead',
+  profile:{role:'pradhan',name:'राधा देवी',district:'बाराबंकी',block:'हैदरगढ़',gps:['कमेला']}};
+ const p={subject:'विषयक अनुरोध',recipient:'खण्ड विकास अधिकारी, हैदरगढ़',paragraphs:['आवश्यक कार्यवाही की अपेक्षा है।'],evidence:[]};
+ const result=render(p,req);
+ assert.ok(!result.html.includes('कार्यालय — ग्राम प्रधान'));
+ assert.ok(result.html.includes('राधा देवी'));
 });
