@@ -109,7 +109,7 @@
    capture.getContext("2d").drawImage(src,0,0,src.width,capture.height,0,0,capture.width,capture.height);
    return compress(capture,1100);
  }
- function mount(el,{profile,user,db,onSaved,toast=()=>{}}={}){
+ function mount(el,{profile,user,db,onSaved,onSkip,toast=()=>{}}={}){
    if(!isPradhan(profile)){el.innerHTML='<div class="card">यह सुविधा ग्राम प्रधान की Profile के लिए है।</div>';return;}
    let config=sanitize(profile.letterhead||defaultFields(profile));
    let currentFile=null,changed=true;
@@ -134,7 +134,8 @@
      '<label class="pai-lh-design">डिज़ाइन<select id="lhStyle"><option value="classic">औपचारिक सरकारी</option><option value="modern">आधुनिक साफ-सुथरा</option></select></label></div>'+
      '<div class="btn-row"><button class="btn" type="button" id="lhPreview">👁 Preview देखें</button>'+
      '<button class="btn alt" type="button" id="lhEdit" hidden>✎ Edit करें</button>'+
-     '<button class="btn" type="button" id="lhSave">💾 Save Letterhead</button></div>'+
+     '<button class="btn" type="button" id="lhSave">💾 Save Letterhead</button>'+
+     '<button class="btn alt" type="button" id="lhLater">अभी नहीं</button></div>'+
      '<p class="hint" id="lhStatus" role="status"></p></div>'+
      '<section class="pai-lh-preview" id="lhResult" aria-label="लेटरहेड पूर्वावलोकन" hidden></section>'+
      '<div class="card"><p class="hint">प्रधान के व्यक्तिगत पत्रों में सहेजा गया लेटरहेड लगेगा। “ग्राम पंचायत कार्यालय की ओर से पत्र” लिखने पर सादा A4 बनेगा।</p></div></div>';
@@ -166,6 +167,7 @@
      result.scrollIntoView({behavior:"smooth",block:"start"});
    };
    $("#lhPreview",el).onclick=()=>{try{showPreview()}catch(e){status.textContent=e.message}};
+   $("#lhLater",el).onclick=()=>{onSkip?.();};
    $("#lhEdit",el).onclick=()=>{result.hidden=true;form.scrollIntoView({behavior:"smooth",block:"start"});status.textContent="विवरण बदलकर फिर Preview देखें।"};
    el.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{
      config.type=b.dataset.type;drawFields();result.hidden=true;
