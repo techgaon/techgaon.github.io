@@ -276,6 +276,8 @@ const sib = () => S.profile && S.profile.gender === "महिला" ? "बह�
 const callName = () => S.profile ? ((S.profile.name || "").split(" ")[0] + " " + sib() + " जी") : "";
 // Home greeting uses exactly the first two meaningful name words (no surname after two).
 const greetingName = () => String(S.profile?.name || S.user?.displayName || "साथी").trim().split(/\s+/u).filter(Boolean).slice(0,2).join(" ");
+// Use the saved profile gender for the home greeting; avoid assuming gender when unspecified.
+const greetingHonorific = () => S.profile?.gender === "पुरुष" ? "भैया जी" : S.profile?.gender === "महिला" ? "दीदी जी" : "जी";
 
 function chrome() {
   $("#loginTop").classList.toggle("hidden", !!S.user);
@@ -332,7 +334,7 @@ function home(el) {
   el.innerHTML = `
   <div class="card hero">
    <div class="hero-motion" aria-hidden="true"><span class="trace"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span></div>
-   <h1>${p ? 'प्रणाम <span class="pai-greeting-emoji" role="img" aria-label="प्रणाम">🙏</span> <span class="pai-greeting-name">' + esc(greetingName()) + '</span>' : "पंचायत AI"}</h1>
+   <h1>${p ? 'प्रणाम <span class="pai-greeting-emoji" role="img" aria-label="प्रणाम">🙏</span> <span class="pai-greeting-name">' + esc(greetingName()) + ' ' + esc(greetingHonorific()) + '</span>' : "पंचायत AI"}</h1>
    <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी में AI सहायता, सरकारी पत्र, नोटिस और पंचायत के उपयोगी Tools"}</p>
    </div>
   ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
