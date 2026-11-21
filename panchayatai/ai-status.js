@@ -14,14 +14,20 @@
        throw Object.assign(new Error("AI मॉड्यूल पूरी तरह लोड नहीं हुआ।"),{code:"AI_MODULE_NOT_LOADED"});
      const state=await window.PAI_AI.diagnose();
      const info="Firebase Project: "+state.project+" | Model: "+state.model;
+     const free=state.backup||{};
+     const fallbackStatus=free.ready?
+       "\n✓ Free AI Backup उपलब्ध: "+(free.providers?.groq?"Groq":"")+
+       (free.providers?.cloudflare?(free.providers.groq?" → ":"")+"Cloudflare Workers AI":""):
+       "\n⚠️ Free AI Backup: "+(free.code||"AI_BACKUP_NOT_DEPLOYED")+
+         " — अभी Worker Deployment/Secret Configuration जाँचें।";
      if(state.ai&&state.appCheck){
-       panel.textContent="✓ AI सेवा चालू है। App Check मान्य है और Gemini से उत्तर मिला।\n"+info;
+       panel.textContent="✓ Gemini चालू है। App Check मान्य है और Gemini से उत्तर मिला।\n"+info+fallbackStatus;
      }else{
        const e=state.error||{};
        panel.textContent="⚠️ "+(e.title||"AI जाँच विफल")+" ["+(e.code||"AI_UNKNOWN")+
          (e.status?", HTTP "+e.status:"")+"]\n"+
          (e.message||"सेवा से संपर्क नहीं बना")+"\n"+
-         (e.action||"")+"\n"+info+
+         (e.action||"")+"\n"+info+fallbackStatus+
          (e.technical?"\nसंक्षिप्त विवरण: "+e.technical:"");
      }
    }catch(error){
