@@ -686,9 +686,12 @@ function chat(el) {
       if(kind){
         const followup=revising;
         const source=followup?[{name:"पिछले मसौदे का संदर्भ",text:window.PAI_DRAFT_CARD.sanitize(previous.html).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ")}]:[];
-        const r=await api("/draft",{kind,profile:S.profile,points:q,gp:$("#chatDraftGP")?.value.trim()||"",att:att.concat(source),refs:[]});
         const detected=window.PAI_LETTERHEAD?.mode(S.profile,q,kind)||"plain";
-        const stationery=revising && previous?.stationery==="gp_office" && detected==="pradhan_letterhead"?"gp_office":detected;
+        const stationery=revising && previous?.stationery==="gp_office" && detected==="pradhan_letterhead"?
+          "gp_office":detected;
+        const r=await api("/draft",{kind,profile:S.profile,points:q,gp:$("#chatDraftGP")?.value.trim()||"",
+          stationery,att:att.concat(source),refs:[]});
+
         S.chat.push({r:"a",document:true,id:crypto.randomUUID(),kind,html:r.html,review:r.review,stationery,refs:r.refs||[],t:kind,question:q});
       }else{
         const [r, originals] = await Promise.all([
