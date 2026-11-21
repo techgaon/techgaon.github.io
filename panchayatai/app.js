@@ -278,14 +278,14 @@ const callName = () => S.profile ? ((S.profile.name || "").split(" ")[0] + " " +
 function chrome() {
   $("#loginTop").classList.toggle("hidden", !!S.user);
   $("#logoutBtn").classList.toggle("hidden", !S.user);
-  $("#backBtn").classList.toggle("hidden", isAdmin() || S.view === "home");
+  $("#backBtn").classList.toggle("hidden", S.view === "home" || (isAdmin() && S.view === "admin"));
   $("#avatar").onclick = () => go(isAdmin() ? "admin" : "profile");
   $("#avatar").classList.toggle("hidden", !S.user || !S.user.photoURL);
   if (S.user && S.user.photoURL) $("#avatar").src = S.user.photoURL;
   $("#planBadge").classList.toggle("hidden", !isPlus()); $("#planBadge").textContent = "PLUS";
   const adminLink = $("#adminLink"); if (adminLink) adminLink.classList.toggle("hidden", !isAdmin());
   document.querySelectorAll("#drawer [data-go]").forEach(link => {
-    link.classList.toggle("hidden", isAdmin() ? link.dataset.go !== "admin" : link.id === "adminLink");
+    link.classList.toggle("hidden", isAdmin() ? !["admin","settings"].includes(link.dataset.go) : link.dataset.go === "admin");
   });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
   document.body.classList.toggle("pai-admin-view", isAdmin());
@@ -305,7 +305,7 @@ function needLogin(next) {
   return false;
 }
 function render() {
-  if (isAdmin() && S.view !== "admin") {
+  if (isAdmin() && !["admin","settings"].includes(S.view)) {
     S.view = "admin";
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
@@ -820,7 +820,7 @@ if (S.db) settingsRef().onSnapshot(doc => {
   liveSettings = doc.exists ? doc.data() : { plans: [] };
   window.PAI_UX?.applyDesign(liveSettings.design || {});
   settingsError = false;
-  if (S.view === "plans") render();
+  if (S.view === "plans" || (S.view === "home" && !document.querySelector(".pai-tour-layer"))) render();
 }, () => { settingsError = true; if (S.view === "plans") render(); });
 
 function plans(el) {
