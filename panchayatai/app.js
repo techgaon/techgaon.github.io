@@ -254,7 +254,14 @@ function attachHindiSpeech(input,button,status){
 }
 
 /* ---------- राउटिंग ---------- */
-function go(v) { stopSpeech(); if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
+function rememberNavigation(view) {
+  if (!["chat","draft","draftEdit","tools","estimate","rti","history"].includes(view)) return;
+  const key = view === "draftEdit" ? "draft" : view;
+  const item = { view:key, draft:view === "draftEdit" ? (S.draftType || "patra") : "", at:Date.now() };
+  const old = LS.get("navHistory") || [];
+  LS.set("navHistory", [item,...old.filter(x => x.view !== item.view || (x.draft || "") !== item.draft)].slice(0,7));
+}
+function go(v) { stopSpeech(); if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } rememberNavigation(v); S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
 document.addEventListener("click", e => { const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); go(a.dataset.go); } });
 const closeDrawer = () => { $("#drawer").classList.remove("open"); $("#scrim").classList.remove("show"); };
 $("#menuBtn").onclick = () => { $("#drawer").classList.add("open"); $("#scrim").classList.add("show"); };
@@ -281,6 +288,14 @@ function chrome() {
     link.classList.toggle("hidden", isAdmin() ? link.dataset.go !== "admin" : link.id === "adminLink");
   });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
+  document.body.classList.toggle("pai-admin-view", isAdmin());
+  const selected = S.view === "draftEdit" ? "draft" : S.view;
+  document.querySelectorAll("#paiBottomNav a[data-go]").forEach(a => {
+    const active = a.dataset.go === selected;
+    a.classList.toggle("on", active);
+    if(active) a.setAttribute("aria-current","page");
+    else a.removeAttribute("aria-current");
+  });
   showAndroidAppReturn();
 }
 function needLogin(next) {
@@ -295,12 +310,16 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB }[S.view] || home;
+  const V = { home, login, details, profile, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
   stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
 }
 
+function settingsScreen(el) {
+  if (window.PAI_UX?.preferences) window.PAI_UX.preferences(el);
+  else el.innerHTML = '<div class="card">Display Settings उपलब्ध नहीं हैं। पेज Reload करें।</div>';
+}
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
 
@@ -786,6 +805,7 @@ let liveSettings = null;
 let settingsError = false;
 if (S.db) settingsRef().onSnapshot(doc => {
   liveSettings = doc.exists ? doc.data() : { plans: [] };
+  window.PAI_UX?.applyDesign(liveSettings.design || {});
   settingsError = false;
   if (S.view === "plans") render();
 }, () => { settingsError = true; if (S.view === "plans") render(); });
@@ -841,14 +861,28 @@ function payUI(id) {
 
 async function admin(el) {
   if (!isAdmin()) { S.after = 'admin'; el.innerHTML = '<div class="card"><h2>Admin login</h2><p>Sign in with the administrator Google account.</p><button class="gbtn" data-go="login">' + googleIcon() + ' Continue with Google</button></div>'; return; }
-  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="limits">Limits</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button></div><div id="adminPanel"></div>';
+  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="limits">Limits</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button><button data-panel="design">🎨 Design</button></div><div id="adminPanel"></div>';
   el.querySelectorAll('[data-panel]').forEach(b => b.onclick = async () => {
     el.querySelectorAll('[data-panel]').forEach(x => x.classList.toggle('on', x === b));
     const panel = $("#adminPanel"); panel.innerHTML = '<p class="typing">Loading…</p>';
-    try { await ({ overview: adminOverview, limits: adminLimits, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments }[b.dataset.panel])(panel); }
+    try { await ({ overview: adminOverview, limits: adminLimits, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments, design:adminDesign }[b.dataset.panel])(panel); }
     catch (e) { panel.innerHTML = '<div class="card">Admin data could not load. Please try again.</div>'; console.error(e); }
   });
   el.querySelector('[data-panel="overview"]').click();
+}
+async function adminDesign(panel) {
+  if (!isAdmin()) throw new Error("Administrator access is required.");
+  const doc = await settingsRef().get();
+  const design = doc.data()?.design || {};
+  if(!window.PAI_UX?.adminDesign) throw new Error("Design module did not load.");
+  window.PAI_UX.adminDesign(panel, {
+    data:design,
+    onSave:async next => {
+      if(!isAdmin()) throw new Error("Admin only");
+      await settingsRef().set({design:next,designUpdatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      liveSettings={...(liveSettings||{}),design:next};
+    }
+  });
 }
 async function adminOverview(panel) {
   await S.db.waitForPendingWrites();
@@ -976,7 +1010,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'settings'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
