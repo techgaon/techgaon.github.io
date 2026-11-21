@@ -15,6 +15,7 @@ on:
       - 'panchayatai/draft-workspace.js'
       - 'panchayatai/hindi-profile.js'
       - 'panchayatai/hindi-profile.test.cjs'
+      - 'panchayatai/letterhead-mode.test.cjs'
       - 'panchayatai/workspace.css'
       - 'panchayatai/config.js'
       - 'panchayatai/index.html'
@@ -38,7 +39,7 @@ jobs:
             node --check "$f"
           done
       - name: Pure drafting regression tests
-        run: node --test panchayatai/drafting.test.mjs panchayatai/hindi-profile.test.cjs
+        run: node --test panchayatai/drafting.test.mjs panchayatai/hindi-profile.test.cjs panchayatai/letterhead-mode.test.cjs
       - name: Review UI integration
         run: |
           python3 - <<'PY'
