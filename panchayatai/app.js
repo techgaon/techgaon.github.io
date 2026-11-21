@@ -486,21 +486,25 @@ async function loadDistrict(d) {
 function profile(el) {
   if (!S.user) return go("login");
   const p = S.profile || { role: "resident" };
-  const onboarding=S.needsProfileSetup?
-    '<section class="profile-onboarding"><h3>अपनी Profile पूरी करें</h3><p>यदि आप नीचे दिए गए किसी पद पर हैं, तो अपना पद और कार्यक्षेत्र चुनकर Profile पूरी करें।</p><div class="onboard-roles">'+Object.values(ROLES).map(r=>'<span>'+esc(r.n)+'</span>').join("")+'</div></section>':"";
   el.innerHTML = `<div class="card"><h2 style="margin-top:0">Your profile</h2>
-   ${onboarding}
    <p class="hint">अगर आप विभागीय अधिकारी, कर्मचारी या प्रधान हैं तो अपनी प्रोफ़ाइल पूरी करें और अपने काम — पत्र, स्पष्टीकरण आदि — 1 मिनट में निपटाएँ।</p>
    <label>Your post</label><select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
    <div class="btn-row"><button class="btn" id="pSave">Save ✔</button><button class="btn alt" data-go="details">Edit name or mobile no</button></div></div>`;
   const area = $("#pArea");
   const st = { district: p.district || "", tehsil: p.tehsil || "", block: p.block || "", clusters: (Array.isArray(p.clusters) ? p.clusters : p.cluster ? [p.cluster] : []).slice(0,3), gps: (Array.isArray(p.gps) ? p.gps : []).slice(0,25), clerkLevel: p.clerkLevel || "block", designation: p.designation || "" };
+  let availableGpNames=[];
+  let drawEpoch=0;
   async function draw() {
+    const thisDraw=++drawEpoch;
     const role = $("#pRole").value; if (!role) { area.innerHTML = ""; return; }
     let scope = ROLES[role].scope; if (scope === "clerk") scope = st.clerkLevel === "district" ? "district" : "block";
     const geo = st.district ? await loadDistrict(st.district) : null;
+    if(thisDraw!==drawEpoch)return;
     const tehsils = geo && geo.tehsils || [], blocks = geo && geo.blocks ? Object.keys(geo.blocks) : [], gpsAll = geo && geo.blocks && geo.blocks[st.block] || [];
+    availableGpNames=[...new Set(gpsAll.filter(x=>typeof x==="string" && x.trim()))];
+    if(ROLES[role].scope==="multigp" && availableGpNames.length)
+      st.clusters=st.clusters.filter(name=>availableGpNames.includes(name)).slice(0,3);
     const sel = (id, label, list, val, ph) => list.length
       ? `<label>${label}</label><select id="${id}"><option value="">— Select ${label} —</option>${list.map(x => `<option ${x === val ? "selected" : ""}>${esc(x)}</option>`).join("")}</select>`
       : `<label>${label}</label><input id="${id}" value="${esc(val)}" placeholder="${ph}">`;
@@ -511,9 +515,10 @@ function profile(el) {
     if (scope !== "district") h += sel("aBlock", "Block", blocks, st.block, "Type block name");
     if (scope === "gp") h += sel("aGp", role === "resident" ? "Your Gram Panchayat" : "Gram Panchayat", gpsAll, st.gps[0] || "", "Type Gram Panchayat name");
     if (scope === "multigp" && st.block) {
-      h += `<label for="aClusterTxt">Select Cluster name (अधिकतम 3)</label>
-       <p class="hint" id="clusterHelp">Block चुनने के बाद Cluster का नाम चुनें या लिखकर जोड़ें। अधिकतम 3 Cluster।</p>
-       <div class="pai-cluster-add"><input id="aClusterTxt" list="paiKnownClusters" maxlength="100" autocomplete="off" placeholder="Cluster चुनें या नाम लिखें" aria-describedby="clusterHelp"><datalist id="paiKnownClusters">${(p.block === st.block && Array.isArray(p.clusters) ? p.clusters : []).filter(x => typeof x === "string").map(x => `<option value="${esc(x)}"></option>`).join("")}</datalist><button class="btn" id="aClusterBtn" type="button">+ Add</button></div>
+      h += `<label for="aClusterSelect">Select Cluster (अधिकतम 3)</label>
+       <p class="hint" id="clusterHelp">इस Block की सभी ग्राम पंचायतों में से Cluster चुनें। Cluster का नाम भी ग्राम पंचायत का नाम होता है।</p>
+       <div class="pai-cluster-add"><select id="aClusterSelect" aria-describedby="clusterHelp" ${availableGpNames.length ? "" : "disabled"}><option value="">— ग्राम पंचायत से Cluster चुनें —</option>${availableGpNames.map(name=>`<option value="${esc(name)}" ${st.clusters.includes(name) ? "disabled" : ""}>${esc(name)}${st.clusters.includes(name) ? " ✓" : ""}</option>`).join("")}</select><button class="btn" id="aClusterBtn" type="button" ${availableGpNames.length && st.clusters.length<3 ? "" : "disabled"}>+ Add</button></div>
+       ${!availableGpNames.length ? '<p class="hint" role="status">इस Block की ग्राम पंचायत सूची उपलब्ध नहीं है। सही Block चुनें या सूची अपडेट करवाएँ।</p>' : ""}
        <div class="gp-list" aria-label="चुने गए Cluster">${st.clusters.map((g,i)=>`<span class="chip">${esc(g)}<button type="button" aria-label="${esc(g)} Cluster हटाएँ" data-rm-cluster="${i}">✕</button></span>`).join("")}</div>
        <p class="hint">${st.clusters.length}/3 Cluster selected</p>
        <label>Gram Panchayats (max 25)</label><p class="hint">अपनी ग्राम पंचायतें चुनें। अधिकतम 25 GP जोड़ सकते हैं।</p>
@@ -532,14 +537,14 @@ function profile(el) {
     on("aGpAdd", e => { if (!e.target.value) return; if (st.gps.length >= 25) return toast("Maximum 25 Gram Panchayats"); if (!st.gps.includes(e.target.value)) st.gps.push(e.target.value); draw(); });
     const b = $("#aGpBtn"); if (b) b.onclick = () => { const v = $("#aGpTxt").value.trim(); if (!v) return; if (st.gps.length >= 25) return toast("Maximum 25 Gram Panchayats"); if (!st.gps.includes(v)) st.gps.push(v); draw(); };
     const addCluster = () => {
-      const field = $("#aClusterTxt"), name = (field?.value || "").trim().replace(/\s+/gu," ");
-      if (!name) return toast("Cluster का नाम लिखें या चुनें");
-      if (st.clusters.some(x => x.toLocaleLowerCase("hi-IN") === name.toLocaleLowerCase("hi-IN"))) return toast("यह Cluster पहले से जुड़ा है");
-      if (st.clusters.length >= 3) return toast("अधिकतम 3 Cluster चुन सकते हैं");
-      st.clusters.push(name); draw();
+      const name=($("#aClusterSelect")?.value||"").trim();
+      if(!name)return toast("ग्राम पंचायत सूची से Cluster चुनें");
+      if(!availableGpNames.includes(name))return toast("Cluster का नाम इसी Block की ग्राम पंचायत सूची में होना चाहिए");
+      if(st.clusters.includes(name))return toast("यह Cluster पहले से जुड़ा है");
+      if(st.clusters.length>=3)return toast("अधिकतम 3 Cluster चुन सकते हैं");
+      st.clusters.push(name);draw();
     };
-    const addBtn = $("#aClusterBtn"); if (addBtn) addBtn.onclick = addCluster;
-    const clusterField = $("#aClusterTxt"); if (clusterField) clusterField.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addCluster(); } };
+    const addBtn=$("#aClusterBtn");if(addBtn)addBtn.onclick=addCluster;
     area.querySelectorAll("[data-rm-cluster]").forEach(x => x.onclick = () => { st.clusters.splice(Number(x.dataset.rmCluster),1); draw(); });
     area.querySelectorAll("[data-rm]").forEach(x => x.onclick = () => { st.gps.splice(+x.dataset.rm, 1); draw(); });
   }
@@ -554,6 +559,7 @@ function profile(el) {
     if (role !== "resident" && scope !== "district" && !st.block) return toast("Select block");
     if (role !== "resident" && scope === "multigp" && !st.clusters.length) return toast("कम-से-कम 1 Cluster जोड़ें");
     if (scope === "multigp" && st.clusters.length > 3) return toast("अधिकतम 3 Cluster");
+    if (scope === "multigp" && (!availableGpNames.length || st.clusters.some(name=>!availableGpNames.includes(name)))) return toast("Cluster केवल चुने गए Block की ग्राम पंचायत सूची से चुनें");
     if (scope === "multigp" && st.gps.length > 25) return toast("अधिकतम 25 Gram Panchayats");
     if (role !== "resident" && (scope === "gp" || scope === "multigp") && !st.gps.length) return toast("Select Gram Panchayat");
     Object.assign(S.profile ||= {}, { role, state: "उत्तर प्रदेश", district: st.district, tehsil: scope.includes("gp") ? st.tehsil : "", block: scope === "district" ? "" : st.block,
