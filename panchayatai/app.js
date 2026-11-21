@@ -116,8 +116,11 @@ function initUpgradeModal(){
 initUpgradeModal();
 function effectiveDailyLimit(settings,kind,plus){
  const key=(plus?"plus":"free")+"Daily"+(kind==="chat"?"Chats":"Drafts");
- const defaultValue=plus?200:C.plans.free[kind==="chat"?"dailyChats":"dailyDrafts"];
- return Number.isInteger(settings?.[key])&&settings[key]>=0&&settings[key]<=1000?settings[key]:defaultValue;
+ // Everyone is unlimited unless admin explicitly activates the limit.
+ const enabled=plus?settings?.plusLimitsEnabled===true:settings?.freeLimitsEnabled===true;
+ if(!enabled)return Infinity;
+ return Number.isInteger(settings?.[key])&&settings[key]>=0&&settings[key]<=100000
+  ?settings[key]:(plus?200:(kind==="chat"?10:3));
 }
 async function useQuota(kind){
  if(S.blocked)throw new Error("Account is blocked");
@@ -131,6 +134,7 @@ async function useQuota(kind){
   try{settings=(await settingsRef().get()).data()||{};}catch(e){settings={};}
  }
  const plus=!!isPlus(),limit=effectiveDailyLimit(settings,kind,plus);
+ if(limit===Infinity)return; // Unlimited: do not increment a quota counter.
  const day=Math.floor((Date.now()+19800000)/864e5);
  if(!S.db||!S.user||S.user.uid==="demo"){
   let u=LS.get("usage")||{};
@@ -996,29 +1000,55 @@ async function adminPlans(panel) {
 }
 async function adminLimits(panel){
  const settings=(await settingsRef().get()).data()||{};
- const fields=[["freeDailyChats","Free AI chats / day",10,500],["freeDailyDrafts","Free letters / day",3,500],["plusDailyChats","Plus AI chats / day",200,1000],["plusDailyDrafts","Plus letters / day",200,1000]];
- panel.innerHTML='<section class="card limit-admin"><h3>Daily Usage Limits</h3><p class="hint">Admin sets each plan limit. Daily counters reset at midnight India time.</p>'+
-   fields.map(([key,label,def,max])=>'<label for="limit-'+key+'">'+label+'</label><input id="limit-'+key+'" type="number" min="0" max="'+max+'" step="1" inputmode="numeric" value="'+(Number.isInteger(settings[key])?settings[key]:def)+'">').join("")+
-   '<button type="button" id="saveLimits" class="btn">Save Limits</button><p id="limitResult" role="status"></p><p class="hint">The matching Firestore Security Rules must be published in Firebase for all users.</p></section>';
+ const fields=[
+   ["freeDailyChats","Free AI Chats / day",10],["freeDailyDrafts","Free letters / day",3],
+   ["plusDailyChats","Plus AI Chats / day",200],["plusDailyDrafts","Plus letters / day",200]
+ ];
+ panel.innerHTML='<section class="card limit-admin"><h3>AI Usage Limits</h3>'+
+   '<p class="hint">अभी सभी के लिए Unlimited है। Admin के ON करने पर ही प्रतिदिन की सीमा लागू होगी।</p>'+
+   '<label class="chk"><input id="freeLimitsEnabled" type="checkbox" '+(settings.freeLimitsEnabled===true?'checked':'')+'> Free Plan की दैनिक सीमा चालू करें</label>'+
+   '<div id="paiFreeLimitFields" class="pai-limit-fields"></div>'+
+   '<label class="chk"><input id="plusLimitsEnabled" type="checkbox" '+(settings.plusLimitsEnabled===true?'checked':'')+'> Plus Plan की दैनिक सीमा चालू करें</label>'+
+   '<div id="paiPlusLimitFields" class="pai-limit-fields"></div>'+
+   '<button class="btn" type="button" id="saveLimits">Save Limits</button><p id="limitResult" role="status"></p>'+
+   '<p class="hint">Security Rules में भी यही नियंत्रण Publish होना चाहिए। केवल Admin Panel में Save करने से सर्वर नियम अपने-आप नहीं बदलते।</p></section>';
+ function fieldsFor(kind){
+   const enabled=panel.querySelector("#"+kind+"LimitsEnabled").checked;
+   const wrap=panel.querySelector(kind==="free"?"#paiFreeLimitFields":"#paiPlusLimitFields");
+   wrap.hidden=!enabled;
+   wrap.innerHTML=fields.filter(([key])=>key.startsWith(kind)).map(([key,label,def])=>
+     '<label for="limit-'+key+'">'+label+'</label><input id="limit-'+key+
+     '" type="number" min="0" max="100000" step="1" inputmode="numeric" value="'+
+     (Number.isInteger(settings[key])&&settings[key]>=0?settings[key]:def)+'">').join("");
+ }
+ for(const kind of ["free","plus"]){
+   panel.querySelector("#"+kind+"LimitsEnabled").onchange=()=>fieldsFor(kind);
+   fieldsFor(kind);
+ }
  panel.querySelector("#saveLimits").onclick=async()=>{
-   const button=panel.querySelector("#saveLimits"),message=panel.querySelector("#limitResult"),update={};
+   const button=panel.querySelector("#saveLimits"),message=panel.querySelector("#limitResult");
+   const update={freeLimitsEnabled:panel.querySelector("#freeLimitsEnabled").checked,
+      plusLimitsEnabled:panel.querySelector("#plusLimitsEnabled").checked};
    try{
-     for(const [key,label,def,max] of fields){
+     for(const [key,label,def] of fields){
+       const enabled=update[key.startsWith("free")?"freeLimitsEnabled":"plusLimitsEnabled"];
+       if(!enabled)continue;
        const raw=panel.querySelector("#limit-"+key).value.trim();
-       if(!/^\d+$/.test(raw))throw new Error(label+": enter a whole number.");
+       if(!/^\d+$/.test(raw))throw Error(label+": पूरा अंक भरें।");
        const value=Number(raw);
-       if(!Number.isSafeInteger(value)||value<0||value>max)throw new Error(label+": allowed 0 to "+max+".");
+       if(!Number.isSafeInteger(value)||value<0||value>100000)throw Error(label+": 0–100000 तक मान्य है।");
        update[key]=value;
      }
      button.disabled=true;
      await settingsRef().set({...update,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
      liveSettings={...(liveSettings||{}),...update};
-     message.textContent="✓ Limits saved. Apply updated Firestore Security Rules to activate.";
-   }catch(e){message.textContent="Save failed: "+(e.message||"Retry");}
+     message.textContent=update.freeLimitsEnabled||update.plusLimitsEnabled?
+       "✓ सीमाएँ Save हो गई हैं। सर्वर पर लागू करने के लिए Firestore Rules Publish करें।":
+       "✓ Unlimited मोड Save हो गया है। सभी के लिए Chat और पत्र असीमित हैं।";
+   }catch(e){message.textContent="Save नहीं हुआ: "+(e.message||"Retry");}
    finally{button.disabled=false;}
  };
 }
-
 async function adminCoupons(panel) {
   const snapshot = await S.db.collection("paiCoupons").get();
   panel.innerHTML = `<div class="card"><h3>Coupon</h3><label for="couponCode">Code</label><input id="couponCode" maxlength="40"><label for="couponType">Discount type</label><select id="couponType"><option value="percent">Percentage</option><option value="fixed">Fixed amount (₹)</option></select><label for="couponValue">Value</label><input id="couponValue" type="number" min="1"><label for="couponPlan">Plan</label><select id="couponPlan"><option value="">All plans</option>${(liveSettings?.plans || []).map(p => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join('')}</select><label for="couponExpiry">Expiry date (optional)</label><input id="couponExpiry" type="date"><label class="chk"><input id="couponActive" type="checkbox" checked> Active</label><button class="btn" id="saveCoupon">Save coupon</button><p id="couponMessage" role="status"></p></div><div id="couponList">${snapshot.docs.map(d => `<button class="card coupon-row" data-code="${esc(d.id)}">${esc(d.id)} · ${d.data().active ? 'Active' : 'Disabled'}</button>`).join('')}</div>`;
