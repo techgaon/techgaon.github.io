@@ -81,15 +81,35 @@ async function chat(b) {
   return {text:caveat?caveat+"\n\n"+answer:answer,language,followups,refs:[],web};
 }
 async function draft(b) {
-  const prepared = draftRequest(b);
-  const generated = await getGenerativeModel(ai, {
-    model: MODEL, systemInstruction: prepared.system,
-    generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-  }).generateContent({ contents: [{ role: "user", parts: parts(prepared.prompt, b.att) }] });
-  let payload;
-  try { payload = JSON.parse(generated.response.text().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
-  catch { throw Error("ड्राफ्ट का उत्तर स्पष्ट प्रारूप में नहीं मिला। फिर प्रयास करें।"); }
-  return renderDraft(payload, b);
+  const prepared=draftRequest(b);
+  const source=[String(b.points||""),...(b.att||[]).filter(x=>x.text).map(x=>String(x.text))].join("\n");
+  let previousError=null;
+  for(let attempt=0;attempt<2;attempt++){
+    const guidance=attempt===0?"":"\nपिछला प्रारूप अस्वीकृत हुआ: "+String(previousError?.message||"अधूरा प्रारूप")+
+      "। अब बिना कोई अप्रमाणित नाम, तारीख, दंड, संख्या, तथ्य, प्रतिलिपि या अलग GP गढ़े पुनः JSON बनाएं।";
+    const generated=await getGenerativeModel(ai,{
+      model:MODEL,systemInstruction:prepared.system,
+      generationConfig:{temperature:0.1,responseMimeType:"application/json"}
+    }).generateContent({contents:[{role:"user",parts:parts(prepared.prompt+guidance,b.att)}]});
+    let payload;
+    try{
+      payload=JSON.parse(generated.response.text().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""));
+    }catch(e){previousError=Error("AI ने स्पष्ट JSON मसौदा नहीं दिया।");continue;}
+    // The model may translate a Roman-Hindi quote into Devanagari; that is not
+    // a literal source quote. Drop it rather than asserting false evidence.
+    if(!Array.isArray(payload.evidence))payload.evidence=[];
+    const originalEvidence=payload.evidence.length;
+    payload.evidence=payload.evidence.filter(x=>x&&typeof x.quote==="string"&&
+      x.quote.length>0&&source.includes(x.quote));
+    if(!Array.isArray(payload.copies))payload.copies=[];
+    payload.copies=payload.copies.filter(x=>typeof x==="string"&&String(b.points||"").includes(x));
+    if(!Array.isArray(payload.missing))payload.missing=[];
+    if(originalEvidence!==payload.evidence.length)
+      payload.missing.push("स्रोत से शब्दशः सत्यापित न होने वाले AI संदर्भ हटाए गए हैं; तथ्य जाँचें।");
+    try{return renderDraft(payload,b);}
+    catch(e){previousError=e;if(attempt===1)break;}
+  }
+  throw previousError||Error("मसौदा तैयार नहीं हुआ। कृपया निर्देश दोबारा लिखें।");
 }
 // पंचायत न्यूज़ — Google समाचार RSS (निःशुल्क) → Gemini से 60 शब्द का हिन्दी सार (केवल दिए गए पाठ से)
 async function news(area) {
