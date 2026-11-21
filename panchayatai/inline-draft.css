@@ -1,0 +1,34 @@
+/* Greeting, playback and document cards stay in the normal mobile conversation. */
+.hero.pai-hero-greeting{min-height:0;padding-bottom:20px}
+.hero .pai-greeting-emoji{width:30px;height:30px;font-size:21px;margin:0 3px;background:rgba(255,255,255,.08);border:0;box-shadow:none;overflow:visible;animation:pai-soft-namaste 3.8s ease-in-out infinite}
+.hero .pai-greeting-emoji::before{inset:0;border:1px solid rgba(224,254,255,.3);animation:none}
+.hero .pai-greeting-name{font-size:inherit}
+@keyframes pai-soft-namaste{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.pai-scene-pause{position:absolute;right:12px;bottom:5px;z-index:3;width:auto;padding:4px 10px;border:1px solid #bdd3de;border-radius:20px;background:#fff;color:#295775;font:600 11px/1.5 'Nirmala UI',sans-serif;cursor:pointer}
+.pai-scenes-paused *,.pai-scenes-paused *::before{animation-play-state:paused!important}
+.chat .msg.draft-message{max-width:100%;width:100%;padding:0;background:transparent;border:0;box-shadow:none;overflow:visible}
+.inline-draft-card{background:var(--card,#fff);border:1px solid var(--bd,#dce4ef);border-radius:17px;padding:14px;min-width:0;max-width:100%;color:var(--text,#172f58)}
+.inline-draft-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.inline-draft-top b{font-size:14px}
+.inline-draft-actions{display:flex;gap:6px;flex:none}
+.inline-draft-icon{width:36px;height:36px;padding:7px;border:1px solid var(--bd,#dce4ef);border-radius:10px;background:var(--card,#fff);color:var(--g,#244c79);cursor:pointer;display:inline-grid;place-items:center}
+.inline-draft-icon svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.inline-draft-paper{background:#fff;color:#111;font-family:'Noto Sans Devanagari','Nirmala UI',sans-serif;font-size:16px;line-height:1.85;padding:16px 12px;min-height:120px;border:1px solid #e6eaf0;border-radius:9px;overflow-wrap:anywhere;white-space:normal;user-select:text;touch-action:pan-y}
+.inline-draft-paper p{margin:0 0 13px}.inline-draft-paper table{border-collapse:collapse;width:100%;table-layout:fixed}.inline-draft-paper td,.inline-draft-paper th{border:1px solid #d8dce2;padding:5px;overflow-wrap:anywhere}
+.inline-draft-paper[contenteditable=true]{outline:2px solid #77acbd;outline-offset:2px}
+.inline-draft-card .draft-save{margin-top:10px;width:auto}.inline-draft-card [hidden]{display:none!important}
+.inline-draft-review{font-size:12px;line-height:1.65;margin:12px 0;color:var(--muted,#52647a)}
+.inline-draft-review summary{cursor:pointer}.inline-draft-review label{display:flex;align-items:flex-start;gap:8px;margin-top:6px}.inline-draft-review input{width:16px;min-width:16px;height:16px;margin-top:3px}
+.inline-draft-files{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.inline-file{min-width:0;background:var(--bg,#f6f8fc);border-radius:12px;padding:8px;border:1px solid var(--bd,#dce4ef)}
+.inline-file .btn{width:100%;margin:0;min-height:42px;font-size:12px;padding:8px 4px}
+.inline-file-status{font-size:11px;min-height:18px;line-height:1.5;margin-top:5px;overflow-wrap:anywhere}.inline-file-status.success{color:#168047;font-weight:700}
+.inline-file-options{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.inline-file-options button{border:0;background:transparent;color:var(--g,#245989);font:600 11px/1.4 inherit;padding:4px;cursor:pointer}
+.inline-file-progress{height:3px;width:100%;margin-top:5px;accent-color:#28835a}
+.draft-chat-mode{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;padding:8px 0}.draft-chat-mode select,.draft-chat-mode input{flex:1;min-width:100px;padding:7px;font-size:13px;width:auto;margin:0}.draft-chat-mode label{margin:0;font-size:12px}
+.draft-chat-composer{position:sticky!important;bottom:0!important;left:auto!important;right:auto!important;margin:0 -14px -14px;padding-bottom:max(10px,env(safe-area-inset-bottom));border-radius:0 0 14px 14px}
+.chat.draft-conversation{padding-bottom:230px}.chat.draft-conversation .msg.u{margin-left:auto}.draft-chat-header{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:8px}.draft-chat-header h2{font-size:18px;margin:0}
+.draft-message{scroll-margin-top:85px}
+body[data-theme=dark] .inline-draft-card{background:#17273d;color:#eef5ff}body[data-theme=dark] .inline-file{background:#22344c}body[data-theme=dark] .inline-draft-review{color:#bed0e6}
+@media(prefers-reduced-motion:reduce){.hero .pai-greeting-emoji{animation:none}}
+body.pai-motion-off .hero .pai-greeting-emoji{animation:none}

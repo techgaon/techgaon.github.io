@@ -78,7 +78,7 @@ const draftsFor = r => BASE_DRAFTS.concat((EXTRA_DRAFTS[r] || []).map(([k,e,n,d]
 /* ---------- स्थिति ---------- */
 const S = { user: null, profile: null, view: "home", chat: [], att: [], referenceDocs: [], db: null, auth: null };
 const LS = { get: k => { try { return JSON.parse(localStorage.getItem("pai_" + k)); } catch { return null; } },
-             set: (k, v) => { try { localStorage.setItem("pai_" + k, JSON.stringify(v)); } catch {} } };
+             set: (k, v) => { try { localStorage.setItem("pai_" + k, JSON.stringify(v)); return true; } catch { return false; } } };
 
 /* ---------- Firebase ---------- */
 let fbReady = false;
@@ -262,7 +262,7 @@ function rememberNavigation(view) {
   LS.set("navHistory", [item,...old.filter(x => x.view !== item.view || (x.draft || "") !== item.draft)].slice(0,7));
 }
 function go(v) { stopSpeech(); if (v === "news") { location.href = "https://techgaon.in/karmcharinews/"; return; } rememberNavigation(v); S.view = v; window.history.replaceState(null, '', location.pathname + '#' + v); closeDrawer(); render(); window.scrollTo(0, 0); }
-document.addEventListener("click", e => { const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); go(a.dataset.go); } });
+document.addEventListener("click", e => { const a = e.target.closest("[data-go]"); if (a) { e.preventDefault(); if(a.dataset.go === "chat") S.draftMode = ""; go(a.dataset.go); } });
 const closeDrawer = () => { $("#drawer").classList.remove("open"); $("#scrim").classList.remove("show"); };
 $("#menuBtn").onclick = () => { $("#drawer").classList.add("open"); $("#scrim").classList.add("show"); };
 $("#scrim").onclick = closeDrawer;
@@ -305,6 +305,7 @@ function needLogin(next) {
   return false;
 }
 function render() {
+  S.chatCleanup?.(); S.chatCleanup=null;
   if (isAdmin() && !["admin","settings"].includes(S.view)) {
     S.view = "admin";
     window.history.replaceState(null, "", location.pathname + "#admin");
@@ -329,10 +330,9 @@ function home(el) {
   el.innerHTML = `
   <div class="card hero">
    <div class="hero-motion" aria-hidden="true"><span class="trace"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span></div>
-   <span class="hero-eyebrow">TECHGAON · DIGITAL PANCHAYAT</span>
-   <h1>${p ? "प्रणाम " + esc(callName()) + " 🙏" : "पंचायत AI"}</h1>
+   <h1>${p ? 'प्रणाम <span class="pai-greeting-emoji" role="img" aria-label="प्रणाम">🙏</span> <span class="pai-greeting-name">' + esc(callName()) + '</span>' : "पंचायत AI"}</h1>
    <p>${p ? esc([(ROLES[p.role] || ROLES.resident).n, p.block, p.district].filter(Boolean).join(" · ")) : "हिंदी में AI सहायता, सरकारी पत्र, नोटिस और पंचायत के उपयोगी Tools"}</p>
-   <div class="hero-quick"><button class="hero-tour-btn" type="button" aria-label="पंचायत AI का ऐप टूर देखें">✦ ऐप कैसे चलाएँ? &nbsp;→</button></div></div>
+   </div>
   ${!S.user ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" id="homeGoogleLogin" type="button">${googleIcon()} Continue with Google</button></div></div>` : ""}
   <div class="home-options">
@@ -580,6 +580,7 @@ function refsHtml(ids){
   ).join("")+"</div>";
 }
 function assistantHtml(message,index){
+  if(message.document)return '<div data-draft-message="'+index+'"></div>';
   const answer=cleanChatAnswer(message.t);
   if(message.error)return chatParagraphs(answer);
   const english=message.language==="en";
@@ -595,16 +596,32 @@ function assistantHtml(message,index){
 function chat(el) {
   if (needLogin("chat")) return;
   S.chat = S.chat.length ? S.chat : (LS.get("chat_general_v1_" + S.user.uid) || []);
-  el.innerHTML = `<div class="chat" id="chatBox"></div>`;
+  const choices = RTI_DRAFTS.concat(draftsFor(S.profile.role));
+  el.innerHTML = `<div class="draft-chat-header"><h2>बातचीत और पत्र</h2></div><div class="draft-chat-mode"><label for="chatDraftKind">बनाएँ</label><select id="chatDraftKind"><option value="">सामान्य बातचीत</option>${[...new Set(choices.map(d=>d.n))].map(n=>`<option ${n===S.draftMode?'selected':''}>${esc(n)}</option>`).join("")}</select><input id="chatDraftGP" list="chatGPList" aria-label="इस पत्र की ग्राम पंचायत" placeholder="ग्राम पंचायत" value="${esc(S.chatGP ?? ((S.profile.gps||[]).length===1?S.profile.gps[0]:""))}"><datalist id="chatGPList">${(S.profile.gps||[]).map(g=>`<option value="${esc(g)}"></option>`).join("")}</datalist></div><div class="chat draft-conversation" id="chatBox"></div>`;
+  $("#chatDraftKind").onchange=e=>{S.draftMode=e.target.value;};
+  $("#chatDraftGP").oninput=e=>{S.chatGP=e.target.value;};
   const box = $("#chatBox");
+  const draftCards = new Map();
+  S.chatCleanup=()=>draftCards.forEach(c=>c.dispose());
   const paint = () => {
     box.innerHTML = (S.chat.length ? "" : `<div class="msg a">उत्तर प्रदेश के पंचायती राज अधिनियम, नियम, शासनादेश और विभागीय प्रक्रियाओं के बारे में पूछें।</div>`) +
-      S.chat.map((m,index) => '<div class="msg ' + (m.r === "u" ? "u" : "a") + '">' + (m.r === "u" ? esc(m.t) : assistantHtml(m,index)) + '</div>').join("");
+      S.chat.map((m,index) => '<div class="msg ' + (m.r === "u" ? "u" : m.document ? "a draft-message" : "a") + '">' + (m.r === "u" ? esc(m.t) : assistantHtml(m,index)) + '</div>').join("");
 
+    box.querySelectorAll("[data-draft-message]").forEach(holder=>{
+      const m=S.chat[Number(holder.dataset.draftMessage)];
+      if(draftCards.has(m.id)){holder.appendChild(draftCards.get(m.id).card);return;}
+      draftCards.set(m.id,window.PAI_DRAFT_CARD.mount(holder,{html:m.html,kind:m.kind,review:m.review,size:m.size||12,dirty:m.dirty,
+        toast,onChange:change=>{Object.assign(m,change,{dirty:true});},onSave:change=>{
+          const list=LS.get("drafts")||[], entry={id:m.id,kind:m.kind,html:m.html,refs:m.refs||[],review:m.review,size:m.size||12,at:Date.now()};
+          const index=list.findIndex(x=>x.id&&x.id===m.id);if(index>=0)list[index]=entry;else list.unshift(entry);
+          if(!LS.set("drafts",list.slice(0,50)))throw Error("फोन की जगह भर गई है। पत्र सहेजा नहीं जा सका।");
+          Object.assign(m,change,{dirty:false});persistChat();
+        }}));
+    });
     box.querySelectorAll("[data-tod]").forEach(b => b.onclick = () => { S.draftType = "patra"; S.draftSeed = S.chat[+b.dataset.tod].t; go("draftEdit"); });
     box.querySelectorAll("[data-original]").forEach(b=>b.onclick=()=>window.PAI.downloadOriginalPDF(b.dataset.original));
-    window.scrollTo(0, document.body.scrollHeight);
   };
+  const persistChat=()=>LS.set("chat_general_v1_" + S.user.uid,S.chat.slice(-40));
   paint();
   const comp = document.createElement("div"); comp.className = "composer"; comp.id = "composerWrap";
   comp.appendChild(attachBar());
@@ -621,20 +638,31 @@ function chat(el) {
     const att = S.att.splice(0); paint();
     box.insertAdjacentHTML("beforeend", `<div class="msg a typing" id="typing">Thinking…</div>`);
     try {
-      const [r, originals] = await Promise.all([
-        api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m=>({r:m.r,t:m.t})), att }),
-        availableOriginals(q)
-      ]);
-      S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
+      const previous=S.chat.slice(0,-1).reverse().find(m=>m.document);
+      const revising=previous&&/इसमें|इसे|बदल|सुधार|जोड़|हटा|edit|change|update/i.test(q);
+      const kind = requestedDraftKind(q, S.draftMode)||(revising?previous.kind:"");
+      if(kind){
+        const followup=revising;
+        const source=followup?[{name:"पिछले मसौदे का संदर्भ",text:window.PAI_DRAFT_CARD.sanitize(previous.html).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ")}]:[];
+        const r=await api("/draft",{kind,profile:S.profile,points:q,gp:$("#chatDraftGP")?.value.trim()||"",att:att.concat(source),refs:[]});
+        S.chat.push({r:"a",document:true,id:crypto.randomUUID(),kind,html:r.html,review:r.review,refs:r.refs||[],t:kind,question:q});
+      }else{
+        const [r, originals] = await Promise.all([
+          api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m=>({r:m.r,t:m.document?m.kind+" का मसौदा तैयार है।":m.t})), att }),
+          availableOriginals(q)
+        ]);
+        S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
+      }
     } catch (e) { if(isDailyLimitError(e))showUpgrade(e.quotaKind,e.limit,e.code==="PLUS_LIMIT");S.chat.push({r:"a",error:true,t:isDailyLimitError(e)?e.message:"⚠️ "+e.message}); }
     S.chatBusy = false;
-    LS.set("chat_general_v1_" + S.user.uid, S.chat.slice(-40));
-    if (document.contains(box)) { paint(); $("#send").disabled = false; }
+    persistChat();
+    if (document.contains(box)) { paint(); $("#send").disabled = false; const latest=box.lastElementChild;latest?.scrollIntoView({block:"start",behavior:"smooth"}); }
     else if (S.view === "chat") render();
   };
   $("#send").onclick = () => send();
   box.addEventListener("click",event => { const button = event.target.closest("[data-followup]"); if (button && !S.chatBusy) { $("#q").value = button.dataset.followup; send(Number(button.dataset.messageIndex)); } });
   $("#q").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+  if(S.draftSeed){$("#q").value=S.draftSeed;S.draftSeed=null;}
   if (S.pendingAsk) { $("#q").value = S.pendingAsk; S.pendingAsk = null; send(); }
 }
 
@@ -679,107 +707,30 @@ function rti(el) {
   el.innerHTML = '<h2>RTI</h2><div class="grid draft-grid">' + RTI_DRAFTS.map(d => '<button class="tile" data-rti="' + d.k + '">' + d.e + ' ' + d.n + ' बनाएँ</button>').join('') + '</div>';
   el.querySelectorAll('[data-rti]').forEach(button => button.onclick = () => { S.draftType = button.dataset.rti; go("draftEdit"); });
 }
-function draftEdit(el) {
-  if (needLogin("draft")) return;
-  const d = RTI_DRAFTS.concat(draftsFor(S.profile.role)).find(x => x.k === S.draftType) || BASE_DRAFTS[0];
-  const ex = examples(d.k, S.profile.role);
-  el.innerHTML = `<div class="card"><h2 style="margin-top:0">${d.e} ${d.n} बनाएँ</h2>
-   <label class="draft-prompt" for="pts">संक्षेप में लिखें कि क्या बनाना है</label>
-   <textarea id="pts" rows="3" placeholder="यहाँ लिखें…">${esc(S.draftSeed || "")}</textarea>
-   <div class="ex-list"><button class="ex ex-main" type="button">${esc(ex[0])}</button><div class="ex-row"><button class="ex" type="button">${esc(ex[1])}</button><button class="ex" type="button">${esc(ex[2])}</button></div></div>
-   <label for="draftGP">इस पत्र की ग्राम पंचायत</label>
-   <input id="draftGP" list="draftGPList" value="${esc((S.profile.gps || []).length === 1 ? S.profile.gps[0] : "")}" placeholder="पंचायत चुनें या निर्देश में नाम लिखें">
-   <datalist id="draftGPList">${(S.profile.gps || []).map(g=>`<option value="${esc(g)}"></option>`).join("")}</datalist>
-   <p class="hint">तारीख, घटना के दिन और उत्तर अवधि नहीं बताएँगे तो उनके लिए खाली स्थान रहेगा। अंतिम पत्र जाँचकर ही जारी करें।</p>
-   <div id="attHere"></div>
-   <div class="btn-row"><button class="btn saf" id="mk">✨ Generate in 1 minute</button></div></div>
-   <div id="out"></div>`;
-  S.draftSeed = null; $("#attHere").appendChild(attachBar());
-  el.querySelectorAll(".ex").forEach(b => b.onclick = () => { $("#pts").value = b.textContent.trim(); $("#pts").focus(); });
-  $("#mk").onclick = async () => {
-    const req = $("#pts").value.trim(); if (!req && !S.att.length) return toast("Please write what you need");
-    const done = progress($("#mk"), "⏳ बन रहा है…");
-    try {
-      const r = await api("/draft", { kind: d.n, profile: S.profile, points: req, gp: $("#draftGP").value.trim(), att: S.att.slice(),
-        refs: [] });
-      done(true); showDraft(r.html, r.refs || [], d.n, 12, r.review);
-    } catch (e) { done(false);if(isDailyLimitError(e))showUpgrade(e.quotaKind,e.limit,e.code==="PLUS_LIMIT");else toast(e.message); }
-  };
+function requestedDraftKind(text, selected="") {
+  if(selected)return selected;
+  if(/कैसे|क्या|कब|how|procedure/i.test(text))return "";
+  if(!/बना|बनाइ|बनाय|तैयार|लिख|draft|bana|likh|taiyar|prepare|create/i.test(text))return "";
+  if(/नोटिस|notice|notis/i.test(text))return "नोटिस";
+  if(/स्पष्टीकरण|spashti|जवाब|प्रतिउत्तर/i.test(text))return "स्पष्टीकरण";
+  if(/आदेश|aadesh|order/i.test(text))return "कार्यालय आदेश";
+  if(/प्रमाण|certificate|praman/i.test(text))return "प्रमाणपत्र";
+  if(/प्रस्ताव|prastav/i.test(text))return "प्रस्ताव";
+  if(/कार्यवाही|karyavahi|minutes/i.test(text))return "कार्यवाही";
+  if(/आरटीआई|rti/i.test(text))return /उत्तर|जवाब|reply/i.test(text)?"RTI उत्तर":"RTI आवेदन";
+  if(/पत्र|लेटर|patra|letter|आवेदन/i.test(text))return "पत्र";
+  return "";
 }
-function showDraft(html, refs, kind, savedFontSize=12, review=null) {
-  const out = $("#out");
-  out.innerHTML = `<div class="card"><p class="hint">✏️ पत्र पर टैप करके संपादित करें।</p><div id="draftReview"><b>जारी करने से पहले समीक्षा आवश्यक है</b><p>नाम, पद, ग्राम पंचायत, आरोप/तथ्य, तारीख, समय-सीमा, संलग्नक और सक्षम हस्ताक्षरकर्ता का मूल अभिलेख से मिलान करें। यह अभी कार्यालय द्वारा जारी पत्र नहीं है।</p>${review?.attachmentReview ? `<p>फोटो/PDF में दिए तथ्यों की अलग से जाँच करें; उनका स्वचालित पाठ मिलान पूरा नहीं हुआ है।</p>` : ""}${review?.missing?.length ? `<p>भरने योग्य विवरण: ${esc(review.missing.join("; "))}</p>` : ""}${review?.sourceIds?.length ? `<details><summary>प्रारूप का आधार</summary><p>${esc(review.sourceIds.join(", "))} — पुराने नमूनों से केवल संरचना ली गई है, कानूनी आधार नहीं।</p></details>` : ""}<label><input type="checkbox" id="reviewedDraft" style="width:auto;display:inline-block"> मैंने वर्तमान पत्र और अभिलेख जाँच लिए हैं।</label></div><div class="paper" id="paper" contenteditable="true">${html}</div>
-   <div class="btn-row"><button class="btn" id="dcopy">📋 Copy</button><button class="btn" id="dpdf">⬇ PDF</button><button class="btn alt" id="dword">⬇ Word (.docx)</button><button class="btn alt" id="dsave">💾 Save</button><button class="btn alt" id="dwa">WhatsApp</button></div>${refsHtml(refs)}</div>`;
-  const exportIds = ["dcopy", "dpdf", "dword", "dwa"];
-  const resetReview = () => { $("#reviewedDraft").checked=false; exportIds.forEach(id=>$("#"+id).disabled=true); };
-  resetReview();
-  $("#reviewedDraft").onchange = e => exportIds.forEach(id=>$("#"+id).disabled=!e.target.checked);
-  $("#paper").addEventListener("input", resetReview);
-  const roleTitle = S.profile ? (ROLES[S.profile.role]?.n || S.profile.designation || "कार्यालय") : "कार्यालय";
-  window.PAI_EDITOR?.mount({paper:$("#paper"),profile:S.profile,role:roleTitle,toast,docSize:savedFontSize});
-  const reviewObserver = new MutationObserver(resetReview);
-  reviewObserver.observe($("#paper"), {childList:true,subtree:true,characterData:true});
-  const name = kind + "_" + new Date().toISOString().slice(0, 10);
-  $("#dcopy").onclick = async () => { const t = $("#paper").innerText; try { await navigator.clipboard.writeText(t); } catch { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); document.execCommand("copy"); x.remove(); } toast("Copied ✔"); };
-  const makeLetterPdf = async () => {
-    const paper=$("#paper");
-    if(!paper||!paper.textContent.trim())throw Error("The letter is empty. Please generate it first.");
-    if(typeof window.html2pdf!=="function")throw Error("PDF library could not load. Refresh and retry.");
-    if(document.fonts?.ready)await document.fonts.ready;
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    const worker=window.html2pdf().set({
-      margin:[14,14,19,14],filename:name+".pdf",
-      image:{type:"jpeg",quality:.97},
-      html2canvas:{scale:2,useCORS:false,backgroundColor:"#ffffff",scrollY:0,scrollX:0},
-      jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
-      pagebreak:{mode:["css","legacy"]}
-    }).from(paper).toPdf();
-    const pdf=await worker.get("pdf");
-    const total=pdf.internal.getNumberOfPages();
-    if(!total)throw Error("PDF contains no pages.");
-    for(let page=1;page<=total;page++){
-      pdf.setPage(page);pdf.setFont("helvetica","normal");pdf.setFontSize(8);pdf.setTextColor(110,125,141);
-      pdf.text("Page "+page+" / "+total,196,286,{align:"right"});
-      pdf.setDrawColor(212,223,237);pdf.line(14,282,196,282);
-    }
-    const bytes=pdf.output("arraybuffer");
-    if(!bytes||bytes.byteLength<900)throw Error("Generated PDF is unexpectedly empty.");
-    return new Blob([bytes],{type:"application/pdf"});
-  };
-  $("#dpdf").onclick = async () => {
-    const button=$("#dpdf");button.disabled=true;
-    try{toast("Creating A4 PDF…");saveBlob(await makeLetterPdf(),name+".pdf");toast("PDF ready");}
-    catch(e){toast("PDF error: "+(e.message||"Please retry"));console.error(e);}
-    finally{button.disabled=false;}
-  };
-  $("#dword").onclick = async () => {
-    const button=$("#dword");button.disabled=true;
-    try {
-      if(!window.PAI_DOCX?.exportPaper)throw Error("DOCX Generator लोड नहीं हुआ। पेज Reload करें।");
-      toast("Word (.docx) फ़ाइल तैयार हो रही है…");
-      await window.PAI_DOCX.exportPaper($("#paper"),name+".docx");
-      toast("DOCX तैयार ✓");
-    } catch(e) {console.error(e);toast("Word Error: "+(e.message||"फिर कोशिश करें"));}
-    finally{button.disabled=false;}
-  };
-  $("#dsave").onclick = () => { const h = LS.get("drafts") || []; h.unshift({ kind, html: $("#paper").innerHTML, refs, review, size:Number($("#paper").dataset.docSize||12), at: Date.now() }); LS.set("drafts", h.slice(0, 50)); toast("Saved ✔"); };
-  $("#dwa").onclick = async () => {
-    const message=$("#paper").innerText.trim();
-    if(!message){toast("Nothing to share");return;}
-    const url="https://wa.me/?text="+encodeURIComponent(message.slice(0,6500)+"\n\n— "+C.appName+" "+C.appUrl);
-    if(navigator.share&&typeof File==="function"){
-      try{
-        const blob=await makeLetterPdf();
-        const attachment=new File([blob],name+".pdf",{type:"application/pdf"});
-        if(!navigator.canShare||navigator.canShare({files:[attachment]})){
-          await navigator.share({title:kind,text:"Panchayat AI letter",files:[attachment]});
-          return;
-        }
-      }catch(e){if(e?.name==="AbortError")return;console.warn("File sharing unavailable, opening WhatsApp text",e);}
-    }
-    const link=document.createElement("a");link.href=url;link.target="_blank";link.rel="noopener noreferrer";
-    document.body.appendChild(link);link.click();link.remove();
-  };
+function draftEdit(el) {
+  if(needLogin("draftEdit"))return;
+  const d=RTI_DRAFTS.concat(draftsFor(S.profile.role)).find(x=>x.k===S.draftType)||BASE_DRAFTS[0];
+  S.draftMode=d.n;S.view="chat";
+  window.history.replaceState(null,"",location.pathname+"#chat");
+  chat(el);
+}
+function showDraft(html,refs,kind,savedFontSize=12,review=null) {
+  S.chat.push({r:"a",document:true,id:crypto.randomUUID(),html,refs,kind,size:savedFontSize,review,t:kind});
+  S.draftMode=kind;go("chat");
 }
 function history(el) {
   const h = LS.get("drafts") || [];

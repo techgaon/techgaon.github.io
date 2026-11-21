@@ -16,7 +16,15 @@
 
 असमर्थित संख्याएँ, स्रोत से न मिले quote/GP और पहचाने गए कानूनी/दंडात्मक दावे मिलने पर ड्राफ्ट नहीं दिखाया जाता। सभी प्रकार के अर्थगत hallucination की पूर्ण रोकथाम का दावा नहीं है। PDF/फोटो के binary प्रमाण का स्थानीय पाठ मिलान उपलब्ध न होने पर अलग समीक्षा सूचना आती है। प्रमाणन, जांच निष्कर्ष, पात्रता या हस्ताक्षर के कानूनी अधिकार की पुष्टि मानव करेगा।
 
-निर्यात/कॉपी/साझा करने के लिए समीक्षा checkbox आवश्यक है। सामग्री बदलने पर समीक्षा रीसेट होती है। सहेजे ड्राफ्ट को खोलने पर दोबारा समीक्षा करनी होती है। यह client-side सहायता है; server-enforced authorization या digital signature नहीं है।
+निर्यात/साझा करने के लिए समीक्षा checkbox आवश्यक है। सामग्री बदलने पर समीक्षा रीसेट होती है। सहेजे ड्राफ्ट को खोलने पर दोबारा समीक्षा करनी होती है। यह client-side सहायता है; server-enforced authorization या digital signature नहीं है।
+
+## चैट में पत्र और डाउनलोड
+
+होम की पत्र/नोटिस टाइलें और सामान्य चैट में सीधे पत्र बनाने के निर्देश एक ही conversation में दस्तावेज देते हैं। `draft-card.js` पत्र को बिना आंतरिक scroll clipping के दिखाता है। कॉपी और संपादन icons साथ हैं; edit icon से बदलाव किए बिना save नहीं दिखता। एक अक्षर बदलने पर save आता है, पुराने file artifacts हटते हैं और समीक्षा फिर चाहिए। Save स्थानीय browser storage में होता है।
+
+Word और PDF बिना संपादन के भी उपलब्ध हैं। दोनों A4 portrait और 20 mm margins इस्तेमाल करते हैं। PDF मोबाइल के chat bubble से स्वतंत्र 170 mm content width पर बनता है; Hindi shaping के लिए export में letter spacing normal रखी गई है। Download की प्रतिशत स्थिति file निर्माण के चरण दिखाती है; `Downloaded` का अर्थ फाइल browser के download handler को दे दी गई है, OS की download shelf को app सीधे पढ़ नहीं सकता। तैयार blob से Open और WhatsApp/share विकल्प मिलते हैं। Word खोलना device के installed handler पर निर्भर है। समर्थित मोबाइल पर Web Share वास्तविक file भेजता है; जहाँ file sharing उपलब्ध नहीं, WhatsApp खोलते समय downloaded file अटैच करने का स्पष्ट संदेश मिलता है।
+
+नई UI और वास्तविक Word/PDF generators की 30 स्थानीय browser जाँच सफल हुईं। असंपादित/संपादित और चार पन्ने वाले PDF का निर्यात जाँचा; PDF पृष्ठों की दृश्य जाँच और DOCX A4 page/margin XML जाँच की गई। Native Microsoft Word की दृश्य जाँच इस वातावरण के UI उपकरण रुकने के कारण पूरी नहीं हुई। AI response fixtures थे; यह नया authenticated Gemini परीक्षण नहीं है।
 
 ## परीक्षण
 

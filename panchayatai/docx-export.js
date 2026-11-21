@@ -29,7 +29,7 @@
  function paragraph(n,d){
    const children=runs(n,d);
    return new d.Paragraph({children:children.length?children:[new d.TextRun({text:""})],
-     alignment:alignment(n,d),spacing:{after:130,line:330},
+     alignment:alignment(n,d),spacing:{after:130,line:330},widowControl:true,keepLines:true,
      keepNext:/^h[1-6]$/.test(n.tagName?.toLowerCase()||"")});
  }
  function elements(n,d){
@@ -76,8 +76,10 @@
    }
    throw Error("DOCX लाइब्रेरी लोड नहीं हुई। Internet जाँचकर फिर कोशिश करें।");
  }
- async function exportPaper(paper,filename){
+ async function createBlob(paper,filename,onProgress=()=>{}){
+   onProgress(10);
    const d=await loadDocx();
+   onProgress(30);
    if(!d?.Document||!d?.Packer||!d?.Paragraph)
      throw Error("DOCX लाइब्रेरी नहीं मिली। Internet जाँचें और पेज Reload करें।");
    if(!paper?.textContent?.trim())throw Error("पहले पत्र तैयार करें।");
@@ -92,13 +94,19 @@
      sections:[{properties:{page:{size:{width:11906,height:16838},
        margin:{top:1134,right:1134,bottom:1134,left:1134}}},children}]
    });
+   onProgress(65);
    const blob=await d.Packer.toBlob(doc);
    if(blob.size<1200)throw Error("DOCX फ़ाइल सही नहीं बनी।");
+   onProgress(90);
+   return blob;
+ }
+ async function exportPaper(paper,filename){
+   const blob=await createBlob(paper,filename);
    const url=URL.createObjectURL(blob),a=document.createElement("a");
    a.href=url;a.download=(filename||"Panchayat-AI-Document").replace(/\.docx$/i,"")+".docx";
    document.body.appendChild(a);a.click();a.remove();
    setTimeout(()=>URL.revokeObjectURL(url),30000);
    return {size:blob.size};
  }
- window.PAI_DOCX={exportPaper};
+ window.PAI_DOCX={exportPaper,createBlob};
 })();

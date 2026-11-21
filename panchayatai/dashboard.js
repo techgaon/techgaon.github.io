@@ -115,6 +115,7 @@
   ];
 
   function addGreetingEmblem(hero) {
+    if(hero?.querySelector('.pai-greeting-emoji')){hero.classList.add('pai-hero-greeting');return;}
     const h = hero?.querySelector("h1");
     if (!h || !/🙏\s*$/u.test(h.textContent || "")) return;
     const previous = h.textContent.replace(/\s*🙏\s*$/u,"").trimEnd();
@@ -140,12 +141,12 @@
     if (!hero || hero.nextElementSibling?.classList.contains("pai-scene-showcase")) return;
     const section = document.createElement("section");
     section.className = "pai-scene-showcase pai-scene-on";
-    section.setAttribute("aria-label","पंचायत AI के 6 दृश्य, दाएँ-बाएँ स्वाइप करें");
+    section.setAttribute("aria-label","पंचायत AI के 6 दृश्य");
     section.setAttribute("aria-roledescription","carousel");
     section.setAttribute("tabindex","0");
     const reduceMotion = () => document.body.classList.contains("pai-motion-off") ||
       (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    let index = 0, lastManual = 0, pointerStart = null;
+    let index = 0, lastManual = 0, pointerStart = null, paused = false;
     const paint = () => {
       const scene = scenes[index];
       section.classList.remove("pai-scene-on");
@@ -156,9 +157,11 @@
         '<div class="pai-scene-art" aria-hidden="true">'+scene.art+'</div></div>'+
         '<div class="pai-scene-progress" aria-label="दृश्य चुनें">'+
         scenes.map((_,i)=>'<button type="button" data-scene-index="'+i+'" class="'+(i===index?'on':'')+
-          '" aria-label="दृश्य '+(i+1)+' : '+scenes[i].title+'" aria-pressed="'+(i===index)+'"></button>').join("")+'</div>';
+          '" aria-label="दृश्य '+(i+1)+' : '+scenes[i].title+'" aria-pressed="'+(i===index)+'"></button>').join("")+'</div>'+
+        '<button class="pai-scene-pause" type="button" aria-label="'+(paused?'दृश्य चलाएँ':'दृश्य रोकें')+'" aria-pressed="'+paused+'">'+(paused?'▶ चलाएँ':'Ⅱ रोकें')+'</button>';
+      section.classList.toggle('pai-scenes-paused',paused);
       section.setAttribute("aria-label","पंचायत AI का दृश्य "+(index+1)+" / "+scenes.length+
-        " : "+scene.title+". आगे या पीछे स्वाइप करें");
+        " : "+scene.title);
       void section.offsetWidth;
       section.classList.add("pai-scene-on");
     };
@@ -191,6 +194,15 @@
     });
     section.addEventListener("pointercancel",() => {pointerStart=null;});
     section.addEventListener("click",event => {
+      if(event.target.closest('.pai-scene-pause')){
+        paused=!paused;
+        const button=section.querySelector('.pai-scene-pause');
+        button.textContent=paused?'▶ चलाएँ':'Ⅱ रोकें';
+        button.setAttribute('aria-label',paused?'दृश्य चलाएँ':'दृश्य रोकें');
+        button.setAttribute('aria-pressed',String(paused));
+        section.classList.toggle('pai-scenes-paused',paused);
+        lastManual=0;return;
+      }
       const button=event.target.closest("button[data-scene-index]");
       if(!button || !section.contains(button))return;
       const selected=Number(button.dataset.sceneIndex);
@@ -208,8 +220,7 @@
     section.addEventListener("mouseenter",() => {lastManual=Date.now();});
     const interval=window.setInterval(() => {
       if(!section.isConnected){window.clearInterval(interval);return;}
-      if(document.hidden || reduceMotion() || Date.now()-lastManual<8500)return;
-      if(section.matches(":hover") || section.matches(":focus-within"))return;
+      if(paused || document.hidden || reduceMotion() || Date.now()-lastManual<8500)return;
       showScene(index+1,false,1);
     },4600);
   }
