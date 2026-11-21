@@ -12,7 +12,7 @@
  const validImage=s=>typeof s==="string"&&s.length<MAX&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(s);
  const isPradhan=p=>p?.role==="pradhan";
  const defaultFields=p=>({type:"created",color:"#22517d",style:"classic",
-    name:p?.name||"",gp:p?.gps?.[0]||"",block:p?.block||"",district:p?.district||"",
+    name:p?.nameHindi||p?.name||"",gp:p?.gps?.[0]||"",block:p?.block||"",district:p?.district||"",
     address:"",phone:p?.phone||"",email:"",motto:"",image:""});
  const sanitize=c=>{
    const out={type:c?.type==="uploaded"?"uploaded":"created",
