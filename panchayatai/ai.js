@@ -57,6 +57,26 @@ const model = (system,search) => {
     generationConfig:{temperature:0.3},...(search?{tools:[{googleSearch:{}}]}:{})});
 };
 
+// Use Gemini first. On quota/App Check/network/model errors, call authenticated
+// Groq → Cloudflare AI through a Worker; never place provider secrets in browser.
+async function withFreeFallback(action,system,messages,att,geminiCall){
+  try{
+    const result=await geminiCall();
+    return {raw:result.response.text(),result,provider:"Gemini",fallback:false};
+  }catch(primary){
+    if(!window.PAI_FREE_FALLBACK?.enabled?.())throw primary;
+    try{
+      const backup=await window.PAI_FREE_FALLBACK.complete({action,system,messages,attachments:att});
+      return {...backup,result:null};
+    }catch(backupError){
+      const err=new Error("Gemini अभी उपलब्ध नहीं है। "+String(backupError.message||"Free AI Backup उपलब्ध नहीं है।"));
+      err.code=backupError.code||"AI_ALL_PROVIDERS_FAILED";
+      err.cause=primary;
+      throw err;
+    }
+  }
+}
+
 const parts = (text, att = []) => { const p = [{ text }];
   for (const a of att.slice(0, 5)) { if (a.text) p.push({ text: `\n[संलग्न Word फ़ाइल: ${a.name}]\n${a.text}` }); else if (a.data) p.push({ inlineData: { mimeType: a.mime, data: a.data } }); }
   return p; };
@@ -106,8 +126,12 @@ async function chat(b) {
   const last=history.pop()||{t:""};
   const contents=history.map(m=>({role:m.r==="u"?"user":"model",parts:[{text:m.t}]}));
   contents.push({role:"user",parts:parts(last.t,b.att)});
-  const r=await gen(SYS_CHAT(b.profile),true,{contents});
-  const raw=r.response.text().trim();
+  const system=SYS_CHAT(b.profile);
+  const messages=contents.map(c=>({role:c.role==="model"?"assistant":"user",
+    content:(c.parts||[]).filter(p=>typeof p.text==="string").map(p=>p.text).join("\n")}));
+  const generated=await withFreeFallback("chat",system,messages,b.att,
+    ()=>gen(system,true,{contents}));
+  const raw=generated.raw.trim();
   let payload;
   try{payload=JSON.parse(raw.replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""));}
   catch{payload={language:/[\u0900-\u097F]/.test(last.t)?"hi":"en",answer:raw,followups:[]};}
@@ -115,29 +139,36 @@ async function chat(b) {
   if(!answer)throw Error("AI returned an empty answer. Please retry.");
   const language=payload.language==="en"?"en":"hi";
   const followups=[...new Set((Array.isArray(payload.followups)?payload.followups:[]).filter(q=>typeof q==="string"&&q.trim().length>5&&q.length<=200).map(q=>q.trim()))].slice(0,2);
-  const web=grounding(r);
+  const web=generated.result?grounding(generated.result):[];
   const officialGrounding=web.some(g=>officialURL(g.uri));
   const upRegulatoryQuestion=/(?:पंचायत|सरकारी|शासनादेश|विभागीय|अधिनियम|नियमावली|वेतन|मानदेय|सेवा\s*नियम|नियुक्ति|भुगतान|पेंशन|वित्त\s*आयोग|आरटीआई|सूचना\s*का\s*अधिकार|panchayat|gram\s*sabha|government\s*order|service\s*rules?|go\s*number|rti|pension|pay\s*scale|allowance)/i.test(last.t||"");
   const caveat=!officialGrounding&&upRegulatoryQuestion
     ? (language==="en"?"I could not verify the latest controlling Uttar Pradesh government document for this question. The following is general guidance, not a confirmed GO citation.":"इस प्रश्न का नवीनतम लागू उत्तर प्रदेश शासनादेश/मूल नियम आधिकारिक स्रोत से सत्यापित नहीं हो सका है। नीचे सामान्य मार्गदर्शन है, प्रमाणित शासनादेश का उद्धरण नहीं।")
     : "";
-  return {text:caveat?caveat+"\n\n"+answer:answer,language,followups,refs:[],web};
+  const badge=generated.fallback?
+    "ℹ️ Gemini उपलब्ध नहीं था; "+generated.provider+" Free Backup से उत्तर मिला है।\n\n":"";
+  return {text:badge+(caveat?caveat+"\n\n"+answer:answer),language,followups,refs:[],web,
+    provider:generated.provider,fallback:generated.fallback};
 }
 async function draft(b) {
-  await checkAppCheck();
   const prepared=draftRequest(b);
   const source=[String(b.points||""),...(b.att||[]).filter(x=>x.text).map(x=>String(x.text))].join("\n");
   let previousError=null;
   for(let attempt=0;attempt<2;attempt++){
     const guidance=attempt===0?"":"\nपिछला प्रारूप अस्वीकृत हुआ: "+String(previousError?.message||"अधूरा प्रारूप")+
       "। अब बिना कोई अप्रमाणित नाम, तारीख, दंड, संख्या, तथ्य, प्रतिलिपि या अलग GP गढ़े पुनः JSON बनाएं।";
-    const generated=await getGenerativeModel(ai,{
-      model:MODEL,systemInstruction:prepared.system,
-      generationConfig:{temperature:0.1,responseMimeType:"application/json"}
-    }).generateContent({contents:[{role:"user",parts:parts(prepared.prompt+guidance,b.att)}]});
+    const userText=prepared.prompt+guidance;
+    const generated=await withFreeFallback("draft",prepared.system,[{role:"user",content:userText}],
+      b.att,async()=>{
+        await checkAppCheck();
+        return getGenerativeModel(ai,{
+          model:MODEL,systemInstruction:prepared.system,
+          generationConfig:{temperature:0.1,responseMimeType:"application/json"}
+        }).generateContent({contents:[{role:"user",parts:parts(userText,b.att)}]});
+      });
     let payload;
     try{
-      payload=JSON.parse(generated.response.text().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""));
+      payload=JSON.parse(generated.raw.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""));
     }catch(e){previousError=Error("AI ने स्पष्ट JSON मसौदा नहीं दिया।");continue;}
     // The model may translate a Roman-Hindi quote into Devanagari; that is not
     // a literal source quote. Drop it rather than asserting false evidence.
@@ -150,7 +181,7 @@ async function draft(b) {
     if(!Array.isArray(payload.missing))payload.missing=[];
     if(originalEvidence!==payload.evidence.length)
       payload.missing.push("स्रोत से शब्दशः सत्यापित न होने वाले AI संदर्भ हटाए गए हैं; तथ्य जाँचें।");
-    try{return renderDraft(payload,b);}
+    try{return {...renderDraft(payload,b),provider:generated.provider,fallback:generated.fallback};}
     catch(e){previousError=e;if(attempt===1)break;}
   }
   throw previousError||Error("मसौदा तैयार नहीं हुआ। कृपया निर्देश दोबारा लिखें।");
