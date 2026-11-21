@@ -1,0 +1,103 @@
+/* Panchayat AI — greeting alignment and auto-playing role stories (21 Nov 2026). */
+.hero.pai-hero-greeting{min-height:172px}
+.hero.pai-hero-greeting h1{
+  position:relative;padding-right:87px;max-width:100%;overflow-wrap:break-word;
+  font-size:clamp(20px,5.2vw,25px);line-height:1.42;
+}
+.hero .pai-greeting-emoji{
+  box-sizing:border-box;position:absolute;right:25px;top:41px;
+  width:73px;height:73px;border-radius:50%;
+  display:grid;place-items:center;
+  font-family:"Noto Color Emoji","Segoe UI Emoji",sans-serif;
+  font-size:33px;line-height:1;
+  background:radial-gradient(circle at 38% 30%,rgba(247,255,255,.25),rgba(35,109,153,.30) 60%,rgba(10,42,92,.34));
+  border:1px solid rgba(170,244,247,.6);
+  box-shadow:inset 0 0 0 5px rgba(180,236,250,.09),0 5px 22px rgba(3,25,62,.18);
+  transform:translateZ(0);isolation:isolate;overflow:hidden;z-index:1;
+  animation:pai-welcome-wave 2.8s ease-in-out 1 both;
+}
+.hero .pai-greeting-emoji::before{
+  content:"";position:absolute;inset:7px;border:1px dashed rgba(224,254,255,.35);
+  border-radius:50%;pointer-events:none
+}
+@keyframes pai-welcome-wave{0%{transform:scale(.82) rotate(-9deg);opacity:.15}40%{transform:scale(1.04) rotate(5deg);opacity:1}70%{transform:scale(.99) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
+
+.pai-scene-showcase{
+  box-sizing:border-box;position:relative;isolation:isolate;overflow:hidden;
+  margin:13px 0 16px;padding:16px 15px 22px;
+  min-height:191px;border:1px solid #cde4ef;border-radius:20px;
+  background:linear-gradient(135deg,#f7fcff 3%,#edf8fb 62%,#e2f3f4 100%);
+  box-shadow:0 8px 22px rgba(37,82,131,.09);
+  color:#23466d;
+}
+.pai-scene-showcase::before{
+  content:"";position:absolute;width:185px;height:185px;right:-60px;top:-75px;
+  border-radius:50%;border:1px solid #a9dada80;box-shadow:0 0 0 25px #b3e7ec27;
+  pointer-events:none
+}
+.pai-scene-inner{
+  position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.06fr);
+  align-items:center;gap:3px;min-height:147px;z-index:1
+}
+.pai-scene-copy{min-width:0;align-self:center;padding:2px 0 10px}
+.pai-scene-kicker{
+  display:inline-flex;align-items:center;gap:6px;color:#178680;
+  font:800 10px/1.35 Manrope,"Noto Sans Devanagari",sans-serif;letter-spacing:.07em;
+  text-transform:uppercase;margin-bottom:8px
+}
+.pai-scene-kicker::before{
+  content:"";width:6px;height:6px;border-radius:50%;background:#0bb5ab;
+  box-shadow:0 0 0 3px #7edbd633
+}
+.pai-scene-title{
+  margin:0 0 6px;font:800 clamp(17px,4vw,20px)/1.45 "Anek Devanagari","Noto Sans Devanagari",sans-serif;
+  color:#1c456e;letter-spacing:-.01em
+}
+.pai-scene-subtitle{
+  margin:0;max-width:240px;font:500 12px/1.65 "Noto Sans Devanagari",sans-serif;
+  color:#536e85
+}
+.pai-scene-art{width:100%;max-width:240px;justify-self:end;align-self:center}
+.pai-scene-art svg{display:block;width:100%;height:auto;overflow:visible}
+.pai-scene-progress{display:flex;gap:5px;position:absolute;left:15px;bottom:11px;z-index:2}
+.pai-scene-progress i{
+  display:block;width:6px;height:5px;border-radius:8px;background:#a9cfda;
+  transition:width .4s ease,background .4s ease
+}
+.pai-scene-progress i.on{width:24px;background:#2395a1}
+.pai-scene-on .pai-scene-copy{animation:pai-scene-reveal .55s ease both}
+.pai-scene-on .pai-scene-art{animation:pai-scene-art-in .62s cubic-bezier(.2,.7,.2,1) both}
+@keyframes pai-scene-reveal{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pai-scene-art-in{from{opacity:0;transform:translateX(11px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+.pai-scene-showcase .pai-laptop-lines{animation:pai-screen-glow 2.2s ease-in-out infinite alternate}
+.pai-scene-showcase .pai-typing-hand{transform-origin:94px 115px;animation:pai-type 1.15s ease-in-out infinite}
+.pai-scene-showcase .pai-orbit-a{transform-origin:195px 41px;animation:pai-ai-float 3s ease-in-out infinite}
+.pai-scene-showcase .pai-orbit-b{animation:pai-ai-float 2.7s ease-in-out -.8s infinite}
+.pai-scene-showcase .pai-happy-spark{transform-origin:center;animation:pai-spark-pop 1.8s ease-in-out infinite alternate}
+.pai-scene-showcase .pai-happy-spark:nth-of-type(2){animation-delay:-.6s}
+@keyframes pai-screen-glow{0%{opacity:.35}100%{opacity:1}}
+@keyframes pai-type{0%,100%{transform:rotate(0)}50%{transform:rotate(8deg)}}
+@keyframes pai-ai-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes pai-spark-pop{0%{opacity:.35;transform:scale(.85)}100%{opacity:1;transform:scale(1.14)}}
+body[data-theme="dark"] .pai-scene-showcase{
+  background:linear-gradient(135deg,#1a2e48,#1c4154);border-color:#3b6174;color:#edf9ff
+}
+body[data-theme="dark"] .pai-scene-title{color:#edf9ff}
+body[data-theme="dark"] .pai-scene-subtitle{color:#bfd4e5}
+body[data-theme="dark"] .pai-scene-kicker{color:#80e0d6}
+@media(max-width:390px){
+ .hero .pai-greeting-emoji{right:17px;top:43px;width:65px;height:65px;font-size:29px}
+ .hero.pai-hero-greeting h1{padding-right:76px;font-size:21px}
+ .pai-scene-showcase{padding:13px 12px 20px;min-height:174px}
+ .pai-scene-inner{min-height:139px;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
+ .pai-scene-title{font-size:17px}
+ .pai-scene-subtitle{font-size:11px;line-height:1.6}
+ .pai-scene-progress{left:12px;bottom:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .hero .pai-greeting-emoji,.pai-scene-showcase *, .pai-scene-on .pai-scene-copy,.pai-scene-on .pai-scene-art{animation:none!important;transition:none!important}
+}
+body.pai-motion-off .hero .pai-greeting-emoji,
+body.pai-motion-off .pai-scene-showcase *,
+body.pai-motion-off .pai-scene-on .pai-scene-copy,
+body.pai-motion-off .pai-scene-on .pai-scene-art{animation:none!important;transition:none!important}
