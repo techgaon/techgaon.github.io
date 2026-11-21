@@ -281,7 +281,7 @@ const isPlus = () => { const p = S.profile && S.profile.plan; return p && p.unti
 const sib = () => S.profile && S.profile.gender === "महिला" ? "बहन" : "भैया";
 const callName = () => S.profile ? ((S.profile.name || "").split(" ")[0] + " " + sib() + " जी") : "";
 // Home greeting uses exactly the first two meaningful name words (no surname after two).
-const greetingName = () => String(S.profile?.name || S.user?.displayName || "साथी").trim().split(/\s+/u).filter(Boolean).slice(0,2).join(" ");
+const greetingName = () => String(S.profile?.nameHindi || S.profile?.name || S.user?.displayName || "साथी").trim().split(/\s+/u).filter(Boolean).slice(0,2).join(" ");
 // Use the saved profile gender for the home greeting; avoid assuming gender when unspecified.
 const greetingHonorific = () => S.profile?.gender === "पुरुष" ? "भैया जी" : S.profile?.gender === "महिला" ? "दीदी जी" : "जी";
 
@@ -494,20 +494,26 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
 function details(el) {
   const g = S.gInfo || {}, p = S.profile || {};
   const name = p.name || g.name || "", phone = p.phone || g.phone || "", gender = p.gender || g.gender || "";
+  const nameHindi=p.nameHindi||(/[\u0900-\u097f]/u.test(name)&&!/[A-Za-z]/.test(name)?name:"");
   el.innerHTML = `<div class="card"><h2 style="margin-top:0">Your details</h2>
    <p class="hint">Filled from your Google account — complete anything missing.</p>
-   <label>Name</label><input id="dName" value="${esc(name)}" placeholder="Full name">
+   <label>नाम (Google Profile)</label><input id="dName" value="${esc(name)}" placeholder="पूरा नाम">
+   <label for="dNameHindi">नाम हिंदी में — सरकारी पत्रों हेतु</label>
+   <input id="dNameHindi" lang="hi" maxlength="80" value="${esc(nameHindi)}" placeholder="जैसे: चंद्र भानु पांडेय">
+   <p class="hint">Google से नाम English में आया है तो सही हिंदी वर्तनी यहाँ Save करें। पत्रों में उसी नाम का उपयोग होगा।</p>
    <label>Gender</label><select id="dGender"><option value="">— Select —</option>${[["पुरुष","Male"],["महिला","Female"],["अन्य","Other"]].map(([v,l]) => `<option value="${v}" ${v === gender ? "selected" : ""}>${l}</option>`).join("")}</select>
    <label>Mobile number</label><input id="dPhone" inputmode="tel" maxlength="13" value="${esc(phone)}" placeholder="10-digit mobile number">
    ${g.phone ? `<label class="chk"><input type="checkbox" id="dOk" checked> This is correct ✔</label>` : ""}
    <div class="btn-row"><button class="btn" id="dNext">Continue →</button></div></div>`;
   $("#dNext").onclick = () => {
-    const n = $("#dName").value.trim(), ph = $("#dPhone").value.replace(/\D/g, "").slice(-10), gd = $("#dGender").value;
+    const n = $("#dName").value.trim(), nh=$("#dNameHindi").value.trim().replace(/\s+/gu," "),
+      ph = $("#dPhone").value.replace(/\D/g, "").slice(-10), gd = $("#dGender").value;
+    if(!/^[\u0900-\u097F\s.'-]{2,80}$/u.test(nh))return toast("सरकारी पत्रों के लिए पूरा नाम हिंदी में दर्ज करें।");
     if (!n) return toast("Enter your name"); if (!gd) return toast("Select gender");
     if (ph.length !== 10) return toast("Enter a valid 10-digit mobile number");
     if ($("#dOk") && !$("#dOk").checked && ph === (g.phone || "").replace(/\D/g, "").slice(-10)) return toast("नंबर सही न हो तो बदलें");
-    S.profile = Object.assign({}, S.profile, { uid: S.user.uid, email: S.user.email, name: n, gender: gd, phone: ph });
-    saveProfile(); go("profile");
+    S.profile = Object.assign({}, S.profile, { uid: S.user.uid, email: S.user.email, name: n, nameHindi:nh, gender: gd, phone: ph });
+    saveProfile(); const next=S.after==="draftEdit"?"draftEdit":"profile";S.after=null;go(next);
   };
 }
 async function saveProfile() {
@@ -849,6 +855,10 @@ function requestedDraftKind(text, selected="") {
 }
 function draftEdit(el) {
   if(needLogin("draftEdit"))return;
+  const hindiName=String(S.profile?.nameHindi || S.profile?.name || "").trim();
+  if(!/[\u0900-\u097f]/u.test(hindiName)||/[A-Za-z]/.test(hindiName)){
+    S.after="draftEdit";toast("पत्र में सही हिंदी नाम के लिए Profile अपडेट करें।");go("details");return;
+  }
   const choices=RTI_DRAFTS.concat(draftsFor(S.profile.role));
   const type=choices.find(x=>x.k===S.draftType)||BASE_DRAFTS[0];
   S.draftType=type.k;
