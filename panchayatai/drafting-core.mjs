@@ -35,7 +35,7 @@ export function request(b={}) {
    selectedGPHindi:str(b.profile?.gpsHindi?.[str(b.gp)]||b.profile?.gpsHindi?.[c.gp]||''),sourcePolicy:'केवल वर्तमान निर्देश और इसी अनुरोध के संलग्नक तथ्य हैं; प्रशिक्षण उदाहरण तथ्य या कानून नहीं।'})};
 }
 // Resolve transliterated GP names without weakening the ban on invented locations.
-const canonical = v => str(v).normalize('NFKC').toLocaleLowerCase().replace(/[.।,;:()]/g,' ').replace(/\\s+/g,' ').trim();
+const canonical = v => str(v).normalize('NFKC').toLocaleLowerCase().replace(/[.।,;:()]/g,' ').replace(/\s+/g,' ').trim();
 function resolveGp(payload,b={}) {
  const p=b.profile||{}, selected=str(b.gp)||(Array.isArray(p.gps)&&p.gps.length===1?str(p.gps[0]):'');
  const suggestion=str(payload.gpOverride),q=canonical(b.points),hindi=p.gpsHindi||{};
