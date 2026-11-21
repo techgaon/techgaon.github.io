@@ -66,6 +66,7 @@
       '<label for="paiBannerTitle">Home Banner Heading (Guest)</label><input id="paiBannerTitle" maxlength="70">'+
       '<label for="paiBannerText">Home Banner Description</label><textarea id="paiBannerText" maxlength="180" rows="3"></textarea>'+
       '<label for="paiBannerLabel">Banner Eyebrow Label</label><input id="paiBannerLabel" maxlength="45">'+
+      '<label for="paiBannerImage">Banner Image URL (Optional, techgaon.in only)</label><input id="paiBannerImage" type="url" placeholder="https://techgaon.in/panchayatai/banner.jpg" maxlength="240">'+
       '<label for="paiFeatured">Smart Dashboard मुख्य Shortcut</label>'+
       '<select id="paiFeatured"><option value="chat">AI Help</option><option value="draft">पत्र / नोटिस</option>'+
       '<option value="tools">AI Tools</option><option value="estimate">Estimate Calculator</option></select>'+
@@ -82,6 +83,7 @@
     set("paiBannerTitle",d.title||"पंचायत AI");
     set("paiBannerText",d.subtitle||"हिंदी में AI सहायता, सरकारी पत्र, नोटिस और पंचायत के उपयोगी Tools");
     set("paiBannerLabel",d.label||"TECHGAON · DIGITAL PANCHAYAT");
+    set("paiBannerImage",d.bannerImage||"");
     set("paiFeatured",["chat","draft","tools","estimate"].includes(d.featured)?d.featured:"chat");
     for(const [id,k] of [["paiShowNews","showNews"],["paiShowEstimate","showEstimate"],["paiShowPlus","showPlus"],["paiMotion","motion"]])
       $("#"+id,panel).checked=d[k]!==false;
@@ -95,6 +97,7 @@
       title:$("#paiBannerTitle",panel).value.trim().slice(0,70),
       subtitle:$("#paiBannerText",panel).value.trim().slice(0,180),
       label:$("#paiBannerLabel",panel).value.trim().slice(0,45),
+      bannerImage:$("#paiBannerImage",panel).value.trim().slice(0,240),
       featured:$("#paiFeatured",panel).value,
       showNews:$("#paiShowNews",panel).checked,
       showEstimate:$("#paiShowEstimate",panel).checked,
@@ -107,6 +110,13 @@
       const btn=$("#paiSaveDesign",panel);btn.disabled=true;
       try{
         const design=read();if(!design.title||!design.subtitle)throw Error("Heading और Description खाली नहीं हो सकते।");
+        if(design.bannerImage){
+          const url=new URL(design.bannerImage);
+          if(url.protocol!=="https:"||url.hostname!=="techgaon.in"||url.search||url.hash)
+            throw Error("Banner Image केवल https://techgaon.in/ का सीधा लिंक हो सकता है।");
+          if(!/\.(png|jpg|jpeg|webp)$/i.test(url.pathname))
+            throw Error("Banner Image PNG, JPG या WebP होनी चाहिए।");
+        }
         await onSave(design);applyDesign(design);status.textContent="✓ डिज़ाइन प्रकाशित। सभी उपयोगकर्ताओं को अपडेट मिलेगा।";
       }catch(e){status.textContent="Save failed: "+(e.message||"Retry");}
       finally{btn.disabled=false;}
