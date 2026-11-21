@@ -327,7 +327,9 @@ function letterheadScreen(el) {
   if(S.profile?.role!=="pradhan")return go("profile");
   if(!window.PAI_LETTERHEAD?.mount){el.innerHTML='<div class="card">Letterhead उपलब्ध नहीं। Refresh करें।</div>';return;}
   window.PAI_LETTERHEAD.mount(el,{profile:S.profile,user:S.user,db:S.db,
-    onSaved:()=>{LS.set("profile",S.profile);},toast});
+    onSaved:()=>{LS.set("profile",S.profile);LS.set("pradhanLetterheadSeen_"+S.user.uid,true);},
+    onSkip:()=>{LS.set("pradhanLetterheadSeen_"+S.user.uid,true);go("home");},
+    toast});
 }
 function settingsScreen(el) {
   if (window.PAI_UX?.preferences) window.PAI_UX.preferences(el);
@@ -443,7 +445,12 @@ async function afterLogin() {
   S.needsProfileSetup=!completed;
   const next=S.after||"home";
   if(!completed&&!S.blocked){S.after=next;go("profile");}
-  else{S.after=null;go(next);}
+  else{
+    S.after=null;
+    if(S.profile.role==="pradhan"&&!S.profile.letterhead && !LS.get("pradhanLetterheadSeen_"+S.user.uid) && next==="home")
+      go("letterhead");
+    else go(next);
+  }
 }
 if (S.auth) S.auth.onAuthStateChanged(async u => {
   if (S.userWatch) S.userWatch();
@@ -577,7 +584,9 @@ function profile(el) {
       clusters: scope === "multigp" ? st.clusters.slice(0,3) : [], gps: scope.includes("gp") ? st.gps.slice(0,25) : [], clerkLevel: role === "clerk" ? st.clerkLevel : "",
       designation: role === "other_staff" ? st.designation : "", sign: role === "other_staff" && st.designation ? st.designation : ROLES[role].n, profileComplete: true });
     S.needsProfileSetup=false;
-    saveProfile(); toast("Profile saved ✔"); const n = S.after || "home"; S.after = null; go(n);
+    saveProfile(); toast("Profile saved ✔"); const n = S.after || "home"; S.after = null;
+    if(role==="pradhan"&&!S.profile.letterhead&&!LS.get("pradhanLetterheadSeen_"+S.user.uid))go("letterhead");
+    else go(n);
   };
 }
 
