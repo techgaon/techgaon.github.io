@@ -159,7 +159,8 @@ body.pai-motion-off .pai-scene-showcase.pai-swipe-enter .pai-scene-inner{
 #pArea .pai-cluster-add{
   display:flex;align-items:stretch;gap:8px;margin-top:6px
 }
-#pArea .pai-cluster-add input{flex:1;min-width:0}
+#pArea .pai-cluster-add input,#pArea .pai-cluster-add select{flex:1;min-width:0;width:100%;font:inherit}
+#pArea .pai-cluster-add select:disabled,#pArea .pai-cluster-add button:disabled{opacity:.55;cursor:not-allowed}
 #pArea .pai-cluster-add button{
   width:auto;min-width:74px;flex:none;padding:9px 12px
 }
