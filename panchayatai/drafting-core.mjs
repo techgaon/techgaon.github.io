@@ -72,7 +72,13 @@ export function validate(payload,b={}) {
  resolveGp(payload,b); // Roman/Hindi variants of the selected GP are valid.
  if(!Array.isArray(payload.evidence))throw Error('तथ्यों का स्रोत नहीं मिला। फिर प्रयास करें।');
  for(const e of payload.evidence)if(!str(e.quote)||!sources.includes(str(e.quote)))throw Error('ड्राफ्ट का तथ्य स्रोत से मेल नहीं खाता।');
- if(payload.staff)for(const k of ['name','absence','complaint','work','dates','deadline'])if(payload.staff[k]&&(typeof payload.staff[k]!=='string'||!sources.includes(str(payload.staff[k]))))throw Error('कर्मचारी नोटिस का तथ्य स्रोत से मेल नहीं खाता।');
+ // Only an employee show-cause NOTICE uses employee evidence slots.
+ // A BDO letter asking for safai-karmi deployment is NOT such a notice.
+ const employeeNotice=/नोटिस|notice/i.test(str(b.kind))&&/सफाई\s*कर्मी|पंचायत सहायक|safai|sahayak/i.test(str(b.points));
+ if(payload.staff&&employeeNotice)
+   for(const k of ['name','absence','complaint','work','dates','deadline'])
+     if(payload.staff[k]&&(typeof payload.staff[k]!=='string'||!sources.includes(str(payload.staff[k]))))
+       throw Error('कर्मचारी नोटिस का तथ्य स्रोत से मेल नहीं खाता।');
  if(payload.copies?.some(x=>!str(b.points).includes(x)))throw Error('प्रतिलिपि प्राप्तकर्ता निर्देश में स्पष्ट लिखें।');
  // Binary PDFs/images have no locally auditable text: never pretend validation was complete.
  return {sources,attachmentReview:(b.att||[]).some(a=>a.data&&!a.text),evidence:payload.evidence};
