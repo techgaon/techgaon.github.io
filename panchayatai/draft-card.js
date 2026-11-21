@@ -48,7 +48,8 @@
    return new Blob([bytes],{type:'application/pdf'});
   }finally{host.remove();}
  }
- function mount(container,{html='',kind='पत्र',review=null,size=12,dirty=false,onChange=()=>{},onSave=()=>{},toast=()=>{}}={}){
+ function mount(container,{html='',kind='पत्र',review=null,size=12,dirty=false,
+   stationery="plain",letterhead=null,onChange=()=>{},onSave=()=>{},toast=()=>{}}={}){
   const card=document.createElement('article');card.className='inline-draft-card';
   card.innerHTML='<div class="inline-draft-top"><b>'+escape(kind)+'</b><div class="inline-draft-actions">'+
    '<button type="button" class="inline-draft-icon" data-copy aria-label="पत्र कॉपी करें" title="कॉपी"><svg viewBox="0 0 24 24">'+icons.copy+'</svg></button>'+
@@ -59,6 +60,23 @@
    '<div class="inline-draft-files">'+['docx','pdf'].map(type=>'<div class="inline-file" data-type="'+type+'"><button class="btn alt" data-download="'+type+'" type="button">↓ '+(type==='docx'?'Word':'PDF')+'</button><div class="inline-file-status" role="status" aria-live="polite"></div><progress class="inline-file-progress" max="100" value="0" hidden aria-label="फाइल तैयार होने की प्रगति"></progress><div class="inline-file-options" hidden><button type="button" data-open="'+type+'">खोलें ↗</button><button type="button" data-share="'+type+'">WhatsApp ↗</button></div></div>').join('')+'</div>';
   container.appendChild(card);
   const paper=card.querySelector('.inline-draft-paper');paper.innerHTML=sanitize(html);paper.dataset.docSize=String([11,12,13,14].includes(Number(size))?Number(size):12);
+  const useHeader=stationery==="pradhan_letterhead" && !!letterhead && !!window.PAI_LETTERHEAD?.header;
+  if(useHeader){
+    const stationeryBlock=document.createElement("div");
+    stationeryBlock.className="inline-draft-stationery";
+    stationeryBlock.innerHTML=window.PAI_LETTERHEAD.header(letterhead);
+    paper.before(stationeryBlock);
+  }
+  function snapshotForExport(){
+    const snapshot=exportPaper(paper);
+    if(useHeader){
+      const top=document.createElement("div");
+      top.innerHTML=window.PAI_LETTERHEAD.header(letterhead);
+      const header=top.firstElementChild;
+      if(header)snapshot.prepend(header);
+    }
+    return snapshot;
+  }
   const saved=card.querySelector('[data-save]'),checked=card.querySelector('[data-reviewed]'),files={};
   saved.hidden=!dirty;
   let baseline=sanitize(paper.innerHTML),revision=0,disposed=false;
@@ -85,7 +103,7 @@
    btn.onclick=async()=>{
     if(!checked.checked)return;
     const startRevision=revision,job={busy:true};files[type]=job;lock();stage(0);
-    const snapshot=exportPaper(paper),name='Panchayat-AI-'+String(kind).replace(/[^\p{L}\p{N}-]/gu,'-')+'-'+new Date().toISOString().slice(0,10)+'.'+type;
+    const snapshot=snapshotForExport(),name='Panchayat-AI-'+String(kind).replace(/[^\p{L}\p{N}-]/gu,'-')+'-'+new Date().toISOString().slice(0,10)+'.'+type;
     try{
      if(type==='docx'&&!window.PAI_DOCX?.createBlob)throw Error('Word सुविधा लोड नहीं हुई। इंटरनेट जाँचकर फिर प्रयास करें।');
      const blob=type==='pdf'?await pdfBlob(snapshot,n=>{if(revision===startRevision)stage(n);}):await window.PAI_DOCX.createBlob(snapshot,name,n=>{if(revision===startRevision)stage(n);});
