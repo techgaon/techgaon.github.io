@@ -75,7 +75,7 @@ main{padding-bottom:calc(105px + env(safe-area-inset-bottom))}
 .pai-document-tools .doc-structure{font:700 11px "Noto Sans Devanagari",sans-serif;
  color:#42678b;margin-right:3px}
 .pai-paper-info{color:var(--mut);font-size:11px;margin:5px 0 10px}
-.pai-doc-editor-shell .paper{width:100%;max-width:210mm;min-height:280mm;margin:0 auto;
+.pai-doc-editor-shell .paper{width:100%;max-width:210mm;min-height:245mm;margin:0 auto;
  padding:15mm 13mm;box-shadow:0 4px 24px #233d6017;outline:none;border:1px solid #d7dfe9;
  background:#fff;color:#1b2535;overflow-wrap:anywhere;font-size:12pt;line-height:1.8}
 .pai-doc-editor-shell .paper:focus{outline:2px solid #6098d7;outline-offset:1px}
@@ -147,3 +147,13 @@ body[data-theme="dark"] .pai-tour-panel p{color:#bdcde0}
 @media(prefers-reduced-motion:reduce){
  .pai-bottom-nav a,.pai-dash-shortcuts button{transition:none!important}
 }
+
+/* User or administrator can disable decorative animations. */
+body.pai-motion-off .hero,body.pai-motion-off .hero::before,
+body.pai-motion-off .hero-motion *,body.pai-motion-off .hero-eyebrow::before,
+body.pai-motion-off .home-options>.grid,body.pai-motion-off .new-pulse,
+body.pai-motion-off .chart-bar{animation:none!important}
+body.pai-motion-off .home-options .tile,body.pai-motion-off .pai-bottom-nav a{
+  transition:none!important
+}
+.pai-dashboard .pai-dash-recent button{font-family:inherit}
