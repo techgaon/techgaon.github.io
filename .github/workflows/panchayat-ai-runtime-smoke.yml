@@ -1,0 +1,54 @@
+name: Panchayat AI Firebase Runtime Check
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/panchayat-ai-runtime-smoke.yml'
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  browser-ai-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser automation
+        run: |
+          npm install --no-save playwright@latest
+          if ! command -v google-chrome >/dev/null 2>&1; then npx playwright install chromium; fi
+      - name: Check production Firebase AI in isolated browser
+        run: |
+          cat > /tmp/pai-runtime-check.cjs <<'JS'
+          const fs=require('node:fs'),{ chromium }=require(process.cwd()+'/node_modules/playwright');
+          (async()=>{
+            const chrome=process.env.CHROME_PATH||'/usr/bin/google-chrome';
+            const executable=fs.existsSync(chrome)?chrome:undefined;
+            const browser=await chromium.launch({headless:true,...(executable?{executablePath:executable}:{}),args:['--no-sandbox']});
+            const page=await browser.newPage({locale:'hi-IN'});
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e.message||e).slice(0,190).replace(/https?:\/\/\S+/g,'[URL]')));
+            page.on('response',r=>{
+              if(/firebasevertexai\.googleapis\.com/.test(r.url()))
+                console.log('AI_HTTP_STATUS',r.status());
+            });
+            try{
+              await page.goto('https://techgaon.in/panchayatai/',{waitUntil:'domcontentloaded',timeout:45000});
+              await page.waitForFunction(()=>Boolean(window.PAI_AI?.diagnose),{timeout:45000});
+              const t=await page.evaluate(()=>window.PAI_AI.diagnose());
+              console.log('DIAGNOSTIC',JSON.stringify({
+                project:t.project,model:t.model,
+                appCheck:t.appCheck,ai:t.ai,
+                errorCode:t.error?.code||null,http:t.error?.status||null,
+                message:t.error?.message||null
+              }));
+              console.log('JAVASCRIPT_ERROR_COUNT',errors.length);
+              for(const e of errors.slice(0,3))console.log('BROWSER_ERROR',e);
+              if(!t.ai)console.log('NOTE: Headless CI can be rejected by production reCAPTCHA; phone outcome may differ.');
+            }finally{await browser.close()}
+          })().catch(e=>{console.error('SMOKE_FAILURE',String(e.message||e).slice(0,200));process.exitCode=1});
+          JS
+          node /tmp/pai-runtime-check.cjs
