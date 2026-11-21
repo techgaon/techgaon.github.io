@@ -42,3 +42,12 @@ body[data-theme="dark"] .pai-writing-suggestions button{background:#263f60;color
 body[data-theme="dark"] .pai-writing-hint{background:#253b58}
 @media(max-width:400px){.pai-writing-actions .btn{flex:1}.pai-writing-heading{padding:13px}.pai-writing-heading h2{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.pai-auth-loading-icon{animation:none}}
+
+/* Hindi profile completion: correct spellings before using letterhead or drafts. */
+#pNameHindi,#aBlockHindi,#aGpHindi,.pai-hindi-gp-row input{font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
+#pHindiStatus{margin-top:8px;font-size:12px;line-height:1.55}
+#pSuggestHindi{font-size:12px}
+.pai-hindi-gp-row{display:flex!important;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 9px;border:1px solid var(--bd,#c5d6e5);border-radius:10px;margin:6px 0;font:600 12px/1.5 "Noto Sans Devanagari",sans-serif;color:var(--ink,#233956)}
+.pai-hindi-gp-row input{flex:1;min-width:120px;width:auto;max-width:100%;margin:0!important;background:var(--card,#fff)}
+#pArea select option{font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
+body[data-theme="dark"] .pai-hindi-gp-row{background:#1b2b41;color:#edf3fb;border-color:#425b75}
