@@ -12,7 +12,9 @@
  const validImage=s=>typeof s==="string"&&s.length<MAX&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(s);
  const isPradhan=p=>p?.role==="pradhan";
  const defaultFields=p=>({type:"created",color:"#22517d",style:"classic",
-    name:p?.nameHindi||p?.name||"",gp:p?.gps?.[0]||"",block:p?.block||"",district:p?.district||"",
+    name:p?.nameHindi||p?.name||"",
+    gp:p?.gpsHindi?.[p?.gps?.[0]]||p?.gps?.[0]||"",
+    block:p?.blockHindi||p?.block||"",district:p?.districtHindi||p?.district||"",
     address:"",phone:p?.phone||"",email:"",motto:"",image:""});
  const sanitize=c=>{
    const out={type:c?.type==="uploaded"?"uploaded":"created",
@@ -28,7 +30,9 @@
    if(!isPradhan(profile))return "plain";
    const q=String(points||"");
    const gpOffice=/(?:कार्यालय\s*ग्राम\s*पंचायत|ग्राम\s*पंचायत\s*कार्यालय|ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से|ग्राम\s*पंचायत\s*के\s*नाम\s*से|gp\s*(?:office|ki\s*taraf|ki\s*or)|gram\s*panchayat\s*(?:office|ki\s*taraf|ki\s*or)|साद[ाे]\s*A4|plain\s*A4|सादे\s*कागज)/iu.test(q);
-   if(gpOffice)return "gp_office";
+   const romanOffice=/(?:gp|gram\s*panchayat|gram\s*panchayt|panchayat)\s+(?:[a-z\d-]+\s+){0,3}(?:karyalay|karyalaya|office)(?:\s+ki\s+(?:taraf|or)\s+se|\s+se)?/iu.test(q);
+   const hindiOffice=/ग्राम\s*पंचायत\s*(?:[\u0900-\u097f\s]{0,35})?कार्यालय\s*(?:की\s*(?:ओर|तरफ)\s*से)?/u.test(q);
+   if(gpOffice||romanOffice||hindiOffice)return "gp_office";
    return profile.letterhead?"pradhan_letterhead":"plain";
  };
  const header=c=>{
