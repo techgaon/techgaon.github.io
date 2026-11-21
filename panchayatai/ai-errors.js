@@ -26,6 +26,10 @@
    function set(id,title,msg,action){
      result.code=id;result.title=title;result.message=msg;result.action=action;return result;
    }
+   if(/(?:ai could not load|module not loaded|module.*load|failed to load module|importing a module)/.test(all))
+     return set("AI_MODULE_NOT_LOADED","AI मॉड्यूल लोड नहीं हुआ",
+       "AI की आवश्यक Script पूरी तरह लोड नहीं हो सकी।",
+       "Internet जाँचें, ऐप पूरी तरह बंद करके खोलें या Refresh करें; फिर AI कनेक्शन जाँचें चलाएँ।");
    if(/(?:re.?captcha|app.?check|attestation|appcheck|attest(?:ation)?)/i.test(all)
       &&/token|failed|invalid|enforc|permission|403|blocked|unauthoriz|captcha|denied/.test(all))
      return set("AI_APP_CHECK", "App Check की जाँच आवश्यक",
