@@ -37,3 +37,8 @@ test('IGRS prompt never equates a complaint with completed action',()=>{
  assert(p.system.includes('स्वतः निस्तारित न घोषित'));
  assert(p.system.includes('निरीक्षण')&&p.system.includes('बिना साक्ष्य'));
 });
+
+test('third-party applicant does not inherit the logged-in officer office address',()=>{
+ const out=render(payload,{...base,points:'ग्रामवासी राहुल की ओर से BDO को सफाई के लिए आवेदन बनाओ'});
+ assert(out.html.includes('राहुल'));assert(!out.html.includes('हैदरगढ़'));assert(out.review.missing.includes('प्रार्थी का पूरा पता'));
+});

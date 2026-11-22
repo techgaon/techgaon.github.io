@@ -216,7 +216,7 @@ export function render(payload,b={}) {
  const application=citizen||personal||/(?:प्रार्थना\s*पत्र|व्यक्तिगत|साधारण\s*आवेदन|सामान्य\s*आवेदन|व्यक्तिगत\s*आवेदन|personal\s*application)/iu.test(requestText+' '+kind);
  const signRole=intent.otherPerson||c.roleCode==='resident'?'':c.role;
  const address=intent.otherPerson?str(payload.senderAddress):str(b.profile?.addressHindi||b.profile?.address);
- const signature=[senderName,signRole,address,intent.otherPerson&&address?'':office].filter(Boolean).join('\n');
+ const signature=[senderName,signRole,address,intent.otherPerson?'':office].filter(Boolean).join('\n');
  html+='<table data-pai-signature="1"><tbody><tr><td style="text-align:left"><span data-pai-date="'+e(knownDate)+'">दिनांक: '+e(knownDate)+'</span></td><td style="text-align:right">'+(application?'प्रार्थी':'भवदीय')+(signature?'<br>'+e(signature).replace(/\n/g,'<br>'):'')+'</td></tr></tbody></table>';
  let copies=[...(payload.copies||[])];
  if(!copies.length&&!application&&!certificate&&!minutes){
@@ -231,6 +231,7 @@ export function render(payload,b={}) {
  html=html.replace(/[०-९]/g, digit=>String(digit.charCodeAt(0)-2406));
  const missing=[...(payload.missing||[])];
  if(!senderName)missing.push('प्रेषक का नाम');
+ if(intent.otherPerson&&!address)missing.push('प्रार्थी का पूरा पता');
  if(intent.otherPerson&&intent.unverifiedName)missing.push('निर्देश में दिए प्रार्थी के नाम की हिंदी वर्तनी जाँचें');
  if(!certificate&&!minutes&&!finalRecipient)missing.push('प्राप्तकर्ता एवं पता');
  if(!knownNumber&&!citizen&&!personal)missing.push('पत्रांक (यदि आवश्यक हो)');
