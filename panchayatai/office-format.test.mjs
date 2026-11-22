@@ -42,3 +42,20 @@ test('third-party applicant does not inherit the logged-in officer office addres
  const out=render(payload,{...base,points:'ग्रामवासी राहुल की ओर से BDO को सफाई के लिए आवेदन बनाओ'});
  assert(out.html.includes('राहुल'));assert(!out.html.includes('हैदरगढ़'));assert(out.review.missing.includes('प्रार्थी का पूरा पता'));
 });
+
+
+test('saved correspondence address appears once under signer and never repeats office location',()=>{
+ const address='ग्राम कमेला, पोस्ट कमेला, विकास खण्ड हैदरगढ़, जनपद बाराबंकी, 225124';
+ const out=render(payload,{...base,profile:{...profile,addressHindi:address}});
+ assert.equal(out.html.split(address).length,2);
+ assert(out.html.includes('>भवदीय<br>'));
+ assert(!out.review.missing.includes('प्रेषक का पूरा पत्राचार पता (प्रोफ़ाइल में भरें)'));
+ const personal=render(payload,{...base,profile:{...profile,addressHindi:address},points:'ADO ko meri chhutti ke liye aavedan patra banao'});
+ assert(personal.html.includes(address));
+ const other=render(payload,{...base,profile:{...profile,addressHindi:address},points:'ग्रामवासी राहुल की ओर से BDO को सफाई के लिए आवेदन बनाओ'});
+ assert(!other.html.includes(address));
+});
+test('personal request with no saved mailing address is flagged rather than inventing one',()=>{
+ const out=render(payload,{...base,points:'ADO ko meri chhutti ke liye aavedan patra banao'});
+ assert(out.review.missing.includes('प्रेषक का पूरा पत्राचार पता (प्रोफ़ाइल में भरें)'));
+});

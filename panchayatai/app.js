@@ -575,6 +575,9 @@ function profile(el) {
    <input id="pNameHindi" lang="hi" maxlength="80" value="${esc(initialName)}" placeholder="जैसे: चंद्र भानु पांडेय">
    <label for="pPhone">मोबाइल नंबर</label>
    <input id="pPhone" inputmode="tel" maxlength="13" value="${esc(p.phone||S.user.phoneNumber||"")}" placeholder="10 अंकों का मोबाइल नंबर">
+   <label for="pAddressHindi">पत्र के अंत में दिखाने हेतु पूरा पत्राचार पता</label>
+   <textarea id="pAddressHindi" lang="hi" maxlength="350" rows="2" placeholder="मकान/मोहल्ला, ग्राम, पोस्ट, विकास खण्ड, जनपद, पिनकोड">${esc(p.addressHindi||p.address||"")}</textarea>
+   <p class="hint">यह पता केवल आपके नाम से बनने वाले पत्रों में लगेगा। दूसरे व्यक्ति की ओर से बने पत्र में उसका अलग पता देना होगा।</p>
    <label for="pRole">आपका पद</label>
    <select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
@@ -748,7 +751,7 @@ function profile(el) {
     }
     const previousProfile={...(S.profile||{})};
     const nextProfile={...previousProfile,role,state:"उत्तर प्रदेश",
-      nameHindi:nh,phone:phone||previousProfile.phone||"",district:st.district,districtHindi:st.districtHindi||st.district,
+      nameHindi:nh,addressHindi:v("pAddressHindi").slice(0,350),phone:phone||previousProfile.phone||"",district:st.district,districtHindi:st.districtHindi||st.district,
       tehsil:scope.includes("gp")?st.tehsil:"",block:scope==="district"?"":st.block,
       blockHindi:scope==="district"?"":blockHindi,
       gpsHindi:mapping,
