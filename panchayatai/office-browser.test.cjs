@@ -115,6 +115,7 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  assert(officeXml.includes('कार्यालय ग्राम पंचायत'));
  assert(officeXml.includes('विकास खण्ड')&&officeXml.includes('जनपद'));
  assert(officeXml.includes('w:jc w:val="center"'), 'DOCX heading must be centered');
+ assert(officeXml.includes('सफाई व्यवस्था'), 'DOCX subject should remain in the same official letter');
  const officialPdf=await PDFDocument.load(Uint8Array.from(official.pdf));
  assert(officialPdf.getPageCount()>=1&&officialPdf.getPageCount()<=2,'Office letter must fit A4');
  assert(Math.abs(officialPdf.getPage(0).getWidth()-595.28)<2);
