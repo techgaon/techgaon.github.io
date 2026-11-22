@@ -40,7 +40,7 @@
  }
  function outputDate(paper,format){
   const clone=paper.cloneNode(true);
-  if(format==='pdf')clone.querySelectorAll('[data-pai-date]').forEach(n=>{const d=n.getAttribute('data-pai-date');if(/^\d{2}\/\d{2}\/\d{4}$/.test(d))n.textContent='दिनांक: __/'+d.slice(3);});
+  if(format==='pdf')clone.querySelectorAll('[data-pai-date]').forEach(n=>{const d=n.getAttribute('data-pai-date');if(/^\d{2}\/\d{2}\/\d{4}$/.test(d))n.textContent='दिनांक: \u00a0\u00a0\u00a0/'+d.slice(3);});
   return clone;
  }
  async function pdfBlob(paper,onProgress=()=>{}){

@@ -24,7 +24,7 @@ window.PAI_CONFIG = {
   recaptchaSiteKey: "6Lcmdw8uAAAAALp9S2hlQaEAiLe72Att_nX7pq4G", // App Check (public site key)
 
   // UPI भुगतान (FoodGaon की तरह केवल UPI)
-  upi: { vpa: "REPLACE_ME@upi", payeeName: "TechGaon AI Services" },
+  upi: { vpa: "techgaon@ybl", payeeName: "TechGaon AI Services" },
   plans: {
     free:   { label: "निःशुल्क", price: 0, dailyChats: null, dailyDrafts: null },
     plus:   { label: "Plus मासिक", price: 49, days: 30 },

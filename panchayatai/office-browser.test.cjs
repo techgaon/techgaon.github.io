@@ -37,7 +37,7 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
   let bad=false;try{window.PAI_PAYMENTS.uri('javascript:alert(1)','x',49);}catch{bad=true;}
   return {blank,full,pdf:Array.from(new Uint8Array(await pdf.arrayBuffer())),word:Array.from(new Uint8Array(await word.arrayBuffer())),uri,png,bad};
  },html);
- assert.equal(result.blank,'दिनांक: __/11/2026');assert.equal(result.full,'दिनांक: 22/11/2026');assert(result.bad);
+ assert.match(result.blank,/^दिनांक:\s+\/11\/2026$/);assert(!result.blank.includes('_')&&!result.blank.includes('-'));assert.equal(result.full,'दिनांक: 22/11/2026');assert(result.bad);
  const pdf=await PDFDocument.load(Uint8Array.from(result.pdf));assert.equal(pdf.getPageCount(),1);
  assert(Math.abs(pdf.getPage(0).getWidth()-595.28)<2);assert(Math.abs(pdf.getPage(0).getHeight()-841.89)<2);
  const zip=await JSZip.loadAsync(Buffer.from(result.word)),xml=await zip.file('word/document.xml').async('string');
