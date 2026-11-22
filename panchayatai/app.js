@@ -572,8 +572,24 @@ function profile(el) {
    <div class="btn-row"><button class="btn alt" id="pSuggestHindi" type="button">✦ हिंदी वर्तनी के सुझाव</button>
    <button class="btn" id="pSave">✓ प्रोफ़ाइल Save करें</button></div>
    <p class="hint" id="pHindiStatus" role="status">नाम और स्थान की वर्तनी बदल सकते हैं। सही करके Save करें।</p>
-   ${p.role==="pradhan"?'<div class="card" style="margin-top:15px"><b>🖋️ ग्राम प्रधान लेटरहेड</b><p class="hint">लेटरहेड बनाएँ या Upload करें, Preview/Edit करके Save करें।</p><button type="button" class="btn" data-go="letterhead">लेटरहेड बनाएँ / Upload करें</button></div>':""}</div>`;
-  const area = $("#pArea");
+   <div id="pradhanLetterheadCard" class="card ${p.role==="pradhan"?"":"hidden"}" style="margin-top:15px">
+      <b>🖋️ ग्राम प्रधान लेटरहेड</b>
+      <p class="hint">लेटरहेड बनाएँ या Upload करें, Preview/Edit करके Save करें।</p>
+      <button type="button" class="btn" id="pradhanLetterheadOpen">लेटरहेड बनाएँ या Upload करें</button>
+    </div></div>`;  const area = $("#pArea");
+  // Keep the letterhead option tied to the selected Gram Pradhan role.
+  const updateLetterheadCard = () => {
+    const isPradhan = $("#pRole",el)?.value==="pradhan";
+    $("#pradhanLetterheadCard",el)?.classList.toggle("hidden",!isPradhan);
+  };
+  $("#pradhanLetterheadOpen",el).onclick = () => {
+    if($("#pRole",el)?.value!=="pradhan")return;
+    if(S.profile?.role!=="pradhan"){
+      toast("पहले ग्राम प्रधान पद चुनकर प्रोफ़ाइल Save करें।");
+      return;
+    }
+    go("letterhead");
+  };
   const st = { district:p.district||"",tehsil:p.tehsil||"",block:p.block||"",
     districtHindi:p.districtHindi||p.district||"",blockHindi:p.blockHindi||"",
     gpsHindi:{...(p.gpsHindi||{})},
@@ -691,7 +707,9 @@ function profile(el) {
   }
   $("#pNameHindi").oninput=()=>touchedHindi.add("name");
   $("#pSuggestHindi").onclick=()=>suggestHindi(true);
-  $("#pRole").onchange = draw; draw();
+  $("#pRole").onchange = () => { updateLetterheadCard(); draw(); };
+  updateLetterheadCard();
+  draw();
   $("#pSave").onclick = async () => {
     const role = $("#pRole").value; if (!role) return toast("Select your post");
     const v = id => { const x = $("#" + id); return x ? x.value.trim() : ""; };
