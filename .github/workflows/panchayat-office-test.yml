@@ -33,7 +33,7 @@ jobs:
           node --check panchayatai/draft-workspace.js
           node --check panchayatai/payment-flow.js
           node --input-type=module --check < panchayatai/ai.js
-          node --test panchayatai/drafting.test.mjs panchayatai/office-format.test.mjs
+          node --test panchayatai/drafting.test.mjs panchayatai/office-format.test.mjs panchayatai/letterhead-mode.test.cjs
       - name: Install isolated export test tools
         run: |
           mkdir -p /tmp/pai-office-tests

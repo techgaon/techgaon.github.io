@@ -22,7 +22,8 @@ export function classifyIntent(b={}) {
    &&/(?:पत्र|आवेदन|प्रार्थना|application|patra|aavedan|arji|ke\s+liye|के\s+लिए)/iu.test(q)
    &&!/(?:सफाई\s*कर्मी|पंचायत\s*सहायक|किसी\s+कर्मचारी|staff\s+leave|सामूहिक\s+अवकाश|leave\s+register)/iu.test(q);
  const personalLeave=leave&&!otherPerson;
- const gpOffice=/(?:कार्यालय\s*ग्राम\s*पंचायत|ग्राम\s*पंचायत\s*कार्यालय|ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से|ग्राम\s*पंचायत\s*के\s*नाम\s*से|gp\s*(?:office|ki\s*taraf|ki\s*or)|gram\s*panchayat\s*(?:office|ki\s*taraf|ki\s*or)|साद[ाे]\s*A4|plain\s*A4|सादे\s*कागज)/iu.test(q);
+ const namedGpOffice=/(?:\bgp\b|gram\s*panchayat)\s+(?:[a-z]+\s+){0,3}(?:karyalay|karyalaya|office)\b|ग्राम\s*पंचायत\s+[\p{L}\p{M}]+\s+कार्यालय/iu.test(q);
+ const gpOffice=namedGpOffice||/(?:कार्यालय\s*ग्राम\s*पंचायत|ग्राम\s*पंचायत\s*कार्यालय|ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से|ग्राम\s*पंचायत\s*के\s*नाम\s*से|gp\s*(?:office|ki\s*taraf|ki\s*or)|gram\s*panchayat\s*(?:office|ki\s*taraf|ki\s*or)|साद[ाे]\s*A4|plain\s*A4|सादे\s*कागज)/iu.test(q);
  const pradhanHead=/(?:मेरे|प्रधान\s*के|ग्राम\s*प्रधान\s*के|अपने)\s*(?:व्यक्तिगत\s*)?लेटरहेड|(?:pradhan|my)\s+letterhead|letterhead\s+(?:par|पर)/iu.test(q);
  const map={rahul:'राहुल',ramesh:'रमेश',suresh:'सुरेश',pankaj:'पंकज',kumar:'कुमार',ravi:'रवि',shweta:'श्वेता',ram:'राम',singh:'सिंह'};
  const romanWords=otherName&&/^[a-z\s]+$/iu.test(otherName);
@@ -137,7 +138,7 @@ export function validate(payload,b={}) {
      if(payload.staff[k]&&(typeof payload.staff[k]!=='string'||!sources.includes(str(payload.staff[k]))))
        throw Error('कर्मचारी नोटिस का तथ्य स्रोत से मेल नहीं खाता।');
  const copyEvidence=[sources,str(b.profile?.blockHindi||b.profile?.block),str(b.profile?.districtHindi||b.profile?.district)].join(' ');
- const knownOfficers=['पंचायत सचिव','सहायक विकास अधिकारी (पंचायत)','खण्ड विकास अधिकारी','जिला पंचायत राज अधिकारी'];
+ const knownOfficers=['पंचायत सचिव','सहायक विकास अधिकारी (पंचायत)','खण्ड विकास अधिकारी','जिला पंचायत राज अधिकारी','मुख्य विकास अधिकारी'];
  if(payload.copies?.some(x=>!sources.includes(x)&&!knownOfficers.some(t=>x===t||x===t+' — सूचनार्थ')))throw Error('प्रतिलिपि में केवल दिए हुए प्राप्तकर्ता या संबंधित पद रखें।');
  // Binary PDFs/images have no locally auditable text: never pretend validation was complete.
  return {sources,attachmentReview:(b.att||[]).some(a=>a.data&&!a.text),evidence:payload.evidence};
@@ -219,7 +220,7 @@ export function render(payload,b={}) {
  html+='<table data-pai-signature="1"><tbody><tr><td style="text-align:left"><span data-pai-date="'+e(knownDate)+'">दिनांक: '+e(knownDate)+'</span></td><td style="text-align:right">'+(application?'प्रार्थी':'भवदीय')+(signature?'<br>'+e(signature).replace(/\n/g,'<br>'):'')+'</td></tr></tbody></table>';
  let copies=[...(payload.copies||[])];
  if(!copies.length&&!application&&!certificate&&!minutes){
-   const copyRole={gpa:'सहायक विकास अधिकारी (पंचायत)',gva:'सहायक विकास अधिकारी (पंचायत)',sahayak:'पंचायत सचिव',pradhan:'सहायक विकास अधिकारी (पंचायत)',prashasak:'सहायक विकास अधिकारी (पंचायत)',ado:'खण्ड विकास अधिकारी',bdo:'जिला पंचायत राज अधिकारी'}[c.roleCode];
+   const copyRole=({gpa:['सहायक विकास अधिकारी (पंचायत)','खण्ड विकास अधिकारी'],gva:['सहायक विकास अधिकारी (पंचायत)','खण्ड विकास अधिकारी'],sahayak:['पंचायत सचिव','सहायक विकास अधिकारी (पंचायत)'],pradhan:['सहायक विकास अधिकारी (पंचायत)','खण्ड विकास अधिकारी'],prashasak:['सहायक विकास अधिकारी (पंचायत)','खण्ड विकास अधिकारी'],ado:['खण्ड विकास अधिकारी','जिला पंचायत राज अधिकारी'],bdo:['जिला पंचायत राज अधिकारी','मुख्य विकास अधिकारी'],dpro:['मुख्य विकास अधिकारी'],adpro:['जिला पंचायत राज अधिकारी'],ddo:['मुख्य विकास अधिकारी']}[c.roleCode]||[]).find(t=>!finalRecipient.includes(t));
    if(copyRole&&!finalRecipient.includes(copyRole))copies=[copyRole+' — सूचनार्थ'];
  }
  if(copies.length)html+=p('प्रतिलिपि:\n'+copies.map((x,i)=>(i+1)+'. '+x).join('\n'));
