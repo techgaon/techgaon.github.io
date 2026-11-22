@@ -59,3 +59,19 @@ A real Groq Hindi letter was also validated and rendered successfully.
 The separate repository drafting/letterhead CI currently has 3 failing assertions
 around GP aliases and letterhead intent; those are outside the fallback module:
 https://github.com/techgaon/techgaon.github.io/actions/runs/44979193851
+
+## Exact Cloudflare diagnostic — 22 November 2026
+
+The account dashboard showed today's usage as 0/10k, while the last-24-hours
+panel showed 10.62k neurons on llama-3.3-70b. Direct synthetic requests to both
+llama-3.1-8b-instruct-fp8-fast and llama-3.3-70b-instruct-fp8-fast returned HTTP429,
+error4006 explicitly saying the daily free allocation was exhausted. Do not
+state that today's visible dashboard count actually reached10k. The API's
+quota enforcement and the dashboard counters disagree. Similar user reports
+exist at https://github.com/cloudflare/cloudflare-docs/issues/34137; this is not
+an independently confirmed root-cause diagnosis by Cloudflare.
+
+Reproducible result: https://github.com/techgaon/karmcharinews/actions/runs/44979658366
+The check workflow is manual-only. No quota evasion, new paid plan, token
+rotation or security weakening was attempted. Groq remains the verified live
+backup while Cloudflare rejects inference requests.
