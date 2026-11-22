@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {render,request,promptDate} from './drafting-core.mjs';
-const profile={role:'gpa',nameHindi:'चंद्र भानु पांडेय',gps:['कमेला'],blockHindi:'हैदरगढ़',districtHindi:'बाराबंकी'};
+const profile={role:'gpa',nameHindi:'परीक्षण सचिव',gps:['कमेला'],blockHindi:'हैदरगढ़',districtHindi:'बाराबंकी'};
 const payload={subject:'सफाई व्यवस्था',recipient:'खण्ड विकास अधिकारी',paragraphs:['सफाई व्यवस्था कराने का अनुरोध है।'],evidence:[]};
 const base={kind:'पत्र',profile,points:'BDO ko safai vyavastha ke liye patra',promptAt:'2026-11-22T06:00:00Z'};
 test('ordinary senders have no upper sender block; signature and date share a row',()=>{

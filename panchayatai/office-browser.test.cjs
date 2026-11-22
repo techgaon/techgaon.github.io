@@ -3,7 +3,7 @@ const root=process.env.GITHUB_WORKSPACE,p=path.join(root,'panchayatai');
 const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr'),JSZip=require('jszip'),{PDFDocument}=require('pdf-lib');
 (async()=>{
  const {render}=await import('file://'+p+'/drafting-core.mjs');
- const input={kind:'पत्र',points:'BDO ko safai ke liye patra',promptAt:'2026-11-22T06:00:00Z',profile:{role:'gpa',nameHindi:'चंद्र भानु पांडेय',gps:['कमेला'],blockHindi:'हैदरगढ़',districtHindi:'बाराबंकी'}};
+ const input={kind:'पत्र',points:'BDO ko safai ke liye patra',promptAt:'2026-11-22T06:00:00Z',profile:{role:'gpa',nameHindi:'परीक्षण सचिव',gps:['कमेला'],blockHindi:'हैदरगढ़',districtHindi:'बाराबंकी'}};
  const html=render({subject:'सफाई व्यवस्था',recipient:'खण्ड विकास अधिकारी',paragraphs:['ग्राम पंचायत की सफाई व्यवस्था हेतु अनुरोध है।','उपलब्ध जानकारी के अनुसार आवश्यक कार्यवाही करने का कष्ट करें।'],evidence:[]},input).html;
  const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://local').pathname;

@@ -390,19 +390,15 @@ function home(el) {
       <button class="tile ai-tile" data-go="chat"><span class="e pai-ai-logo"><img src="ai-help-icon.svg?v=20261121-generic-ai2" alt="" width="53" height="53" decoding="async"></span><b>AI Help</b><small>UP के नियम व पंचायत कार्य</small></button>
       <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
     </div>
-    <div class="grid draft-grid home-go-feature pai-go-compact">
-      <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><span class="pai-go-home-copy"><b>GO Search</b><small>शासनादेश का नाम या Keyword खोजें · PDF डाउनलोड</small></span></button>
-    </div>
-    <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
-    <div class="grid draft-grid home-news-estimate">
+    <div class="grid draft-grid pai-office-tiles">
+      <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>शासनादेश खोजें · संबंधित PDF</small></button>
+      ${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
       <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
-    </div>
-    <div class="grid draft-grid home-final-pair">
       <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
       <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>More features</small></button>
+      <button class="tile igrs-tile" type="button" data-go="igrs"><span class="e">📋</span><b>IGRS</b><small>शिकायत Upload · आख्या · Word / PDF</small></button>
     </div>
-    <div class="grid draft-grid"><button class="tile igrs-tile" type="button" data-go="igrs"><span class="e">📋</span><b>IGRS</b><small>शिकायत Upload · निस्तारण आख्या · Edit / Word / PDF</small></button></div>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
    ${["ग्राम पंचायत की खुली बैठक आयोजित करने की प्रक्रिया क्या है?","ग्राम पंचायत की कार्ययोजना (GPDP) कैसे तैयार की जाती है?","15वें वित्त आयोग की धनराशि से कार्य कराते समय किन बातों का ध्यान रखना चाहिए?","ग्राम पंचायत में RTI आवेदन मिलने पर सचिव को क्या करना चाहिए?"]

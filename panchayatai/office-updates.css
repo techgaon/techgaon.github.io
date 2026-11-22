@@ -14,3 +14,5 @@
 @keyframes paiPlusReveal{from{opacity:0;transform:translateY(18px) scale(.9)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.go-search-tile .e,.igrs-tile .e,.pai-plus-celebration,.pai-plus-star{animation:none}}
 @media print{@page{size:A4;margin:20mm}.inline-draft-paper{width:170mm;max-width:none;box-sizing:border-box}.inline-draft-paper table[data-pai-signature]{break-inside:avoid}}
+
+.pai-office-tiles .go-search-tile,.pai-office-tiles .igrs-tile{grid-column:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;min-height:130px;padding:16px}
