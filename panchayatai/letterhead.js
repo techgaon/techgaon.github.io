@@ -27,15 +27,15 @@
    return out;
  };
  const mode=(profile,points,kind)=>{
-   if(!isPradhan(profile))return "plain";
    const q=String(points||"");
    // Third-party citizen applications and personal leave never use Pradhan stationery.
    const thirdPerson=/(?:ग्रामवासी|ग्रामीण|निवासी|ग्राम\s*निवासी|प्रार्थी)\s+[\p{L}\p{M}\s.]{1,70}?\s+(?:की|के)\s+(?:ओर|तरफ)\s+से|(?:gramvasi|gramwasi|gram\s*nivasi|nivasi|resident)\s+[a-z\s]{1,70}?\s+(?:ki|ke)\s+(?:or|aur|taraf)\s+se/iu.test(q);
    const personalLeave=/(?:छुट्टी|अवकाश|chhutti|chutti|leave|avakash)/iu.test(q)&&/(?:पत्र|आवेदन|प्रार्थना|patra|application|ke\s+liye|के\s+लिए)/iu.test(q);
    if(thirdPerson||personalLeave)return "plain";
    const namedGpOffice=/(?:\bgp\b|gram\s*panchayat)\s+(?:[a-z]+\s+){0,3}(?:karyalay|karyalaya|office)\b|ग्राम\s*पंचायत\s+[\p{L}\p{M}]+\s+कार्यालय/iu.test(q);
-   const gpOffice=namedGpOffice||/(?:कार्यालय\s*ग्राम\s*पंचायत|ग्राम\s*पंचायत\s*कार्यालय|ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से|ग्राम\s*पंचायत\s*के\s*नाम\s*से|gp\s*(?:office|ki\s*taraf|ki\s*or)|gram\s*panchayat\s*(?:office|ki\s*taraf|ki\s*or)|साद[ाे]\s*A4|plain\s*A4|सादे\s*कागज)/iu.test(q);
-   if(gpOffice)return "gp_office";
+   const gpOffice=namedGpOffice||/(?:कार्यालय\s*ग्राम\s*पंचायत|ग्राम\s*पंचायत\s*कार्यालय|ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से|ग्राम\s*पंचायत\s*के\s*नाम\s*से|gp\s*(?:office|ki\s*taraf|ki\s*or)|gram\s*panchayat\s*(?:office|ki\s*taraf|ki\s*or)|पंचायत\s*कार्यालय\s*की\s*(?:ओर|तरफ)\s*से|panchayat\s*karyalay\s*(?:ki\s*taraf|ki\s*or|se))/iu.test(q);
+   if(gpOffice&&["pradhan","prashasak","gpa","gva"].includes(profile?.role))return "gp_office";
+   if(!isPradhan(profile))return "plain";
    const explicitHead=/(?:मेरे|प्रधान\s*के|ग्राम\s*प्रधान\s*के|अपने)\s*(?:व्यक्तिगत\s*)?लेटरहेड|(?:pradhan|my)\s+letterhead|letterhead\s+(?:par|पर)/iu.test(q);
    return explicitHead&&profile.letterhead?"pradhan_letterhead":"plain";
  };

@@ -59,3 +59,33 @@ test('personal request with no saved mailing address is flagged rather than inve
  const out=render(payload,{...base,points:'ADO ko meri chhutti ke liye aavedan patra banao'});
  assert(out.review.missing.includes('प्रेषक का पूरा पत्राचार पता (प्रोफ़ाइल में भरें)'));
 });
+
+test('plain secretary letter to ADO does not inherit office heading',()=>{
+ for(const role of ['gpa','gva']){
+  const b={...base,profile:{...profile,role},points:'sachiv ki taraf se ADO ko safai ke liye samanya patra banao'};
+  const h=render({...payload,recipient:'सहायक विकास अधिकारी (पंचायत)'},b).html;
+  assert(h.startsWith('<p>सेवा में,'));assert(!h.includes('data-pai-office-header'));assert(h.includes('>भवदीय<br>'));
+ }
+});
+test('explicit office letter shows GP, block and district for secretary and pradhan',()=>{
+ for(const role of ['gpa','gva','pradhan']){
+  const b={...base,profile:{...profile,role},points:'gram panchayat karyalay ki taraf se ADO ko patra banao'};
+  const h=render({...payload,recipient:'सहायक विकास अधिकारी (पंचायत)'},b).html;
+  assert(h.startsWith('<div data-pai-office-header="1">'),h);
+  assert(h.includes('<strong>कार्यालय ग्राम पंचायत — कमेला</strong>'));
+  assert(h.includes('<p style="text-align:center">विकास खण्ड — हैदरगढ़</p>'));
+  assert(h.includes('<p style="text-align:center">जनपद — बाराबंकी</p>'));
+  assert(h.includes('style="text-align:justify"'));
+ }
+});
+test('office title uses selected GP and never guesses the first GP',()=>{
+ const b={...base,gp:'संडवा',profile:{...profile,gps:['कमेला','संडवा'],gpsHindi:{'संडवा':'संडवा'}},points:'ग्राम पंचायत कार्यालय की ओर से एडीओ को पत्र बनाएँ'};
+ const h=render({...payload,recipient:'सहायक विकास अधिकारी (पंचायत)'},b).html;
+ assert(h.includes('कार्यालय ग्राम पंचायत — संडवा'));assert(!h.includes('कार्यालय ग्राम पंचायत — कमेला'));
+});
+test('plain A4 and leave requests never become GP office letters',()=>{
+ const h=render(payload,{...base,points:'ADO ko sade A4 par patra banao'}).html;
+ assert(h.startsWith('<p>सेवा में,'));
+ const leave=render(payload,{...base,points:'ADO ko meri chhutti ke liye application GP karyalay se'}).html;
+ assert(!leave.includes('data-pai-office-header'));assert(leave.includes('>प्रार्थी<br>'));
+});
