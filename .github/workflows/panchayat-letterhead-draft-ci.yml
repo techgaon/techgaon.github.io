@@ -78,8 +78,8 @@ jobs:
           assert 'mode' in head and 'gp_office' in head
           assert 'new Function' not in workspace
           assert '<script src="ai-errors.js' in html
-          assert '<script src="ai-status.js' in html
-          assert 'AI कनेक्शन जाँचें' in app and 'AI कनेक्शन जाँचें' in workspace
+          assert '<script src="ai-fallback-client.js' in html
+          assert 'paiWriteStatus' in workspace and 'window.PAI_AI_ERRORS?.explain' in app
           assert 'getToken(appCheck,false)' in Path('panchayatai/ai.js').read_text()
           assert 'window.PAI_AI_ERRORS?.explain' in app
           assert 'async function diagnose()' in Path('panchayatai/ai.js').read_text()
