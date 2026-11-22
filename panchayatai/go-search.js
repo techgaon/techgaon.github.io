@@ -168,7 +168,7 @@
     });
     load().then(draw).catch(()=>{result.textContent="दस्तावेज़ संग्रह अभी उपलब्ध नहीं है। कृपया दोबारा प्रयास करें।";});
   }
-  document.addEventListener("click",async e=>{
+  document.addEventListener?.("click",async e=>{
     const button=e.target.closest("[data-go-excerpt]");if(!button)return;
     const hit=excerptHits.get(button.dataset.goExcerpt);if(!hit)return;
     button.disabled=true;const label=button.textContent;button.textContent="PDF तैयार हो रही है…";

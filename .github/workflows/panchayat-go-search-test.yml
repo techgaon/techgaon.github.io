@@ -1,0 +1,41 @@
+name: Panchayat GO Search Tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'panchayatai/go-search.js'
+      - 'panchayatai/reference-search.js'
+      - '.github/workflows/panchayat-go-search-test.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test GO routing, Roman Hindi, safe URLs and empty results
+        run: node --test panchayatai/go-search.test.cjs
+      - name: Check search and AI module syntax
+        run: |
+          node --check panchayatai/go-search.js
+          node --check panchayatai/reference-static-client.js
+          node --input-type=module --check < panchayatai/ai.js
+      - name: Test real corpus subject ranking and Hindi equivalence
+        run: |
+          node <<'JS'
+          const fs=require('fs'),assert=require('assert'),search=require('./panchayatai/reference-search.js');
+          const root='panchayatai/go-corpus/',catalog=JSON.parse(fs.readFileSync(root+'catalog.json'));
+          const index=JSON.parse(fs.readFileSync(root+catalog.index));
+          assert.equal(index.docs.length,290);assert.equal(index.pages.length,2542);
+          const roman=search.search(index,'panchayt sahayak niyukti ka go do');
+          const hindi=search.search(index,'पंचायत सहायक नियुक्ति का GO दो');
+          assert(roman.length&&roman[0].title.includes('पंचायत सहायक'));
+          assert.deepEqual(roman.map(h=>h.id),hindi.map(h=>h.id));
+          assert(roman.every(h=>h.pages.every(p=>index.docs.find(d=>d.id===h.id).availablePages.includes(p))));
+          console.log('Real GO corpus, subject ranking, Hindi/Roman equivalence and page references passed.');
+          JS
