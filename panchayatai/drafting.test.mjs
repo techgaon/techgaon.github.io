@@ -199,3 +199,26 @@ test('when no GP has been reliably selected AI cannot fabricate a name but can d
  assert.ok(!out.html.includes('काल्पनिक गाँव'));
  assert.ok(out.review.missing.includes('संबंधित ग्राम पंचायत'));
 });
+
+
+test('panchayat assistant leave letter addresses secretary with profile location and personal signature',()=>{
+ const input={kind:'पत्र',points:'सचिव को एक दिन की छुट्टी के लिए पत्र बनाओ',gp:'कमेला',profile:{role:'sahayak',name:'श्वेता तिवारी',block:'हैदरगढ़',district:'बाराबंकी',gps:['कमेला']}};
+ const draft={subject:'एक दिन के अवकाश हेतु आवेदन',recipient:'खण्ड विकास अधिकारी',salutation:'श्रीमान खण्ड विकास अधिकारी महोदय',paragraphs:['व्यक्तिगत कार्य के कारण एक दिन का अवकाश स्वीकृत करने की कृपा करें।'],evidence:[]};
+ const html=render(draft,input).html;
+ assert.ok(html.includes('सेवा में,<br>पंचायत सचिव'));
+ assert.ok(html.includes('ग्राम पंचायत कमेला'));
+ assert.ok(html.includes('विकास खण्ड हैदरगढ़'));
+ assert.ok(html.includes('जनपद बाराबंकी'));
+ assert.ok(html.includes('महोदय,'));
+ assert.ok(!html.includes('श्रीमान खण्ड विकास अधिकारी'));
+ assert.ok(html.includes('श्वेता तिवारी'));
+ assert.ok(html.includes('पंचायत सहायक'));
+ assert.ok(!html.includes('कार्यालय — पंचायत सहायक'));
+});
+test('general letter retains appropriate custom salutation, notice has no greeting',()=>{
+ const input={kind:'पत्र',points:'अपने मित्र को सामान्य पत्र लिखो',profile:{role:'sahayak',name:'श्वेता'}};
+ const draft={subject:'सामान्य पत्र',recipient:'प्रिय मित्र',salutation:'प्रिय मित्र,',paragraphs:['आपका कुशलक्षेम जानने के लिए पत्र लिख रही हूँ।'],evidence:[]};
+ assert.ok(render(draft,input).html.includes('प्रिय मित्र,'));
+ const notice={...draft};
+ assert.ok(!render(notice,{...input,kind:'नोटिस'}).html.includes('<p>प्रिय मित्र,</p>'));
+});
