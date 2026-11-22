@@ -95,6 +95,32 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  assert(checkedGo.getPage(0).getHeight()>fixturePage.getHeight()+90);
  for(const p of checkedGo.getPages())assert(p.node.Annots(),'All pages must link to the main content page');
  fs.writeFileSync('office-test-artifacts/full-go.pdf',Buffer.from(fullGo.bytes));
- await browser.close();server.close();console.log('PASS: A4 dates, DOCX, UPI QR, IGRS, Plus and full navigable two-page GO PDF.');
+ const institutional=render({subject:'सफाई व्यवस्था',recipient:'सहायक विकास अधिकारी (पंचायत)',
+   paragraphs:['ग्राम पंचायत में सफाई व्यवस्था सुनिश्चित करने हेतु आवश्यक कार्यवाही का अनुरोध है।'],evidence:[]},
+   {...input,points:'ग्राम पंचायत कार्यालय की ओर से ADO को सफाई व्यवस्था पर पत्र बनाएँ'});
+ const official=await page.evaluate(async officeHTML=>{
+   const paper=document.createElement('div');paper.innerHTML=window.PAI_DRAFT_CARD.sanitize(officeHTML);
+   paper.dataset.docSize='13';document.body.appendChild(paper);
+   const header=paper.querySelector('[data-pai-office-header="1"]');
+   if(!header)throw Error('Institutional heading disappeared during sanitization');
+   const aligned=Array.from(header.querySelectorAll('h2,p')).every(e=>e.style.textAlign==='center');
+   const word=await window.PAI_DOCX.createBlob(paper,'office.docx');
+   const pdf=await window.PAI_DRAFT_CARD.pdfBlob(paper);
+   paper.remove();return {aligned,word:Array.from(new Uint8Array(await word.arrayBuffer())),
+     pdf:Array.from(new Uint8Array(await pdf.arrayBuffer()))};
+ },institutional.html);
+ assert(official.aligned,'all GP office heading lines must be centered');
+ const officeZip=await JSZip.loadAsync(Buffer.from(official.word));
+ const officeXml=await officeZip.file('word/document.xml').async('string');
+ assert(officeXml.includes('कार्यालय ग्राम पंचायत'));
+ assert(officeXml.includes('विकास खण्ड')&&officeXml.includes('जनपद'));
+ assert(officeXml.includes('w:jc w:val="center"'), 'DOCX heading must be centered');
+ const officialPdf=await PDFDocument.load(Uint8Array.from(official.pdf));
+ assert(officialPdf.getPageCount()>=1&&officialPdf.getPageCount()<=2,'Office letter must fit A4');
+ assert(Math.abs(officialPdf.getPage(0).getWidth()-595.28)<2);
+ fs.writeFileSync('office-test-artifacts/official-office-letter.pdf',Buffer.from(official.pdf));
+ fs.writeFileSync('office-test-artifacts/official-office-letter.docx',Buffer.from(official.word));
+ await browser.close();server.close();console.log('PASS: Plain/office intent, centered GP heading, A4 Word/PDF alignment, UPI, IGRS, Plus and full GO.');
+
 
 })().catch(e=>{console.error(e);process.exit(1);});
