@@ -2,9 +2,11 @@ name: Panchayat GO Search Tests
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, go-full-doc-ui-20261122]
     paths:
       - 'panchayatai/go-search.js'
+      - 'panchayatai/go-full-pdf.js'
+      - 'panchayatai/go-search.css'
       - 'panchayatai/reference-search.js'
       - '.github/workflows/panchayat-go-search-test.yml'
 permissions:
@@ -23,6 +25,7 @@ jobs:
       - name: Check search and AI module syntax
         run: |
           node --check panchayatai/go-search.js
+          node --check panchayatai/go-full-pdf.js
           node --check panchayatai/reference-static-client.js
           node --input-type=module --check < panchayatai/ai.js
       - name: Test real corpus subject ranking and Hindi equivalence

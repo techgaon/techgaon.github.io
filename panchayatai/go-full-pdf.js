@@ -120,10 +120,7 @@ async function create(hit,query=hit?.query||"",onStatus=()=>{}){
  }
  const ordered=new Map(entries.map(e=>[e.pageNo,e]));
  const sorted=available.map(p=>ordered.get(p));
- const corrected=await lib.PDFDocument.create();
- // Rebuild original document order if source blocks were stored out-of-order.
- // The output was assembled per verified block; copyPages retains annotations only within output.
- // Most ingest blocks are naturally ordered; annotate the verified target on the assembled pages.
+ // Each original page stays visually intact and receives a separate navigation margin.
  const target=ordered.get(targetPage)?.page;
  if(!target)throw Error("मुख्य पृष्ठ उपलब्ध नहीं है।");
  for(const {page} of entries)addGoTo(output,page,target,lib,page.getHeight()-TOP);

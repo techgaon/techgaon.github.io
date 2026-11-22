@@ -2,7 +2,7 @@ name: Panchayat Office Format Payment and IGRS
 on:
   workflow_dispatch:
   push:
-    branches: [main, office-payments-igrs-20261122]
+    branches: [main, office-payments-igrs-20261122, go-full-doc-ui-20261122]
     paths:
       - 'panchayatai/app.js'
       - 'panchayatai/ai.js'
@@ -12,6 +12,7 @@ on:
       - 'panchayatai/draft-workspace.js'
       - 'panchayatai/docx-export.js'
       - 'panchayatai/payment-flow.js'
+      - 'panchayatai/go-full-pdf.js'
       - 'panchayatai/office-*.test.*'
       - 'panchayatai/payment-security.test.cjs'
       - '.github/workflows/panchayat-office-test.yml'
