@@ -48,7 +48,7 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  await page.screenshot({path:'office-test-artifacts/preview.png',fullPage:true});
  const fixture=await PDFDocument.create(),fixturePage=fixture.addPage();fixturePage.drawText('IGRS complaint CASE12345: drainage problem. No inspection completed.');
  const fixtureBytes=await fixture.save();
- await page.addScriptTag({path:path.join(p,'tools.js')});
+ await page.addScriptTag({url:'http://127.0.0.1:'+server.address().port+'/panchayatai/tools.js'});
  await page.addScriptTag({path:path.join(p,'draft-workspace.js')});
  await page.evaluate(html=>{
   const holder=document.createElement('div');holder.id='igrs';document.body.append(holder);
@@ -57,7 +57,7 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  },html);
  await page.locator('#igrs input[type=file]').setInputFiles({name:'case-native.pdf',mimeType:'application/pdf',buffer:Buffer.from(fixtureBytes)});
  await page.locator('#igrs #paiWrite').click();
- await page.waitForFunction(()=>!!window.igrsReceived);
+ try{await page.waitForFunction(()=>!!window.igrsReceived);}catch(error){console.error('IGRS STATUS:',await page.locator('#igrs #paiWriteStatus').innerText());await page.screenshot({path:'office-test-artifacts/igrs-error.png',fullPage:true});throw error;}
  const received=await page.evaluate(()=>window.igrsReceived);
  assert(received.att[0].text.includes('CASE12345'));assert(received.points.includes('निस्तारण'));
  await page.locator('#igrs [data-edit]').click();
