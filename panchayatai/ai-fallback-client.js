@@ -8,6 +8,13 @@
  const enabled=()=>window.PAI_CONFIG?.aiFallback?.enabled===true;
  let healthCache={at:0,data:null};
  const fail=(code,message)=>Object.assign(new Error(message),{code});
+ function endpoint(path){
+   const target=new URL(window.PAI_CONFIG?.aiFallback?.endpoint||ENDPOINT,location.origin);
+   const allowed=[location.origin,"https://panchayat-ai-fallback.surajbhanpandey853.workers.dev"];
+   if(target.protocol!=="https:"||!allowed.includes(target.origin)||target.username||target.password||target.search||target.hash||target.pathname!==ENDPOINT)
+     throw fail("AI_BACKUP_CONFIG","अमान्य AI बैकअप पता");
+   return new URL(path,target.origin).toString();
+ }
  async function health(force=false){
    if(!enabled())return {ready:false,code:"AI_BACKUP_DISABLED"};
    if(!force&&Date.now()-healthCache.at<60000&&healthCache.data)return healthCache.data;
@@ -15,9 +22,7 @@
    const timer=setTimeout(()=>control.abort(),6500);
    let outcome;
    try{
-     const url=new URL(HEALTH,location.origin);
-     if(url.origin!==location.origin)throw fail("AI_BACKUP_CONFIG","अमान्य Fallback URL");
-     const r=await fetch(url.toString(),{cache:"no-store",signal:control.signal,redirect:"error"});
+     const r=await fetch(endpoint(HEALTH),{cache:"no-store",credentials:"omit",signal:control.signal,redirect:"error"});
      if(!r.ok||!/application\/json/i.test(r.headers.get("content-type")||""))
        throw fail(NO_DEPLOY,"Groq बैकअप सर्वर अभी Deploy नहीं हुआ है।");
      const j=await r.json();
@@ -50,7 +55,7 @@
    const token=await current.getIdToken();
    const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),55000);
    try{
-     const res=await fetch(ENDPOINT,{method:"POST",cache:"no-store",redirect:"error",
+     const res=await fetch(endpoint(ENDPOINT),{method:"POST",cache:"no-store",credentials:"omit",redirect:"error",
        headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},
        body:JSON.stringify({action,system,messages:items}),signal:ctrl.signal});
      let j={};try{j=await res.json()}catch{}
