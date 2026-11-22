@@ -1,20 +1,26 @@
 name: Deploy reviewed Panchayat GO corpus
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/panchayat-go-corpus-deploy.yml']
   release:
     types: [published]
 permissions:
-  contents: read
+  contents: write
+  pages: write
 concurrency:
   group: panchayat-go-corpus
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'panchayat-go-corpus-20261122'
+    if: github.event_name != 'release' || github.event.release.tag_name == 'panchayat-go-corpus-20261122'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -63,17 +69,30 @@ jobs:
           PY
       - name: Include PDF module runtime dependency
         run: cp panchayatai/vendor/chunk-T4BHF35L.js corpus/vendor/chunk-T4BHF35L.js
-      - name: Deploy all verified assets to existing Pages project
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Publish verified files to existing app hosting source
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN"
-          test -n "$CLOUDFLARE_ACCOUNT_ID"
-          npx --yes wrangler@4 pages deploy corpus --project-name techgaon-panchayat-orders --branch main
+          mkdir -p panchayatai/go-corpus
+          cp -a corpus/. panchayatai/go-corpus/
+          python3 - <<'PY'
+          from pathlib import Path
+          total=sum(p.stat().st_size for p in Path('.').rglob('*') if p.is_file() and '.git' not in p.parts and 'corpus' not in p.parts and not p.name.startswith('part-'))
+          assert total<950*1024*1024, total
+          print('Complete app hosting source bytes:', total)
+          PY
+          git config user.name "Techgaon GO deployment"
+          git config user.email "349643751+techgaon@users.noreply.github.com"
+          git add panchayatai/go-corpus
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish verified GO corpus: 290 documents and 2542 reference pages"
+            git push origin HEAD:main
+          fi
+      - name: Request existing GitHub Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST repos/techgaon/techgaon.github.io/pages/builds
       - name: Verify live catalog
         run: |
-          curl --fail --silent --show-error --retry 5 --retry-delay 5 https://techgaon-panchayat-orders.pages.dev/catalog.json -o live-catalog.json
+          curl --fail --silent --show-error --retry 30 --retry-delay 10 --retry-all-errors https://techgaon.in/panchayatai/go-corpus/catalog.json -o live-catalog.json
           python3 - <<'PY'
           import json
           c=json.load(open('live-catalog.json'))
