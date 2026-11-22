@@ -4,6 +4,9 @@ on:
   push:
     branches: [main, office-payments-igrs-20261122]
     paths:
+      - 'panchayatai/app.js'
+      - 'panchayatai/ai.js'
+      - 'panchayatai/tools.js'
       - 'panchayatai/drafting-core.mjs'
       - 'panchayatai/draft-card.js'
       - 'panchayatai/draft-workspace.js'
@@ -16,7 +19,7 @@ permissions:
   contents: read
 jobs:
   format-and-exports:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +52,7 @@ jobs:
           name: office-export-preview
           path: office-test-artifacts
   payment-rules:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
