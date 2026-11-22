@@ -57,8 +57,24 @@
  const suggestionsFor=(role,type)=>{
    const specific=roleExamples[role]?.[type];
    if(specific?.length)return specific;
+   const nonIssuers=["resident","sahayak","clerk","other_staff"];
+   if(type==="notice"&&nonIssuers.includes(role))
+     return ["संबंधित सक्षम अधिकारी से सार्वजनिक स्थान पर बाधा के संबंध में नोटिस जारी करने हेतु आवेदन बनाओ",
+       "ग्राम पंचायत में सफाई समस्या पर सक्षम अधिकारी को कार्रवाई हेतु शिकायत लिखो"];
+   if(type==="spasht")
+     return role==="resident"
+       ? ["मुझे मिले नोटिस का तथ्यात्मक और विनम्र जवाब तैयार करो","Notice ka point wise jawab banao"]
+       : ["मेरे पद से संबंधित प्राप्त नोटिस का तथ्यात्मक स्पष्टीकरण बनाओ","Bina galat tathya jode notice ka jawab taiyar karo"];
+   if(type==="aakhya")
+     return nonIssuers.includes(role)
+       ? ["सक्षम अधिकारी को उपलब्ध तथ्यों के आधार पर सामान्य सूचना रिपोर्ट बनाओ"]
+       : ["उपलब्ध अभिलेखों के आधार पर अधिकारी को तथ्यात्मक जाँच आख्या बनाओ"];
+   if(type==="aadesh")
+     return nonIssuers.includes(role)
+       ? ["सक्षम अधिकारी को आवश्यक कार्यालय आदेश जारी कराने हेतु आवेदन बनाओ"]
+       : ["कार्यालय के कार्य वितरण के संबंध में आदेश का मसौदा बनाओ"];
    if(type==="patra")return examples.patra;
-   return examples[type]||["विषय के संबंध में संक्षिप्त सरकारी मसौदा बनाओ"];
+   return examples[type]||["उपलब्ध तथ्यों के आधार पर संबंधित अधिकारी को पत्र तैयार करो"];
  };
 
  function mount(el,{kind,code,description,profile,user,api,letterhead,toast,save,previous=null}={}){
