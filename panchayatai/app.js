@@ -820,7 +820,8 @@ function assistantHtml(message,index){
     '<a href="'+esc(src.uri)+'" target="_blank" rel="noopener noreferrer">'+esc(src.title||(english?"Web source":"वेब स्रोत"))+"</a>"
   ).join(" · ");
   const followups=(message.followups||[]).filter(q=>typeof q==="string"&&q.trim().length>5).slice(0,2);
-  return chatParagraphs(answer)+(Array.isArray(message.goResultIds)?(window.PAI_GO_SEARCH?.chatResultsHtml(message.goResultIds)||""):"")+
+  window.PAI_GO_SEARCH?.registerHits(message.referenceHits||[]);
+  return (Array.isArray(message.goResultIds)?(window.PAI_GO_SEARCH?.chatResultsHtml(message.goResultIds,message.question)||""):"")+chatParagraphs(answer)+
     (Array.isArray(message.goResultIds)?'<div class="btn-row"><button class="btn-sm btn alt" data-go="goSearch">📚 GO Search खोलें</button></div>':"")+(web?'<p class="hint">'+web+"</p>":"")+refsHtml(message.originalIds||[])+
     (followups.length?'<div class="followups">'+followups.map(q=>
       '<button class="btn alt followup" data-followup="'+esc(q)+'" data-message-index="'+index+'">'+esc(q)+'</button>'
@@ -950,7 +951,7 @@ function chat(el) {
           api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m=>({r:m.r,t:m.document?m.kind+" का मसौदा तैयार है।":m.t})), att }),
           availableOriginals(q)
         ]);
-        S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
+        S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),referenceHits:r.referenceHits||[],goResultIds:r.referenceHits?.length?r.referenceHits.map(h=>h.id):undefined,web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
       }
     } catch (e) { if(isDailyLimitError(e))showUpgrade(e.quotaKind,e.limit,e.code==="PLUS_LIMIT");S.chat.push({r:"a",error:true,t:isDailyLimitError(e)?e.message:"⚠️ "+e.message}); }
     S.chatBusy = false;
@@ -1343,3 +1344,4 @@ window.addEventListener('hashchange', () => {
 });
 render();
 })();
+

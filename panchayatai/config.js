@@ -1,5 +1,6 @@
 // ===== पंचायत AI — कॉन्फ़िग (डिप्लॉय से पहले ये मान भरें) =====
 window.PAI_CONFIG = {
+  referenceCatalog: "https://techgaon.in/panchayatai/go-corpus/catalog.json",
   appName: "PANCHAYT AI",
   appUrl: "https://techgaon.in/panchayatai/",
   companyName: "TechGaon AI Services",
@@ -31,4 +32,5 @@ window.PAI_CONFIG = {
   },
   whatsapp: "919129203268"
 };
+
 
