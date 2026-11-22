@@ -11,21 +11,21 @@ export function context(b={}) {
 }
 // Role-aware identity resolution. The logged-in profile is context, not proof of authorship.
 export function classifyIntent(b={}) {
- const q=str(b.points).normalize('NFKC').replace(/\\s+/gu,' ').trim();
+ const q=str(b.points).normalize('NFKC').replace(/\s+/gu,' ').trim();
  const p=b.profile||{};
- const hindi=q.match(/(?:ग्रामवासी|ग्रामीण|ग्राम\\s*निवासी|निवासी|प्रार्थी)\\s+([\\p{L}\\p{M}]+(?:\\s+[\\p{L}\\p{M}]+){0,3}?)\\s+(?:की|के)\\s+(?:ओर|तरफ)\\s+से/iu);
- const roman=q.match(/(?:gramvasi|gramwasi|gram\\s*niwasi|gram\\s*nivasi|nivasi|resident)\\s+([a-z]+(?:\\s+[a-z]+){0,3}?)\\s+(?:ki|ke)\\s+(?:or|aur|taraf)\\s+se/iu);
- const otherName=str(hindi?.[1]||roman?.[1]).replace(/\\s+/g,' ').trim();
- const otherPerson=Boolean(otherName)||/(?:किसी\\s+अन्य\\s+व्यक्ति|दूसरे\\s+व्यक्ति)\\s+की\\s+(?:ओर|तरफ)\\s+से|on\\s+behalf\\s+of\\s+another\\s+person/iu.test(q);
+ const hindi=q.match(/(?:ग्रामवासी|ग्रामीण|ग्राम\s*निवासी|निवासी|प्रार्थी)\s+([\p{L}\p{M}]+(?:\s+[\p{L}\p{M}]+){0,3}?)\s+(?:की|के)\s+(?:ओर|तरफ)\s+से/iu);
+ const roman=q.match(/(?:gramvasi|gramwasi|gram\s*niwasi|gram\s*nivasi|nivasi|resident)\s+([a-z]+(?:\s+[a-z]+){0,3}?)\s+(?:ki|ke)\s+(?:or|aur|taraf)\s+se/iu);
+ const otherName=str(hindi?.[1]||roman?.[1]).replace(/\s+/g,' ').trim();
+ const otherPerson=Boolean(otherName)||/(?:किसी\s+अन्य\s+व्यक्ति|दूसरे\s+व्यक्ति)\s+की\s+(?:ओर|तरफ)\s+से|on\s+behalf\s+of\s+another\s+person/iu.test(q);
  // Leave requests are personal unless the instruction explicitly asks for a staff/office matter.
  const leave=/(?:छुट्टी|अवकाश|chhutti|chutti|chhuti|leave|avakash)/iu.test(q)
-   &&/(?:पत्र|आवेदन|प्रार्थना|application|patra|aavedan|arji|ke\\s+liye|के\\s+लिए)/iu.test(q)
-   &&!/(?:सफाई\\s*कर्मी|पंचायत\\s*सहायक|किसी\\s+कर्मचारी|staff\\s+leave|सामूहिक\\s+अवकाश|leave\\s+register)/iu.test(q);
+   &&/(?:पत्र|आवेदन|प्रार्थना|application|patra|aavedan|arji|ke\s+liye|के\s+लिए)/iu.test(q)
+   &&!/(?:सफाई\s*कर्मी|पंचायत\s*सहायक|किसी\s+कर्मचारी|staff\s+leave|सामूहिक\s+अवकाश|leave\s+register)/iu.test(q);
  const personalLeave=leave&&!otherPerson;
- const gpOffice=/(?:कार्यालय\\s*ग्राम\\s*पंचायत|ग्राम\\s*पंचायत\\s*कार्यालय|ग्राम\\s*पंचायत\\s*की\\s*(?:ओर|तरफ)\\s*से|ग्राम\\s*पंचायत\\s*के\\s*नाम\\s*से|gp\\s*(?:office|ki\\s*taraf|ki\\s*or)|gram\\s*panchayat\\s*(?:office|ki\\s*taraf|ki\\s*or)|साद[ाे]\\s*A4|plain\\s*A4|सादे\\s*कागज)/iu.test(q);
- const pradhanHead=/(?:मेरे|प्रधान\\s*के|ग्राम\\s*प्रधान\\s*के|अपने)\\s*(?:व्यक्तिगत\\s*)?लेटरहेड|(?:pradhan|my)\\s+letterhead|letterhead\\s+(?:par|पर)/iu.test(q);
+ const gpOffice=/(?:कार्यालय\s*ग्राम\s*पंचायत|ग्राम\s*पंचायत\s*कार्यालय|ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से|ग्राम\s*पंचायत\s*के\s*नाम\s*से|gp\s*(?:office|ki\s*taraf|ki\s*or)|gram\s*panchayat\s*(?:office|ki\s*taraf|ki\s*or)|साद[ाे]\s*A4|plain\s*A4|सादे\s*कागज)/iu.test(q);
+ const pradhanHead=/(?:मेरे|प्रधान\s*के|ग्राम\s*प्रधान\s*के|अपने)\s*(?:व्यक्तिगत\s*)?लेटरहेड|(?:pradhan|my)\s+letterhead|letterhead\s+(?:par|पर)/iu.test(q);
  const map={rahul:'राहुल',ramesh:'रमेश',suresh:'सुरेश',pankaj:'पंकज',kumar:'कुमार',ravi:'रवि',shweta:'श्वेता',ram:'राम',singh:'सिंह'};
- const romanWords=otherName&&/^[a-z\\s]+$/iu.test(otherName);
+ const romanWords=otherName&&/^[a-z\s]+$/iu.test(otherName);
  const parts=romanWords?otherName.split(' '):[];
  const knownRoman=romanWords&&parts.every(x=>!!map[x.toLowerCase()]);
  const citizenName=knownRoman?parts.map(x=>map[x.toLowerCase()]).join(' '):otherName;
@@ -95,9 +95,9 @@ export function validate(payload,b={}) {
  const text=fields.join('\n');
  const intent=classifyIntent(b);
  const narrative=payload.paragraphs.join(' ');
- if(intent.otherPerson&&/(?:मैं\\s*(?:ग्राम\\s*प्रधान|पंचायत\\s*सचिव)|ग्राम\\s*प्रधान\\s*के\\s*रूप\\s*में|ग्राम\\s*पंचायत\\s*कार्यालय\\s*की\\s*ओर\\s*से)/u.test(narrative))
+ if(intent.otherPerson&&/(?:मैं\s*(?:ग्राम\s*प्रधान|पंचायत\s*सचिव)|ग्राम\s*प्रधान\s*के\s*रूप\s*में|ग्राम\s*पंचायत\s*कार्यालय\s*की\s*ओर\s*से)/u.test(narrative))
    throw Error('अन्य व्यक्ति के पत्र में Profile का पद गलत जुड़ गया। मसौदा पुनः तैयार करें।');
- if(intent.personalLeave&&/(?:कार्यालय\\s*ग्राम\\s*पंचायत\\s*की\\s*(?:ओर|तरफ)\\s*से)/u.test(narrative))
+ if(intent.personalLeave&&/(?:कार्यालय\s*ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से)/u.test(narrative))
    throw Error('व्यक्तिगत अवकाश आवेदन में ग्राम पंचायत कार्यालय को प्रेषक बना दिया गया।');
  // Fail closed rather than display a draft with invented numerical facts.
  const known=new Set(digits(sources));
@@ -139,12 +139,12 @@ export function render(payload,b={}) {
    :['dpro','adpro','ddo'].includes(c.roleCode)
      ?(c.district?'जनपद — '+c.district:'') : location;
  const sender=gpOffice?'कार्यालय — ग्राम पंचायत'+(gp?' '+gp:''):
-   c.roleCode==='pradhan'?'प्रेषक — '+c.name+'\\n'+c.role:'कार्यालय — '+c.role;
+   c.roleCode==='pradhan'?'प्रेषक — '+c.name+'\n'+c.role:'कार्यालय — '+c.role;
  let html='';
  const senderName=intent.otherPerson?intent.senderName:c.name;
  if(citizen){if(senderName)html+=p('प्रार्थी — '+senderName);}
- else if(personal){if(c.name)html+=p('प्रार्थी — '+c.name+'\\n'+c.role);}
- else if(!ownPradhanHead)html+=p(sender+(office?'\\n'+office:''));
+ else if(personal){if(c.name)html+=p('प्रार्थी — '+c.name+'\n'+c.role);}
+ else if(!ownPradhanHead)html+=p(sender+(office?'\n'+office:''));
  // A date/letter number is only rendered when the current user instruction
  // supplies it. The profile does not justify inventing an official dispatch.
  const knownNumber=str(payload.letterNumber);
