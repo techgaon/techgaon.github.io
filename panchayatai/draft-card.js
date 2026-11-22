@@ -10,10 +10,13 @@
    if(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','SVG','MATH','IMG','LINK','META'].includes(el.tagName)){el.remove();continue;}
    if(!allowed.has(el.tagName)){el.replaceWith(...el.childNodes);continue;}
    const align=el.style.textAlign,bold=el.style.fontWeight,italics=el.style.fontStyle;
+   const date=el.getAttribute('data-pai-date'),signature=el.getAttribute('data-pai-signature');
    const span=el.getAttribute('colspan'),rowspan=el.getAttribute('rowspan');
    for(const a of Array.from(el.attributes))el.removeAttribute(a.name);
    if(['left','right','center','justify'].includes(align))el.style.textAlign=align;
    if(['bold','600','700','800'].includes(bold))el.style.fontWeight=bold;
+   if(/^\d{2}\/\d{2}\/\d{4}$/.test(date||''))el.setAttribute('data-pai-date',date);
+   if(signature==='1'&&el.tagName==='TABLE')el.setAttribute('data-pai-signature','1');
    if(italics==='italic')el.style.fontStyle='italic';
    if(/^(?:[1-9]|[1-4][0-9])$/.test(span||''))el.setAttribute('colspan',span);
    if(/^(?:[1-9]|[1-4][0-9])$/.test(rowspan||''))el.setAttribute('rowspan',rowspan);
@@ -32,12 +35,18 @@
   clone.querySelectorAll('p').forEach(p=>{p.style.margin='0 0 10pt';p.style.breakInside='avoid';});
   clone.querySelectorAll('table').forEach(t=>{t.style.cssText='width:100%;border-collapse:collapse;table-layout:fixed';});
   clone.querySelectorAll('td,th').forEach(c=>{c.style.border='1px solid #ccc';c.style.padding='5px';});
+  clone.querySelectorAll('table[data-pai-signature]').forEach(t=>{t.style.border='0';t.style.breakInside='avoid';t.querySelectorAll('td').forEach(c=>{c.style.border='0';c.style.padding='6pt 0';c.style.verticalAlign='top';});});
+  return clone;
+ }
+ function outputDate(paper,format){
+  const clone=paper.cloneNode(true);
+  if(format==='pdf')clone.querySelectorAll('[data-pai-date]').forEach(n=>{const d=n.getAttribute('data-pai-date');if(/^\d{2}\/\d{2}\/\d{4}$/.test(d))n.textContent='दिनांक: __/'+d.slice(3);});
   return clone;
  }
  async function pdfBlob(paper,onProgress=()=>{}){
   if(typeof window.html2pdf!=='function')throw Error('PDF सुविधा लोड नहीं हुई। इंटरनेट जाँचकर फिर प्रयास करें।');
   onProgress(10);if(document.fonts?.ready)await document.fonts.ready;
-  const clone=exportPaper(paper),host=document.createElement('div');
+  const clone=exportPaper(outputDate(paper,'pdf')),host=document.createElement('div');
   host.style.cssText='position:absolute;left:0;top:0;z-index:-9999;pointer-events:none;width:170mm;background:#fff';host.appendChild(clone);document.body.appendChild(host);
   try{
    onProgress(25);
@@ -126,5 +135,5 @@
   }
   return {card,paper,dispose(){disposed=true;urls.forEach(url=>URL.revokeObjectURL(url));}};
  }
- window.PAI_DRAFT_CARD={mount,sanitize,pdfBlob,exportPaper};
+ window.PAI_DRAFT_CARD={mount,sanitize,pdfBlob,exportPaper,outputDate};
 })();

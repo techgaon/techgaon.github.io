@@ -56,12 +56,15 @@
      new d.Paragraph({children:[new d.TextRun({text:tag==="ol"?(i+1)+". ":"• ",font:FONT,size:activeHalfPoints}),...runs(li,d)],
        indent:{left:400,hanging:220},spacing:{after:105,line:330}}));
    if(tag==="table"){
+     const signature=n.getAttribute('data-pai-signature')==='1';
+     const border={style:signature?d.BorderStyle.NONE:d.BorderStyle.SINGLE,size:signature?0:4,color:signature?'FFFFFF':'CCCCCC'};
      const rows=Array.from(n.querySelectorAll("tr")).slice(0,150).map(tr=>
-       new d.TableRow({children:Array.from(tr.children).filter(c=>/^(TD|TH)$/.test(c.tagName)).map(cell=>
-         new d.TableCell({children:[new d.Paragraph({children:[new d.TextRun({
-           text:text(cell).trim(),bold:cell.tagName==="TH",font:FONT,size:22})]} )],
-           margins:{top:100,bottom:100,left:110,right:110}}))}));
-     return rows.length?[new d.Table({rows,width:{size:100,type:d.WidthType.PERCENTAGE}})]:[];
+       new d.TableRow({cantSplit:true,children:Array.from(tr.children).filter(c=>/^(TD|TH)$/.test(c.tagName)).map(cell=>
+         new d.TableCell({children:[paragraph(cell,d)],width:{size:50,type:d.WidthType.PERCENTAGE},
+           borders:{top:border,bottom:border,left:border,right:border},
+           margins:{top:80,bottom:80,left:signature?0:110,right:signature?0:110}}))}));
+     return rows.length?[new d.Table({rows,width:{size:100,type:d.WidthType.PERCENTAGE},
+       borders:{top:border,bottom:border,left:border,right:border,insideHorizontal:border,insideVertical:border}})]:[];
    }
    if(tag==="hr")return [new d.Paragraph({border:{bottom:{color:"B0BED3",size:4,space:1}}})];
    if(["div","section","header","article"].includes(tag)){

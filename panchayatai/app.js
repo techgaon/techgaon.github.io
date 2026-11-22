@@ -307,7 +307,7 @@ function chrome() {
   $("#planBadge").classList.toggle("hidden", !isPlus()); $("#planBadge").textContent = "PLUS";
   const adminLink = $("#adminLink"); if (adminLink) adminLink.classList.toggle("hidden", !isAdmin());
   document.querySelectorAll("#drawer [data-go]").forEach(link => {
-    link.classList.toggle("hidden", isAdmin() ? !["admin","settings","goSearch"].includes(link.dataset.go) :
+    link.classList.toggle("hidden", isAdmin() ? !["admin","settings","goSearch","igrs","home","chat","draft","draftEdit","plans","history"].includes(link.dataset.go) :
       link.dataset.go==="admin" || (link.dataset.go==="letterhead" && (!S.user||S.profile?.role!=="pradhan")));
   });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
@@ -344,7 +344,7 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
+  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, igrs, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
   stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
@@ -365,6 +365,13 @@ function settingsScreen(el) {
 }
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
+function igrs(el){
+ if(needLogin("igrs"))return;
+ const workspace=window.PAI_DRAFT_WORKSPACE.mount(el,{kind:"IGRS निस्तारण आख्या",code:"igrs",
+ previous:S.igrsRestore||null,description:"IGRS शिकायत upload करें और वास्तविक जाँच/कार्रवाई के आधार पर निस्तारण आख्या तैयार करें।",profile:S.profile,user:S.user,api,letterhead:window.PAI_LETTERHEAD,toast,
+ save:async entry=>{const list=LS.get("drafts")||[],i=list.findIndex(x=>x.id===entry.id),saved={...entry,at:Date.now()};if(i>=0)list[i]=saved;else list.unshift(saved);if(!LS.set("drafts",list.slice(0,50)))throw Error("Draft सुरक्षित नहीं हुआ।");toast("IGRS मसौदा सुरक्षित ✓");}});
+ S.igrsRestore=null;S.chatCleanup=()=>workspace?.destroy();
+}
 function goSearch(el) { if(window.PAI_GO_SEARCH?.mount) window.PAI_GO_SEARCH.mount(el); else el.textContent="GO Search उपलब्ध नहीं है। ऐप Refresh करें।"; }
 
 /* ---------- होम ---------- */
@@ -383,7 +390,7 @@ function home(el) {
       <button class="tile ai-tile" data-go="chat"><span class="e pai-ai-logo"><img src="ai-help-icon.svg?v=20261121-generic-ai2" alt="" width="53" height="53" decoding="async"></span><b>AI Help</b><small>UP के नियम व पंचायत कार्य</small></button>
       <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
     </div>
-    <div class="grid draft-grid home-go-feature">
+    <div class="grid draft-grid home-go-feature pai-go-compact">
       <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><span class="pai-go-home-copy"><b>GO Search</b><small>शासनादेश का नाम या Keyword खोजें · PDF डाउनलोड</small></span></button>
     </div>
     <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
@@ -395,6 +402,7 @@ function home(el) {
       <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
       <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>More features</small></button>
     </div>
+    <div class="grid draft-grid"><button class="tile igrs-tile" type="button" data-go="igrs"><span class="e">📋</span><b>IGRS</b><small>शिकायत Upload · निस्तारण आख्या · Edit / Word / PDF</small></button></div>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
    ${["ग्राम पंचायत की खुली बैठक आयोजित करने की प्रक्रिया क्या है?","ग्राम पंचायत की कार्ययोजना (GPDP) कैसे तैयार की जाती है?","15वें वित्त आयोग की धनराशि से कार्य कराते समय किन बातों का ध्यान रखना चाहिए?","ग्राम पंचायत में RTI आवेदन मिलने पर सचिव को क्या करना चाहिए?"]
@@ -506,6 +514,7 @@ if (S.auth) S.auth.onAuthStateChanged(async u => {
         const data = doc.data() || {};
         S.blocked = !isAdmin() && data.blocked === true;
         if (S.profile) S.profile.plan = data.plan || null;
+        window.PAI_PAYMENTS?.notify(data.plan,S.user?.uid);
         if (S.blocked) { S.view = "blocked"; render(); }
       });
     } catch (e) { toast("Account could not load. Please try again."); go("login"); }
@@ -1058,7 +1067,7 @@ function draftEdit(el) {
 function history(el) {
   const h = LS.get("drafts") || [];
   el.innerHTML = `<h2>My Drafts</h2>` + (h.length ? h.map((x, i) => `<div class="lib-item"><a data-i="${i}"><b>${esc(x.kind)}</b></a><small>${new Date(x.at).toLocaleString("hi-IN")}</small></div>`).join("") : `<p class="hint">No saved drafts yet.</p>`) + `<div id="out"></div>`;
-  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; S.draftType=([...RTI_DRAFTS,...draftsFor(S.profile?.role||"resident")].find(d=>d.n===x.kind)?.k)||"patra";
+  el.querySelectorAll("[data-i]").forEach(a => a.onclick = () => { const x = h[+a.dataset.i]; if(x.kind==="IGRS निस्तारण आख्या"){S.igrsRestore=x;go("igrs");return;} S.draftType=([...RTI_DRAFTS,...draftsFor(S.profile?.role||"resident")].find(d=>d.n===x.kind)?.k)||"patra";
     S.draftRestore=x;go("draftEdit"); });
 }
 
@@ -1128,18 +1137,38 @@ function payUI(id) {
   function paymentInstructions() {
     const vpa = liveSettings.upi || "";
     const area = $("#paymentInstructions");
-    if (quote.amount > 0 && (!vpa.includes("@") || /REPLACE_ME/i.test(vpa))) { area.innerHTML = '<p>Payment setup is pending. Please contact the administrator.</p>'; return; }
+    if (quote.amount > 0 && (!window.PAI_PAYMENTS.validUpi(vpa) || /REPLACE_ME/i.test(vpa))) { area.innerHTML = '<p>Payment setup is pending. Please contact the administrator.</p>'; return; }
     const ref = "PAI" + crypto.randomUUID().replaceAll("-", "").slice(0, 20);
-    const uri = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(liveSettings.payee || C.companyName)}&am=${quote.amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(plan.label)}&tr=${ref}`;
-    area.innerHTML = `${quote.amount > 0 ? `<a class="btn" href="${uri}">Pay ${money(quote.amount)} with UPI</a><p class="hint">UPI ID: ${esc(vpa)}</p><label for="utr">12-digit UTR / Transaction ID</label><input id="utr" inputmode="numeric" maxlength="12">` : '<p>This coupon covers the full price. Submit for administrator approval.</p>'}<button class="btn" id="submitPayment">Submit for verification</button><p id="paymentStatus" role="status"></p>`;
+    const uri = quote.amount>0?window.PAI_PAYMENTS.uri(vpa,liveSettings.payee||C.companyName,quote.amount,ref,plan.label):"";
+    area.innerHTML = `${quote.amount>0?`<a class="btn" href="${uri}">Pay via UPI · ${money(quote.amount)}</a><p>UPI ID: <b>${esc(vpa)}</b> <button class="btn alt" type="button" id="copyUpi">UPI ID कॉपी करें</button></p><div class="pai-payment-qr" id="payQr"></div><p class="hint">UPI app से भुगतान करें, QR download करके scan करें या UPI ID से payment करें।</p><label for="utr">12-digit UTR / Transaction ID</label><input id="utr" inputmode="numeric" maxlength="12"><label for="paymentProof">Payment screenshot upload करें</label><input id="paymentProof" type="file" accept="image/jpeg,image/png,image/webp"><img id="paymentProofPreview" class="pai-payment-proof" alt="Payment screenshot preview" hidden>`:'<p>Coupon से पूरा भुगतान कवर है। Admin approval के लिए भेजें।</p>'}<button class="btn" id="submitPayment">Admin को जाँच के लिए भेजें</button><p id="paymentStatus" role="status"></p>`;
+    let proof="",reading=false;
+    if(quote.amount>0){
+      window.PAI_PAYMENTS.qr($("#payQr"),uri).catch(e=>{$("#paymentStatus").textContent=e.message;});
+      $("#copyUpi").onclick=()=>navigator.clipboard.writeText(vpa).then(()=>toast("UPI ID कॉपी हो गई"));
+      $("#paymentProof").onchange=async e=>{reading=true;proof="";try{proof=await window.PAI_PAYMENTS.proof(e.target.files?.[0]);$("#paymentProofPreview").src=proof;$("#paymentProofPreview").hidden=false;$("#paymentStatus").textContent="Screenshot तैयार है। UTR जाँचकर भेजें।";}catch(error){$("#paymentProofPreview").hidden=true;$("#paymentStatus").textContent=error.message;}finally{reading=false;}};
+    }
     $("#submitPayment").onclick = async () => {
       const utr = quote.amount === 0 ? "FREE" : $("#utr").value.trim();
       if (quote.amount > 0 && !/^\d{12}$/.test(utr)) return toast("Enter a valid 12-digit UTR");
+      if(reading)return toast("Screenshot तैयार होने दें।");
+      if(quote.amount>0&&!proof)return toast("Payment screenshot upload करें।");
       const button = $("#submitPayment"); button.disabled = true;
       try {
-        await S.db.collection("paiPayments").doc(ref).set({ uid: S.user.uid, email: S.user.email, planId: id, amount: quote.amount, coupon: quote.coupon, utr, status: "pending", at: firebase.firestore.FieldValue.serverTimestamp() });
-        $("#paymentStatus").textContent = "Submitted. Your plan activates after payment verification.";
-      } catch (e) { $("#paymentStatus").textContent = "Could not submit. Please try again."; button.disabled = false; }
+        const paymentId=quote.amount>0?"upi-"+utr:ref;
+        await S.db.runTransaction(async tx=>{
+          const userRef=S.db.collection("users").doc(S.user.uid),user=(await tx.get(userRef)).data()||{};
+          if(isAdmin()&&(await tx.get(S.db.collection("paiPayments").doc(paymentId))).exists)throw Error("इस UTR का अनुरोध पहले से मौजूद है।");
+          const proofs={...(user.paymentProofs||{})};
+          if(proof){
+            if(Object.keys(proofs).length>=3&&!proofs[paymentId])throw Error("पहले भेजे 3 अनुरोधों की जाँच पूरी होने दें।");
+            proofs[paymentId]={image:proof,createdAt:Date.now(),planId:id};
+            if(new TextEncoder().encode(JSON.stringify({...user,paymentProofs:proofs})).length>850000)throw Error("कृपया छोटा screenshot चुनें या पुराने अनुरोध की जाँच होने दें।");
+            tx.set(userRef,{paymentProofs:proofs},{merge:true});
+          }
+          tx.set(S.db.collection("paiPayments").doc(paymentId),{uid:S.user.uid,email:S.user.email,planId:id,amount:quote.amount,coupon:quote.coupon,utr,status:"pending",at:firebase.firestore.FieldValue.serverTimestamp()});
+        });
+        $("#paymentStatus").textContent = "✓ Screenshot और payment विवरण Admin को भेज दिए गए हैं। Approval के बाद Plus सक्रिय होगा और notification मिलेगा।";
+      } catch (e) { $("#paymentStatus").textContent = e.code==="permission-denied"?"इस UTR पर अनुरोध पहले भेजा गया हो सकता है। UTR जाँचें या Admin से संपर्क करें।":(e.message||"अनुरोध नहीं भेजा गया। फिर कोशिश करें।"); button.disabled = false; }
     };
   }
   $("#applyCoupon").onclick = async () => {
@@ -1199,8 +1228,15 @@ async function adminPlans(panel) {
     { id: "yearly", label: "Plus Yearly", price: 499, days: 365, active: false, features: "All Plus features for a year" },
     { id: "two-year", label: "Plus 2 Years", price: 999, days: 730, active: false, features: "All Plus features for two years" }
   ];
-  panel.innerHTML = '<p class="hint">Edit prices, duration and features. Enable a plan to display it to users.</p><div id="planEditors"></div><button class="btn alt" id="addPlan">Add plan</button><h3>Payment settings</h3><label for="adminUpi">UPI ID</label><input id="adminUpi"><label for="adminPayee">Payee name</label><input id="adminPayee"><button class="btn" id="savePlans">Save and publish plans</button><p id="planStatus" role="status"></p>';
+  panel.innerHTML = '<p class="hint">Edit prices, duration and features. Enable a plan to display it to users.</p><div id="planEditors"></div><button class="btn alt" id="addPlan">Add plan</button><h3>Payment settings</h3><label for="adminUpi">UPI ID</label><input id="adminUpi"><label for="adminPayee">Payee name</label><input id="adminPayee"><div id="adminUpiQr" class="pai-payment-qr" hidden></div><p id="adminQrStatus" role="status"></p><button class="btn" id="savePlans">Save and publish plans</button><p id="planStatus" role="status"></p>';
   $("#adminUpi").value = config.upi || ''; $("#adminPayee").value = config.payee || C.companyName;
+  let qrTimer;
+  const updateQr=()=>{clearTimeout(qrTimer);qrTimer=setTimeout(async()=>{
+    const vpa=$("#adminUpi").value.trim(),box=$("#adminUpiQr");box.hidden=!window.PAI_PAYMENTS.validUpi(vpa);
+    if(box.hidden){$("#adminQrStatus").textContent=vpa?"मान्य UPI ID भरें।":"";return;}
+    try{await window.PAI_PAYMENTS.qr(box,window.PAI_PAYMENTS.uri(vpa,$("#adminPayee").value.trim()||C.companyName));$("#adminQrStatus").textContent="UPI QR तैयार है। Save करके प्रकाशित करें।";}catch(e){$("#adminQrStatus").textContent=e.message;}
+  },250);};
+  $("#adminUpi").addEventListener("input",updateQr);$("#adminPayee").addEventListener("input",updateQr);updateQr();
   function add(p) {
     const form = document.createElement('div'); form.className = 'card plan-editor'; form.dataset.id = p.id;
     form.innerHTML = `<label>Plan name<input data-field="label" value="${esc(p.label)}" maxlength="80"></label><div class="grid"><label>Price (₹)<input data-field="price" type="number" min="0" step="0.01" value="${p.price}"></label><label>Duration (days)<input data-field="days" type="number" min="1" max="3650" value="${p.days}"></label></div><label>Features<textarea data-field="features" maxlength="2000">${esc(p.features || '')}</textarea></label><label class="chk"><input data-field="active" type="checkbox" ${p.active ? 'checked' : ''}> Published</label><button class="btn alt" data-remove>Remove plan</button>`;
@@ -1215,7 +1251,7 @@ async function adminPlans(panel) {
         const p = { id: form.dataset.id, label: field('label').value.trim(), price: Number(field('price').value), days: Number(field('days').value), features: field('features').value.trim(), active: field('active').checked };
         if (!p.label || !Number.isFinite(p.price) || p.price < 0 || !Number.isInteger(p.days) || p.days < 1 || p.days > 3650) throw new Error("Check plan name, price and duration"); return p;
       });
-      const upi = $("#adminUpi").value.trim(); if (upi && !/^[\w.\-]+@[\w.\-]+$/.test(upi)) throw new Error("Check the UPI ID");
+      const upi = $("#adminUpi").value.trim(); if (upi && !window.PAI_PAYMENTS.validUpi(upi)) throw new Error("Check the UPI ID");
       await settingsRef().set({ plans, upi, payee: $("#adminPayee").value.trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       $("#planStatus").textContent = "Plans published successfully";
     } catch (e) { $("#planStatus").textContent = e.message; } finally { button.disabled = false; }
@@ -1308,7 +1344,9 @@ async function adminUsers(panel) {
 }
 async function adminPayments(panel) {
   const payments = await S.db.collection('paiPayments').where('status','==','pending').limit(100).get();
-  panel.innerHTML = '<p class="hint">Verify the amount and UTR in your bank or UPI app before approving a payment.</p>' + (payments.docs.map(d => { const p = d.data(); return `<div class="card"><b>${esc(p.email)}</b><p>${esc(p.planId)} · ${money(p.amount)} · UTR ${esc(p.utr)}</p><p>Coupon: ${esc(p.coupon || 'None')}</p><button class="btn" data-approve="${d.id}">Verify and approve</button> <button class="btn alt" data-reject="${d.id}">Reject</button><p class="payment-message" role="status"></p></div>`; }).join('') || '<div class="card">No pending payments</div>');
+  const proofById=new Map(await Promise.all(payments.docs.map(async d=>{const p=d.data();try{const user=(await S.db.collection("users").doc(p.uid).get()).data();return [d.id,p.proof||user?.paymentProofs?.[d.id]?.image||""];}catch{return [d.id,""];}})));
+  panel.innerHTML = '<p class="hint">Verify the amount and UTR in your bank or UPI app before approving a payment.</p>' + (payments.docs.map(d => { const p = {...d.data(),proof:proofById.get(d.id)||''}; return `<div class="card"><b>${esc(p.email)}</b><p>${esc(p.planId)} · ${money(p.amount)} · UTR ${esc(p.utr)}</p><p>Coupon: ${esc(p.coupon || 'None')}</p>${window.PAI_PAYMENTS.safeProof(p.proof)?`<img class="pai-payment-proof" alt="Payment screenshot" src="${p.proof}"><button type="button" class="btn alt" data-proof-view="${d.id}">Screenshot बड़ा देखें / डाउनलोड करें</button>`:'<p class="hint">इस पुराने अनुरोध में screenshot नहीं है। बैंक में UTR जाँचें।</p>'}<button class="btn" data-approve="${d.id}">Verify and approve</button> <button class="btn alt" data-reject="${d.id}">Reject</button><p class="payment-message" role="status"></p></div>`; }).join('') || '<div class="card">No pending payments</div>');
+  panel.querySelectorAll('[data-proof-view]').forEach(b=>b.onclick=()=>window.PAI_PAYMENTS.openProof(proofById.get(b.dataset.proofView)));
   panel.querySelectorAll('[data-approve],[data-reject]').forEach(b => b.onclick = async () => {
     const id = b.dataset.approve || b.dataset.reject, approve = !!b.dataset.approve; b.disabled = true;
     try {
@@ -1326,16 +1364,18 @@ async function adminPayments(panel) {
             amount = Math.max(0, Math.round((amount - (coupon.type === 'percent' ? amount * coupon.value / 100 : coupon.value)) * 100) / 100);
           }
           if (Math.abs(amount - payment.amount) > 0.001) throw new Error('Price changed. Verify the amount before proceeding');
-          tx.set(userRef, { plan: { name: plan.label, until: Math.max(Date.now(), user.plan?.until || 0) + plan.days * 864e5 } }, { merge: true });
+          tx.set(userRef, { plan: { name: plan.label, activationId:id, activatedAt:Date.now(), until: Math.max(Date.now(), user.plan?.until || 0) + plan.days * 864e5 } }, { merge: true });
         }
-        tx.update(ref, { status: approve ? 'approved' : 'rejected', by: S.user.email, doneAt: firebase.firestore.FieldValue.serverTimestamp() });
+        const receipt=payment.proof||user.paymentProofs?.[id]?.image||"";
+        if(user.paymentProofs?.[id])tx.update(userRef,{["paymentProofs."+id]:firebase.firestore.FieldValue.delete()});
+        tx.update(ref, {proof:window.PAI_PAYMENTS.safeProof(receipt)?receipt:"", status: approve ? 'approved' : 'rejected', by: S.user.email, doneAt: firebase.firestore.FieldValue.serverTimestamp() });
       });
       await adminPayments(panel);
     } catch(e) { b.parentElement.querySelector('.payment-message').textContent = e.message; b.disabled = false; }
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'settings'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'settings', 'goSearch', 'igrs'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {

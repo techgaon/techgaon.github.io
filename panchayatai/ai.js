@@ -1,4 +1,4 @@
-import { request as draftRequest, render as renderDraft } from './drafting-core.mjs?v=20261122-role-sender-intent3';
+import { request as draftRequest, render as renderDraft } from './drafting-core.mjs?v=20261122-office1';
 /* पंचायत AI — Gemini (Firebase AI Logic, Spark/निःशुल्क प्लान पर चलता है; API key Firebase में सुरक्षित) */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-ai.js";
@@ -156,6 +156,7 @@ async function chat(b) {
     referenceHits:referenceHits.map(({passages,...hit})=>hit),provider:generated.provider,fallback:generated.fallback};
 }
 async function draft(b) {
+  b={...b,promptAt:b.promptAt||new Date().toISOString()};
   const prepared=draftRequest(b);
   const source=[String(b.points||""),...(b.att||[]).filter(x=>x.text).map(x=>String(x.text))].join("\n");
   let previousError=null;
@@ -182,7 +183,7 @@ async function draft(b) {
     payload.evidence=payload.evidence.filter(x=>x&&typeof x.quote==="string"&&
       x.quote.length>0&&source.includes(x.quote));
     if(!Array.isArray(payload.copies))payload.copies=[];
-    payload.copies=payload.copies.filter(x=>typeof x==="string"&&String(b.points||"").includes(x));
+    payload.copies=payload.copies.filter(x=>typeof x==="string"&&(String(b.points||"").includes(x)||["पंचायत सचिव","सहायक विकास अधिकारी (पंचायत)","खण्ड विकास अधिकारी","जिला पंचायत राज अधिकारी"].some(t=>x===t||x===t+" — सूचनार्थ")));
     if(!Array.isArray(payload.missing))payload.missing=[];
     if(originalEvidence!==payload.evidence.length)
       payload.missing.push("स्रोत से शब्दशः सत्यापित न होने वाले AI संदर्भ हटाए गए हैं; तथ्य जाँचें।");
