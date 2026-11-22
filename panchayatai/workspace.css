@@ -116,3 +116,69 @@ html,body{overflow-x:clip}
 }
 body.pai-motion-off .pai-ai-generate .pai-ai-sparkle,
 body.pai-motion-off .pai-ai-generate .pai-ai-spinner{animation:none!important}
+
+/* Refined bottom navigation: modern line icons, compact selected state, soft motion. */
+.pai-bottom-nav{
+  gap:4px;padding:6px 11px max(6px,env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.97);
+  border-top:1px solid #e4ebf2;
+  box-shadow:0 -4px 20px rgba(31,59,89,.085);
+}
+.pai-bottom-nav a{
+  position:relative;min-width:0;min-height:48px;gap:2px;
+  border:1px solid transparent;border-radius:13px;
+  color:#718397;background:transparent;
+  transition:color .2s ease,transform .18s ease,background .2s ease;
+}
+.pai-bottom-nav a.on{
+  color:#215b84;background:transparent;border-color:transparent;
+}
+.pai-bottom-nav .nav-symbol{
+  width:42px;height:33px;border-radius:12px;
+  border:1px solid transparent;background:transparent;
+  color:inherit;transform:none!important;
+  transition:background .25s ease,border-color .25s ease,box-shadow .25s ease;
+  will-change:auto;
+}
+body:not(.pai-motion-off) .pai-bottom-nav a .nav-symbol{animation:none}
+.pai-bottom-nav .nav-symbol svg{
+  width:23px;height:23px;display:block;flex:none;
+  transition:transform .22s ease;transform-origin:center;
+}
+.pai-bottom-nav .nav-label{
+  font:700 11px/1.25 "Noto Sans Devanagari","Manrope",sans-serif;
+  letter-spacing:.05px;white-space:nowrap;
+}
+.pai-bottom-nav a.on .nav-symbol{
+  background:linear-gradient(145deg,#eaf4ff,#eaf9f7);
+  border-color:#d0e5f0;
+  color:#266b9b;
+  box-shadow:0 2px 7px #224e7710;
+}
+@keyframes pai-nav-selected-breathe{
+  0%,78%,100%{transform:scale(1)}
+  89%{transform:scale(1.065)}
+}
+body:not(.pai-motion-off) .pai-bottom-nav a.on .nav-symbol svg{
+  animation:pai-nav-selected-breathe 5.6s ease-in-out infinite;
+}
+.pai-bottom-nav a:active{transform:scale(.965)}
+.pai-bottom-nav a:active .nav-symbol svg{transform:scale(.92)}
+.pai-bottom-nav a:focus-visible{outline:2px solid #69a4c8;outline-offset:-2px}
+body[data-theme="dark"] .pai-bottom-nav{background:rgba(27,43,65,.97);border-color:#354a64}
+body[data-theme="dark"] .pai-bottom-nav a{color:#a4b6cc}
+body[data-theme="dark"] .pai-bottom-nav a.on{background:transparent;color:#a8dfff;border-color:transparent}
+body[data-theme="dark"] .pai-bottom-nav a.on .nav-symbol{
+  background:linear-gradient(145deg,#2b4f70,#2a5a61);
+  color:#d9f9ff;border-color:#41728a;
+}
+@media(prefers-reduced-motion:reduce){
+  .pai-bottom-nav a,.pai-bottom-nav .nav-symbol,.pai-bottom-nav .nav-symbol svg{
+    transition:none!important;animation:none!important;
+  }
+}
+body.pai-motion-off .pai-bottom-nav a,
+body.pai-motion-off .pai-bottom-nav .nav-symbol,
+body.pai-motion-off .pai-bottom-nav .nav-symbol svg{
+  transition:none!important;animation:none!important;
+}
