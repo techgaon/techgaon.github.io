@@ -2,7 +2,7 @@ name: Panchayat AI Draft and Letterhead Tests
 on:
   workflow_dispatch:
   push:
-    branches: [main, letter-intent-a4-alignment-20261122]
+    branches: [main]
     paths:
       - 'panchayatai/app.js'
       - 'panchayatai/ai.js'
