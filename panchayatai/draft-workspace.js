@@ -4,9 +4,9 @@
  const $=(s,p=document)=>p.querySelector(s);
  const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const examples={
-   patra:["ADO पंचायत को ग्राम पंचायत की सफाई व्यवस्था के संबंध में पत्र बनाओ","BDO को आवश्यक अभिलेख उपलब्ध कराने हेतु पत्र बनाओ"],
+   patra:["ADO पंचायत को ग्राम पंचायत की सफाई व्यवस्था के संबंध में पत्र बनाओ","BDO को आवश्यक अभिलेख उपलब्ध कराने हेतु पत्र बनाओ","ADO panchayat ko safai vyavastha ke sambandh me patra banao","BDO ko zaroori abhilekh uplabdh karane hetu patra banao"],
    notice:["ग्राम पंचायत में सार्वजनिक रास्ते पर निर्माण सामग्री रखने के संबंध में नोटिस बनाओ"],
-   spasht:["प्राप्त नोटिस में लगाए गए आरोपों का क्रमवार स्पष्टीकरण तैयार करो"],
+   spasht:["प्राप्त नोटिस में लगाए गए आरोपों का क्रमवार स्पष्टीकरण तैयार करो","Notice me lagaye gaye aaropon ka point wise jawab banao","BDO ke notice ka spashtikaran taiyar karo"],
    aakhya:["DPRO को जन्म पंजीकरण से जुड़ी जाँच आख्या बनाओ"],
    aadesh:["ग्राम पंचायत कार्यालय से संबंधित कार्यालय आदेश तैयार करो"]
  };
@@ -14,6 +14,8 @@
    if(!user||!profile)throw Error("Profile Login आवश्यक है");
    const title=String(kind||"पत्र"),type=String(code||"patra"),name=profile.nameHindi||profile.name||"";
    const gps=Array.isArray(profile.gps)?profile.gps.filter(Boolean):[];
+   // Only the response to a received notice needs supporting file upload.
+   const allowNoticeReplyUpload=type==="spasht";
    el.innerHTML='<section class="pai-writing-workspace" aria-label="सरकारी पत्र Draft Workspace">'+
      '<header class="pai-writing-heading"><span class="pai-writing-symbol" aria-hidden="true">✍</span>'+
      '<div><small>OFFICIAL DRAFT STUDIO</small><h2>'+esc(title)+' बनाएँ</h2><p>'+esc(description||"पूरे सरकारी प्रारूप में मसौदा तैयार करें")+'</p></div></header>'+
@@ -26,25 +28,22 @@
        gps.map(g=>'<option value="'+esc(g)+'">'+esc(g)+'</option>').join("")+'</select>':"")+
      '<div class="pai-writing-suggestions">'+(examples[type]||["विषय के संबंध में संक्षिप्त सरकारी मसौदा बनाओ"]).map(v=>
        '<button type="button" class="pai-writing-example">'+esc(v)+'</button>').join("")+'</div>'+
-     '<div class="pai-writing-attach"><label for="paiWritingFile">दस्तावेज़ / नोटिस जोड़ें (वैकल्पिक)</label>'+
+     (allowNoticeReplyUpload?
+       '<div class="pai-writing-attach"><label for="paiWritingFile">Upload File</label>'+
        '<input id="paiWritingFile" type="file" accept=".docx,.pdf,image/jpeg,image/png" multiple>'+
-       '<span id="paiFilesInfo" class="hint">Word, PDF या फोटो से संदर्भ दे सकते हैं।</span></div>'+
-     '<div class="pai-writing-actions"><button id="paiWrite" class="btn" type="button">✨ पूरा मसौदा बनाएँ</button>'+
-       '<button class="btn alt" type="button" data-go="draft">प्रकार बदलें</button>'+
-       '</div>'+
-
-     '<p id="paiWriteStatus" class="hint" role="status" aria-live="polite"></p>'+
-     '<p class="hint">Gemini विफल होने पर लिखित प्रश्न और आवश्यक Profile संदर्भ Groq / Cloudflare AI को भेजा जा सकता है। Free Backup में PDF/फोटो का AI विश्लेषण नहीं होता।</p></section>'+
+       '<span id="paiFilesInfo" class="hint">Upload Word, PDF or Photo for reference (optional).</span></div>':"")+
+     '<div class="pai-writing-actions"><button id="paiWrite" class="btn" type="button">Genrate letter Via AI</button></div>'+
+     '<p id="paiWriteStatus" class="hint" role="status" aria-live="polite"></p></section>'+
      '<section id="paiWritingOutput" aria-live="polite"></section></section>';
    const matter=$("#paiMatter",el),submit=$("#paiWrite",el),status=$("#paiWriteStatus",el);
    const target=$("#paiWritingOutput",el),input=$("#paiWritingFile",el);
    if(previous?.question)matter.value=previous.question;
    el.querySelectorAll(".pai-writing-example").forEach(btn=>btn.onclick=()=>{matter.value=btn.textContent;matter.focus()});
    const chosenFiles=[];
-   input.onchange=()=>{
+   if(input) input.onchange=()=>{
      chosenFiles.splice(0,...chosenFiles.length,...Array.from(input.files||[]).slice(0,3));
      $("#paiFilesInfo",el).textContent=chosenFiles.length?
-       chosenFiles.map(x=>x.name).join(" · "):"फ़ाइल नहीं चुनी";
+       chosenFiles.map(x=>x.name).join(" · "):"No file chosen";
    };
    async function asAttachment(file){
      if(file.size>5*1024*1024)throw Error("5 MB से छोटी Word/PDF/फोटो फ़ाइल चुनें");
@@ -102,7 +101,7 @@
          await create(true);
        };
      }catch(e){status.textContent="⚠️ "+(e.message||"पत्र नहीं बना। पुनः प्रयास करें।");}
-     finally{submit.disabled=false;submit.textContent="✨ पूरा मसौदा बनाएँ";}
+     finally{submit.disabled=false;submit.textContent="Genrate letter Via AI";}
    };
    submit.onclick=()=>create(false);
    if(previous?.html){
