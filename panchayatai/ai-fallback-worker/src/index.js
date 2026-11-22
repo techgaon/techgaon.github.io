@@ -78,7 +78,7 @@ async function cloudflareAI(body,env){
   if(env.ENABLE_CF_AI!=="true"||!env.AI)throw Error("CLOUDFLARE_DISABLED");
   const model=env.CF_MODEL||"@cf/meta/llama-3.1-8b-instruct-fp8-fast";
   const messages=[{role:"system",content:body.system},...body.messages];
-  const j=await env.AI.run(model,{messages,max_tokens:1800,temperature:0.2});
+  const j=await env.AI.run(model,{messages,max_tokens:3072,temperature:0.2,response_format:{type:"json_object"}});
   const text=j?.response||j?.result?.response||j?.choices?.[0]?.message?.content;
   if(typeof text!=="string"||!text.trim())throw Error("CLOUDFLARE_EMPTY");
   return {text,provider:"Cloudflare Workers AI",model};
@@ -112,9 +112,15 @@ export default {
     catch{return fail("BAD_REQUEST",400)}
     const order=[["Groq",groq],["Cloudflare Workers AI",cloudflareAI]];
     for(const [provider,fn] of order){
-      try{return reply(await fn(input,env))}
+      try{
+        const result=await fn(input,env);
+        const parsed=JSON.parse(result.text.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""));
+        if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw Error("INVALID_PROVIDER_JSON");
+        return reply({...result,text:JSON.stringify(parsed)});
+      }
       catch(e){/* Never log letters, identifiers, tokens, or the provider response. */ }
     }
     return fail("BACKUP_EXHAUSTED",503);
   }
 };
+

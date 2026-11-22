@@ -78,3 +78,18 @@ test("do not accept arbitrary model or provider override to access keys",async()
   assert.equal((await r.json()).model,"openai/gpt-oss-20b");
 });
 test.after(()=>{globalThis.fetch=originalFetch});
+test("invalid Groq JSON switches to Cloudflare instead of failing the draft",async()=>{
+  const saved=globalThis.fetch;
+  globalThis.fetch=async(url,...args)=>String(url).includes("api.groq.com")?
+    new Response(JSON.stringify({choices:[{message:{content:'{"subject":'}}]})):saved(url,...args);
+  try{
+    const r=await worker.fetch(req(),{...env,ENABLE_CF_AI:"true"});
+    assert.equal(r.status,200);assert.equal((await r.json()).provider,"Cloudflare Workers AI");
+  }finally{globalThis.fetch=saved;}
+});
+test("invalid JSON from all backups is rejected",async()=>{
+  groqStatus=429;
+  const r=await worker.fetch(req(),{...env,ENABLE_CF_AI:"true",AI:{run:async()=>({response:"not a draft"})}});
+  assert.equal(r.status,503);assert.equal((await r.json()).error.code,"BACKUP_EXHAUSTED");
+});
+

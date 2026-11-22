@@ -3,10 +3,7 @@ main = "src/index.js"
 compatibility_date = "2026-11-21"
 workers_dev = true
 
-# Only this API route, not the GitHub Pages website, is handled by the Worker.
-routes = [
-  { pattern = "techgaon.in/panchayatai/api/*", zone_name = "techgaon.in" }
-]
+# Use the dedicated workers.dev host; do not change the site's DNS or other apps.
 
 [ai]
 binding = "AI"
@@ -16,8 +13,9 @@ FIREBASE_PROJECT_ID = "panchayat-ai-f00d5"
 ALLOWED_ORIGIN = "https://techgaon.in"
 GROQ_MODEL = "openai/gpt-oss-20b"
 CF_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8-fast"
-# Remain off until confirming the Workers AI account will not incur paid overages.
-ENABLE_CF_AI = "false"
+# Account fc14ce3ea45e9966cc8933371cecc0ad verified Free on 2026-11-22.
+# Free-plan requests stop at the daily allocation; do not upgrade automatically.
+ENABLE_CF_AI = "true"
 
 [[ratelimits]]
 name = "LIMITER"
@@ -25,3 +23,4 @@ namespace_id = "814621"
   [ratelimits.simple]
   limit = 20
   period = 60
+
