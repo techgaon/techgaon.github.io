@@ -1,0 +1,32 @@
+/* Panchayat AI: independent GO Search UI */
+.home-go-feature .go-search-tile{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:14px;text-align:left;padding:17px 19px}
+.home-go-feature .go-search-tile .e{flex:none;font-size:34px;line-height:1}
+.home-go-feature .go-search-tile .pai-go-home-copy{display:flex;flex-direction:column;gap:2px}
+.home-go-feature .go-search-tile small{opacity:.83;font-size:12px}
+.pai-go-intro,.pai-go-suggest{margin-bottom:14px}
+.pai-go-heading{display:flex;align-items:flex-start;gap:14px}
+.pai-go-heading>span{font-size:32px;line-height:1.2}
+.pai-go-heading h2{margin:0 0 5px;font-size:22px}
+.pai-go-heading p{margin:0 0 13px;line-height:1.6;font-size:14px}
+.pai-go-form label{display:block;font-size:14px;font-weight:700;margin:6px 0}
+.pai-go-input{display:flex;align-items:stretch;gap:8px}
+.pai-go-input input{flex:1;min-width:0;padding:12px;border-radius:11px;border:1px solid var(--line,#cbd5e1);background:var(--card,#fff);color:inherit;font:inherit;font-size:15px}
+.pai-go-input button{flex:none}
+.pai-go-suggest h3{font-size:17px;margin:0 0 4px}
+.pai-go-suggest p{margin:0 0 12px;font-size:13px}
+.pai-go-chips{display:flex;flex-wrap:wrap;gap:8px}
+.pai-go-chips button{border:1px solid #abc6dc;background:rgba(72,138,189,.07);border-radius:999px;padding:8px 11px;color:inherit;font:inherit;font-size:12px;line-height:1.35;cursor:pointer}
+.pai-go-chips button:hover,.pai-go-chips button:focus-visible{background:rgba(72,138,189,.18)}
+.pai-go-results{display:grid;gap:10px}
+.pai-go-count{font-size:13px;font-weight:700;opacity:.85}
+.pai-go-result{display:flex;align-items:flex-start;gap:12px;background:var(--card,#fff);border:1px solid var(--line,#d7e2e8);border-radius:14px;padding:14px;overflow-wrap:anywhere}
+.pai-go-file-icon{font-size:24px}
+.pai-go-result-info{min-width:0;flex:1}
+.pai-go-result strong{display:block;font-size:15px;line-height:1.55}
+.pai-go-result small{display:block;opacity:.8;font-size:12px;margin-top:3px}
+.pai-go-actions{display:flex;gap:8px;margin-top:10px}
+.pai-go-actions a{display:inline-flex;padding:8px 11px;border-radius:9px;background:#1d5688;color:white;text-decoration:none;font-size:12px;font-weight:700}
+.pai-go-actions a:hover{background:#16416b}
+.pai-go-chat-results{display:grid;gap:8px;margin-top:12px}
+.pai-go-chat-results .pai-go-result{padding:10px}
+@media(max-width:380px){.pai-go-input{flex-direction:column}.pai-go-input button{width:100%}}
