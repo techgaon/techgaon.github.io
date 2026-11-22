@@ -64,7 +64,8 @@
         Array.isArray(item.exactPhrases)?item.exactPhrases.filter(x=>typeof x==="string").slice(0,40):[]
     };
   };
-  let records=[],loaded=false,inflight=null,loadError=false;
+  let records=[],loaded=false,inflight=null,loadError=false,corpus=null;
+  const excerptHits=new Map();
   async function load(){
     if(loaded)return records;
     if(inflight)return inflight;
@@ -82,8 +83,28 @@
     }).finally(()=>{inflight=null;});
     return inflight;
   }
+  const baseLoad=load;
+  load=async function(){
+    const local=await baseLoad();
+    if(!window.PAI_REFERENCES)return local;
+    if(!corpus){
+      const data=await window.PAI_REFERENCES.load();
+      if(data){
+        corpus=data;
+        for(const doc of data.index.docs){
+          if(!records.some(d=>d.id===doc.id))records.push({...doc,url:"",keywords:[],aliases:[]});
+        }
+      }
+    }
+    return records;
+  };
   function search(query,limit=20){
     const q=norm(query),words=terms(query);if(!q||!words.length)return [];
+    if(corpus){
+      const hits=window.PAI_REFERENCE_SEARCH.search(corpus.index,query).slice(0,limit);
+      for(const hit of hits)excerptHits.set(hit.id,hit);
+      return hits;
+    }
     const scored=[];
     for(const doc of records){
       const title=norm(doc.title),number=norm(doc.officialNumber),aliases=norm(doc.aliases.join(" ")),
@@ -113,12 +134,13 @@
     const sub=[doc.officialNumber,doc.department,doc.date].filter(Boolean).map(escapeHTML).join(" · ");
     return '<article class="pai-go-result"><div class="pai-go-file-icon" aria-hidden="true">📄</div><div class="pai-go-result-info">'+
       '<strong>'+escapeHTML(doc.title)+'</strong>'+(sub?'<small>'+sub+'</small>':"")+
-      '<div class="pai-go-actions"><a href="'+escapeHTML(doc.url)+'" target="_blank" rel="noopener noreferrer">PDF देखें / डाउनलोड करें ↗</a></div>'+
+      '<div class="pai-go-actions">'+(corpus&&excerptHits.has(doc.id)?'<button type="button" class="btn alt" data-go-excerpt="'+escapeHTML(doc.id)+'">संबंधित पृष्ठ PDF डाउनलोड करें</button>':'<a href="'+escapeHTML(doc.url)+'" target="_blank" rel="noopener noreferrer">PDF देखें / डाउनलोड करें ↗</a>')+'</div>'+
       '</div></article>';
   }
-  function chatResultsHtml(ids){
+  function chatResultsHtml(ids,query){
     if(!Array.isArray(ids)||!ids.length)return "";
-    const list=ids.slice(0,10).map(id=>records.find(d=>d.id===id)).filter(Boolean);
+    if(corpus&&query)for(const hit of window.PAI_REFERENCE_SEARCH.search(corpus.index,query))if(!excerptHits.has(hit.id))excerptHits.set(hit.id,hit);
+    const list=ids.slice(0,10).map(id=>excerptHits.get(id)||records.find(d=>d.id===id)).filter(Boolean);
     return list.length?'<div class="pai-go-chat-results">'+list.map(d=>card(d,true)).join("")+'</div>':"";
   }
   function mount(el){
@@ -139,11 +161,22 @@
           '<div class="card">ऊपर नाम, विषय या GO नंबर लिखकर खोजें।</div>');
     };
     el.querySelector(".pai-go-form").onsubmit=e=>{e.preventDefault();draw();};
-    input.addEventListener("input",draw);
+    let searchTimer;
+    input.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(draw,180);});
     el.querySelectorAll("[data-go-example]").forEach(b=>b.onclick=()=>{
       input.value=b.dataset.goExample;draw();input.focus();
     });
-    load().then(draw);
+    load().then(draw).catch(()=>{result.textContent="दस्तावेज़ संग्रह अभी उपलब्ध नहीं है। कृपया दोबारा प्रयास करें।";});
   }
-  window.PAI_GO_SEARCH={load,search,isGoLookup,mount,chatResultsHtml};
+  document.addEventListener("click",async e=>{
+    const button=e.target.closest("[data-go-excerpt]");if(!button)return;
+    const hit=excerptHits.get(button.dataset.goExcerpt);if(!hit)return;
+    button.disabled=true;const label=button.textContent;button.textContent="PDF तैयार हो रही है…";
+    try{await window.PAI_REFERENCES.download(hit);}
+    catch(error){button.textContent="डाउनलोड नहीं हुआ, फिर प्रयास करें";return;}
+    finally{button.disabled=false;}
+    button.textContent=label;
+  });
+  function registerHits(hits){for(const hit of hits||[])if(corpus?.index.docs.some(d=>d.id===hit.id))excerptHits.set(hit.id,hit);}
+  window.PAI_GO_SEARCH={load,search,isGoLookup,mount,chatResultsHtml,registerHits};
 })();
