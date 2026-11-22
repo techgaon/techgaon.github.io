@@ -29,11 +29,14 @@
  const mode=(profile,points,kind)=>{
    if(!isPradhan(profile))return "plain";
    const q=String(points||"");
+   // Third-party citizen applications and personal leave never use Pradhan stationery.
+   const thirdPerson=/(?:ग्रामवासी|ग्रामीण|निवासी|ग्राम\s*निवासी|प्रार्थी)\s+[\p{L}\p{M}\s.]{1,70}?\s+(?:की|के)\s+(?:ओर|तरफ)\s+से|(?:gramvasi|gramwasi|gram\s*nivasi|nivasi|resident)\s+[a-z\s]{1,70}?\s+(?:ki|ke)\s+(?:or|aur|taraf)\s+se/iu.test(q);
+   const personalLeave=/(?:छुट्टी|अवकाश|chhutti|chutti|leave|avakash)/iu.test(q)&&/(?:पत्र|आवेदन|प्रार्थना|patra|application|ke\s+liye|के\s+लिए)/iu.test(q);
+   if(thirdPerson||personalLeave)return "plain";
    const gpOffice=/(?:कार्यालय\s*ग्राम\s*पंचायत|ग्राम\s*पंचायत\s*कार्यालय|ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से|ग्राम\s*पंचायत\s*के\s*नाम\s*से|gp\s*(?:office|ki\s*taraf|ki\s*or)|gram\s*panchayat\s*(?:office|ki\s*taraf|ki\s*or)|साद[ाे]\s*A4|plain\s*A4|सादे\s*कागज)/iu.test(q);
-   const romanOffice=/(?:gp|gram\s*panchayat|gram\s*panchayt|panchayat)\s+(?:[a-z\d-]+\s+){0,3}(?:karyalay|karyalaya|office)(?:\s+ki\s+(?:taraf|or)\s+se|\s+se)?/iu.test(q);
-   const hindiOffice=/ग्राम\s*पंचायत\s*(?:[\u0900-\u097f\s]{0,35})?कार्यालय\s*(?:की\s*(?:ओर|तरफ)\s*से)?/u.test(q);
-   if(gpOffice||romanOffice||hindiOffice)return "gp_office";
-   return profile.letterhead?"pradhan_letterhead":"plain";
+   if(gpOffice)return "gp_office";
+   const explicitHead=/(?:मेरे|प्रधान\s*के|ग्राम\s*प्रधान\s*के|अपने)\s*(?:व्यक्तिगत\s*)?लेटरहेड|(?:pradhan|my)\s+letterhead|letterhead\s+(?:par|पर)/iu.test(q);
+   return explicitHead&&profile.letterhead?"pradhan_letterhead":"plain";
  };
  const header=c=>{
    c=sanitize(c);
@@ -201,7 +204,7 @@
        profile.letterhead=config;
        onSaved?.(config);
        showPreview();
-       status.textContent="✓ Letterhead सुरक्षित हो गया। अब प्रधान के पत्रों में अपने-आप लगेगा।";
+       status.textContent="✓ Letterhead सुरक्षित हो गया। केवल स्पष्ट रूप से लेटरहेड माँगे जाने पर उपयोग होगा।";
        toast("Letterhead Saved ✓");
      }catch(error){status.textContent="Save नहीं हुआ: "+(error.message||error);}
      finally{btn.disabled=false}
