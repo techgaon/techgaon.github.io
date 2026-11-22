@@ -30,3 +30,15 @@
 .pai-go-chat-results{display:grid;gap:8px;margin-top:12px}
 .pai-go-chat-results .pai-go-result{padding:10px}
 @media(max-width:380px){.pai-go-input{flex-direction:column}.pai-go-input button{width:100%}}
+
+/* Full-GO tiles, source-based yellow emphasis, and mobile PDF preview */
+.pai-go-suggest{margin-top:18px}.pai-go-start{padding:18px;color:var(--muted,#536476)}
+.pai-go-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;align-items:start}
+.pai-go-count{grid-column:1/-1}.pai-go-tile{height:100%;border:1px solid #dae5ef;box-shadow:0 6px 20px rgba(31,55,92,.055);background:var(--card,#fff);border-radius:16px;transition:transform .16s ease,box-shadow .16s ease}
+.pai-go-tile:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,55,92,.10)}
+.pai-go-tile .pai-go-result-info{display:flex;flex-direction:column;gap:5px}.pai-go-snippet{margin:9px 0 6px;padding:12px;background:#fffdf1;border:1px solid #f2e9bd;border-radius:10px;line-height:1.7;font-size:13px;color:#283445}
+.pai-go-snippet small{font-size:11px;font-weight:750;color:#805f05;opacity:1;margin:0 0 6px}.pai-go-yellow{background:#ffe75a;color:#201c0b;border-radius:3px;padding:0 2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;font-weight:750}
+.pai-go-actions{margin-top:auto;padding-top:10px;flex-wrap:wrap}.pai-go-actions .pai-go-open{background:#1d5688;color:#fff;font-weight:800;text-align:center;padding:10px 15px;border:0;border-radius:10px;cursor:pointer;text-decoration:none;font-size:13px}
+.pai-go-error{color:#a92729;font-size:12px;margin:8px 0}.pai-full-go-dialog{border:0;border-radius:16px;padding:0;max-width:min(96vw,900px);width:100%;max-height:95vh;background:var(--card,#fff);color:inherit;box-shadow:0 30px 95px #1118}.pai-full-go-dialog::backdrop{background:#101c32b8}
+.pai-full-go-modal{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:92vh}.pai-full-go-modal header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.pai-full-go-modal header strong{font-size:16px;line-height:1.5}.pai-full-go-actions{display:flex;gap:8px;flex-wrap:wrap}.pai-full-go-actions .btn{text-decoration:none}.pai-full-go-modal iframe{min-height:50vh;height:65vh;width:100%;border:1px solid #d4e0ea;border-radius:10px;background:#f6f7fb}
+@media(max-width:600px){.pai-go-results{grid-template-columns:1fr}.pai-full-go-modal iframe{height:52vh}.pai-full-go-modal{padding:12px}}

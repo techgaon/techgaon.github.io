@@ -37,7 +37,7 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
   let bad=false;try{window.PAI_PAYMENTS.uri('javascript:alert(1)','x',49);}catch{bad=true;}
   return {blank,full,pdf:Array.from(new Uint8Array(await pdf.arrayBuffer())),word:Array.from(new Uint8Array(await word.arrayBuffer())),uri,png,bad};
  },html);
- assert.equal(result.blank,'दिनांक: __/11/2026');assert.equal(result.full,'दिनांक: 22/11/2026');assert(result.bad);
+ assert.match(result.blank,/^दिनांक:\s+\/11\/2026$/);assert(!result.blank.includes('_')&&!result.blank.includes('-'));assert.equal(result.full,'दिनांक: 22/11/2026');assert(result.bad);
  const pdf=await PDFDocument.load(Uint8Array.from(result.pdf));assert.equal(pdf.getPageCount(),1);
  assert(Math.abs(pdf.getPage(0).getWidth()-595.28)<2);assert(Math.abs(pdf.getPage(0).getHeight()-841.89)<2);
  const zip=await JSZip.loadAsync(Buffer.from(result.word)),xml=await zip.file('word/document.xml').async('string');
@@ -47,6 +47,7 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  fs.mkdirSync('office-test-artifacts',{recursive:true});fs.writeFileSync('office-test-artifacts/letter.pdf',Buffer.from(result.pdf));fs.writeFileSync('office-test-artifacts/letter.docx',Buffer.from(result.word));
  await page.screenshot({path:'office-test-artifacts/preview.png',fullPage:true});
  const fixture=await PDFDocument.create(),fixturePage=fixture.addPage();fixturePage.drawText('IGRS complaint CASE12345: drainage problem. No inspection completed.');
+ const secondPage=fixture.addPage();secondPage.drawText('Pension and local governance approval rule');
  const fixtureBytes=await fixture.save();
  await page.addScriptTag({url:'http://127.0.0.1:'+server.address().port+'/panchayatai/tools.js'});
  await page.addScriptTag({path:path.join(p,'draft-workspace.js')});
@@ -68,5 +69,32 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  await page.locator('#paiPlusCelebration button').click();
  await page.evaluate(()=>window.PAI_PAYMENTS.notify({name:'Plus',activationId:'test-approval',until:Date.now()+86400000},'test-user'));
  assert.equal(await page.locator('#paiPlusCelebration').count(),0);
- await browser.close();server.close();console.log('PASS: Real one-page A4 PDF, blank PDF day, full DOCX date, right signature, decodable UPI QR invalid UPI rejection, real IGRS PDF text upload, editable report and one-time Plus popup.');
+ await page.addScriptTag({path:require.resolve('pdf-lib/dist/pdf-lib.min.js')});
+ await page.addScriptTag({path:path.join(p,'go-full-pdf.js')});
+ const sha256=require('crypto').createHash('sha256').update(Buffer.from(fixtureBytes)).digest('hex');
+ const fullGo=await page.evaluate(async({bytes,sha})=>{
+   const id='0123456789abcdef01234567',file='blocks/'+id+'-1.pdf';
+   const documentInfo={id,title:'Pension governance GO',documentType:'go',pageCount:2,
+     availablePages:[1,2],blocks:[{file,first:1,last:2,sha256:sha}]};
+   window.PAI_REFERENCES={load:async()=>({
+      catalog:{incompleteArchive:false},
+      index:{docs:[documentInfo],pages:[{doc:0,page:2,text:'Pension governance approval'}],terms:{}},
+      url:location.origin+'/panchayatai/go-corpus/catalog.json'})};
+   const nativeFetch=window.fetch.bind(window);
+   window.fetch=async(url,options)=>{
+      if(String(url).endsWith(file))return new Response(new Uint8Array(bytes),{status:200});
+      return nativeFetch(url,options);
+   };
+   const result=await window.PAI_FULL_GO.create({id,pages:[2],query:'pension'},'pension');
+   return {bytes:Array.from(new Uint8Array(await result.blob.arrayBuffer())),
+      count:result.count,targetPage:result.targetPage,highlighted:result.highlighted};
+ },{bytes:Array.from(new Uint8Array(fixtureBytes)),sha:sha256});
+ assert.equal(fullGo.count,2);assert.equal(fullGo.highlighted,1);assert.equal(fullGo.targetPage,2);
+ const checkedGo=await PDFDocument.load(Uint8Array.from(fullGo.bytes));
+ assert.equal(checkedGo.getPageCount(),2);
+ assert(checkedGo.getPage(0).getHeight()>fixturePage.getHeight()+90);
+ for(const p of checkedGo.getPages())assert(p.node.Annots(),'All pages must link to the main content page');
+ fs.writeFileSync('office-test-artifacts/full-go.pdf',Buffer.from(fullGo.bytes));
+ await browser.close();server.close();console.log('PASS: A4 dates, DOCX, UPI QR, IGRS, Plus and full navigable two-page GO PDF.');
+
 })().catch(e=>{console.error(e);process.exit(1);});

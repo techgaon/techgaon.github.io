@@ -102,7 +102,7 @@
     const q=norm(query),words=terms(query);if(!q||!words.length)return [];
     if(corpus){
       const hits=window.PAI_REFERENCE_SEARCH.search(corpus.index,query).slice(0,limit);
-      for(const hit of hits)excerptHits.set(hit.id,hit);
+      for(const hit of hits){hit.query=query;excerptHits.set(hit.id,hit);}
       return hits;
     }
     const scored=[];
@@ -129,54 +129,99 @@
     const drafting=/(?:पत्र|नोटिस|प्रस्ताव|आख्या|letter|patra|notice).{0,30}(?:बनाओ|बनाइ|बनाय|तैयार|लिखो|banao|bana|draft)/iu.test(q);
     return go&&!explaining&&!drafting&&(retrieval||q.split(" ").length<=10);
   }
-  function card(doc,chat=false){
+  function markedExcerpt(text,query){
+    const tokens=(window.PAI_REFERENCE_SEARCH?.tokens?.(query)||terms(query)).filter(t=>t.length>=3).slice(0,8);
+    if(!tokens.length)return escapeHTML(text);
+    const pattern=new RegExp(tokens.map(t=>t.replace(/[.*+?^$()|[\]{}]/g,"\\$&")).join("|"),"giu");
+    let last=0,part="",match;
+    while((match=pattern.exec(text))){
+      part+=escapeHTML(text.slice(last,match.index))+'<mark class="pai-go-yellow">'+escapeHTML(match[0])+'</mark>';
+      last=match.index+match[0].length;
+    }
+    return part+escapeHTML(text.slice(last));
+  }
+  function extractPreview(doc,query){
+    const passage=doc?.passages?.find(p=>typeof p.text==="string"&&p.text.trim());
+    if(!passage)return "";
+    const plain=passage.text.replace(/\s+/gu," ").trim();
+    const tokens=(window.PAI_REFERENCE_SEARCH?.tokens?.(query)||terms(query)).filter(t=>t.length>=3);
+    let first=-1;
+    for(const token of tokens){
+      const position=plain.toLowerCase().indexOf(token.toLowerCase());
+      if(position>=0&&(first<0||position<first))first=position;
+    }
+    const start=first>=0?Math.max(0,first-75):0;
+    const snippet=plain.slice(start,start+390);
+    return '<p class="pai-go-snippet"><small>मुख्य अंश · मूल पृष्ठ '+escapeHTML(passage.page)+'</small>'+
+      (start?'…':'')+markedExcerpt(snippet,query)+(start+390<plain.length?'…':'')+'</p>';
+  }
+  function card(doc,chat=false,query=""){
     if(!doc)return "";
-    const sub=[doc.officialNumber,doc.department,doc.date].filter(Boolean).map(escapeHTML).join(" · ");
-    return '<article class="pai-go-result"><div class="pai-go-file-icon" aria-hidden="true">📄</div><div class="pai-go-result-info">'+
-      '<strong>'+escapeHTML(doc.title)+'</strong>'+(sub?'<small>'+sub+'</small>':"")+
-      '<div class="pai-go-actions">'+(corpus&&excerptHits.has(doc.id)?'<button type="button" class="btn alt" data-go-excerpt="'+escapeHTML(doc.id)+'">संबंधित पृष्ठ PDF डाउनलोड करें</button>':'<a href="'+escapeHTML(doc.url)+'" target="_blank" rel="noopener noreferrer">PDF देखें / डाउनलोड करें ↗</a>')+'</div>'+
-      '</div></article>';
+    const hit=excerptHits.get(doc.id)||doc;
+    const sub=[hit.officialNumber||doc.officialNumber,doc.department||doc.documentType||"",hit.date||doc.date]
+      .filter(Boolean).map(escapeHTML).join(" · ");
+    const full=!!(corpus&&corpus.index.docs.some(d=>d.id===doc.id)&&excerptHits.has(doc.id));
+    const pageCount=full?corpus.index.docs.find(d=>d.id===doc.id)?.availablePages?.length:0;
+    const action=full
+      ?'<button type="button" class="btn pai-go-open" data-go-full="'+escapeHTML(doc.id)+'">Download Or View Pdf</button>'
+      :'<a class="btn pai-go-open" href="'+escapeHTML(doc.url||"")+'" target="_blank" rel="noopener noreferrer">Download Or View Pdf</a>';
+    return '<article class="pai-go-result pai-go-tile"><div class="pai-go-file-icon" aria-hidden="true">📑</div>'+
+      '<div class="pai-go-result-info"><strong>'+escapeHTML(hit.title||doc.title)+'</strong>'+
+      (sub?'<small>'+sub+'</small>':"")+
+      (pageCount?'<small>मूल PDF के उपलब्ध '+pageCount+' पृष्ठ</small>':"")+
+      extractPreview(hit,query||hit.query||"")+
+      '<div class="pai-go-actions">'+action+'</div></div></article>';
   }
   function chatResultsHtml(ids,query){
     if(!Array.isArray(ids)||!ids.length)return "";
     if(corpus&&query)for(const hit of window.PAI_REFERENCE_SEARCH.search(corpus.index,query))if(!excerptHits.has(hit.id))excerptHits.set(hit.id,hit);
     const list=ids.slice(0,10).map(id=>excerptHits.get(id)||records.find(d=>d.id===id)).filter(Boolean);
-    return list.length?'<div class="pai-go-chat-results">'+list.map(d=>card(d,true)).join("")+'</div>':"";
+    return list.length?'<div class="pai-go-chat-results">'+list.map(d=>card(d,true,query)).join("")+'</div>':"";
   }
   function mount(el){
     if(!el)return;
-    el.innerHTML='<section class="card pai-go-intro"><div class="pai-go-heading"><span aria-hidden="true">📚</span><div><h2>GO Search</h2><p>शासनादेश का नाम, GO नंबर या Keyword लिखें। खोज और PDF डाउनलोड के लिए AI की आवश्यकता नहीं है।</p></div></div>'+
+    el.innerHTML='<section class="card pai-go-intro"><div class="pai-go-heading"><span aria-hidden="true">📚</span><div><h2>GO Search</h2><p>शासनादेश का नाम, GO नंबर या Keyword लिखें। संबंधित पूरा मूल GO देखें और प्रमुख अंश पीले रंग में पहचानें।</p></div></div>'+
       '<form class="pai-go-form"><label for="paiGoQuery">शासनादेश खोजें</label><div class="pai-go-input"><input id="paiGoQuery" type="search" autocomplete="off" placeholder="जैसे पंचायत सहायक नियुक्ति का GO" /><button type="submit" class="btn">खोजें</button></div></form></section>'+
+      '<section class="pai-go-results" aria-live="polite"><p class="hint">शासनादेश सूची लोड हो रही है…</p></section>'+
       '<section class="card pai-go-suggest"><h3>ऐसे खोजकर देखें</h3><p>हिंदी या Roman Hindi, दोनों में लिख सकते हैं।</p><div class="pai-go-chips">'+
       EXAMPLES.map(x=>'<button type="button" data-go-example="'+escapeHTML(x)+'">'+escapeHTML(x)+'</button>').join("")+
-      '</div></section><section class="pai-go-results" aria-live="polite"><p class="hint">शासनादेश सूची लोड हो रही है…</p></section>';
+      '</div></section>';
     const input=el.querySelector("#paiGoQuery"),result=el.querySelector(".pai-go-results");
     const draw=()=>{
       if(!loaded){result.innerHTML='<p class="hint">शासनादेश सूची लोड हो रही है…</p>';return;}
-      if(loadError){result.innerHTML='<div class="card">शासनादेश सूची अभी उपलब्ध नहीं है। कृपया बाद में दोबारा खोलें।</div>';return;}
-      if(!records.length){result.innerHTML='<div class="card"><strong>GO Library में अभी सत्यापित PDF नहीं जोड़ी गई है।</strong><p>संग्रह की जाँच और अपलोड होने के बाद यहाँ वास्तविक शासनादेश दिखेंगे।</p></div>';return;}
+      if(loadError){result.innerHTML='<div class="card">शासनादेश सूची अभी उपलब्ध नहीं है। कृपया दोबारा प्रयास करें।</div>';return;}
+      if(!records.length){result.innerHTML='<div class="card"><strong>GO Library में अभी PDF नहीं जोड़ी गई है।</strong></div>';return;}
       const q=input.value.trim(),matches=q?search(q):[];
-      result.innerHTML='<div class="pai-go-count">'+(q?matches.length+" परिणाम":records.length+" सत्यापित दस्तावेज उपलब्ध")+'</div>'+
-        (q?(matches.length?matches.map(d=>card(d)).join(""):'<div class="card">इस नाम या Keyword पर कोई सत्यापित शासनादेश नहीं मिला। GO नंबर या दूसरे शब्दों से खोजें।</div>'):
-          '<div class="card">ऊपर नाम, विषय या GO नंबर लिखकर खोजें।</div>');
+      result.innerHTML=q
+        ?'<div class="pai-go-count">'+matches.length+' परिणाम</div>'+
+          (matches.length?matches.map(d=>card(d,false,q)).join(""):'<div class="card">इस नाम या Keyword पर कोई उपलब्ध शासनादेश नहीं मिला। GO नंबर या दूसरे शब्दों से खोजें।</div>')
+        :'<div class="card pai-go-start">ऊपर शासनादेश का विषय या GO नंबर लिखकर खोजें।</div>';
     };
     el.querySelector(".pai-go-form").onsubmit=e=>{e.preventDefault();draw();};
     let searchTimer;
     input.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(draw,180);});
     el.querySelectorAll("[data-go-example]").forEach(b=>b.onclick=()=>{
-      input.value=b.dataset.goExample;draw();input.focus();
+      input.value=b.dataset.goExample;draw();input.focus();result.scrollIntoView?.({behavior:"smooth",block:"start"});
     });
     load().then(draw).catch(()=>{result.textContent="दस्तावेज़ संग्रह अभी उपलब्ध नहीं है। कृपया दोबारा प्रयास करें।";});
   }
   document.addEventListener?.("click",async e=>{
-    const button=e.target.closest("[data-go-excerpt]");if(!button)return;
-    const hit=excerptHits.get(button.dataset.goExcerpt);if(!hit)return;
+    const button=e.target?.closest?.("[data-go-full],[data-go-excerpt]");if(!button)return;
+    const hit=excerptHits.get(button.dataset.goFull||button.dataset.goExcerpt);if(!hit)return;
     button.disabled=true;const label=button.textContent;button.textContent="PDF तैयार हो रही है…";
-    try{await window.PAI_REFERENCES.download(hit);}
-    catch(error){button.textContent="डाउनलोड नहीं हुआ, फिर प्रयास करें";return;}
-    finally{button.disabled=false;}
-    button.textContent=label;
+    try{
+      if(button.hasAttribute("data-go-full")){
+        if(!window.PAI_FULL_GO?.open)throw Error("पूरा GO PDF मॉड्यूल नहीं मिला। Reload करें।");
+        await window.PAI_FULL_GO.open(hit,hit.query||"",message=>{button.textContent=message;});
+      }else await window.PAI_REFERENCES.download(hit);
+      button.textContent=label;
+    }catch(error){
+      button.textContent=label;
+      const note=document.createElement("p");note.className="hint pai-go-error";note.textContent=error.message||"PDF डाउनलोड नहीं हो सका";
+      button.closest(".pai-go-actions")?.append(note);
+    }finally{button.disabled=false;}
   });
   function registerHits(hits){for(const hit of hits||[])if(corpus?.index.docs.some(d=>d.id===hit.id))excerptHits.set(hit.id,hit);}
-  window.PAI_GO_SEARCH={load,search,isGoLookup,mount,chatResultsHtml,registerHits};
+  async function inventory(){await load();return {documents:corpus?.index?.docs?.length||records.length,pages:corpus?.index?.pages?.length||0,incomplete:!!corpus?.catalog?.incompleteArchive};}
+  window.PAI_GO_SEARCH={load,search,isGoLookup,mount,chatResultsHtml,registerHits,inventory};
 })();
