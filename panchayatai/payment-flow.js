@@ -43,7 +43,7 @@ function notify(plan,uid){
  const close=document.createElement('button');close.className='btn';close.textContent='शुरू करें';
  dialog.append(star,heading,message,note,close);document.body.append(dialog);
  const seen=()=>{try{localStorage.setItem(key,id);}catch{}dialog.remove();};
- close.onclick=()=>dialog.close();dialog.addEventListener('close',seen,{once:true});dialog.showModal();
+ close.onclick=()=>{dialog.close();seen();};dialog.addEventListener('close',seen,{once:true});dialog.showModal();
  if('Notification' in window&&Notification.permission==='granted')try{new Notification('Panchayat AI Plus सक्रिय',{body:message.textContent,tag:'pai-plus-'+id});}catch{}
 }
 function openProof(value){
