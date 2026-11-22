@@ -105,7 +105,7 @@ test('pradhan official GP office letter suppresses personal header',()=>{
    profile:{role:'pradhan',name:'राधा देवी',district:'बाराबंकी',block:'हैदरगढ़',gps:['कमेला']}};
  const p={subject:'ग्राम पंचायत कार्य संबंधी पत्र',recipient:'खण्ड विकास अधिकारी, हैदरगढ़',paragraphs:['विषयक आवश्यक कार्यवाही करने का कष्ट करें।'],evidence:[]};
  const result=render(p,req);
- assert.ok(result.html.startsWith('<p>सेवा में,')); assert.ok(result.html.includes('ग्राम पंचायत — कमेला'));
+ assert.ok(result.html.startsWith('<div data-pai-office-header="1">')); assert.ok(result.html.includes('कार्यालय ग्राम पंचायत — कमेला'));
  assert.ok(result.html.includes('राधा देवी'));
  assert.ok(!/\[[^\]]+भरें\]/.test(result.html));
 });

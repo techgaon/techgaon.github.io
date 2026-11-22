@@ -17,7 +17,7 @@
    const f={bold:format.bold||["b","strong"].includes(tag)||node.style.fontWeight==="bold"||
      Number(node.style.fontWeight)>=600,italic:format.italic||["i","em"].includes(tag)||
      node.style.fontStyle==="italic",underline:format.underline||tag==="u"||
-     node.style.textDecoration.includes("underline"),size:format.size||24};
+     node.style.textDecoration.includes("underline"),size:format.size||activeHalfPoints};
    if(/^h[1-6]$/.test(tag))f.size=tag==="h1"?30:tag==="h2"?27:24;
    return Array.from(node.childNodes).flatMap(c=>runs(c,d,f));
  }
@@ -28,9 +28,12 @@
  }
  function paragraph(n,d){
    const children=runs(n,d);
+   const tag=n.tagName?.toLowerCase()||"",heading=/^h[1-6]$/.test(tag);
+   const isOffice=n.closest?.('[data-pai-office-header="1"]');
+   const isSignature=n.closest?.('table[data-pai-signature="1"]');
    return new d.Paragraph({children:children.length?children:[new d.TextRun({text:""})],
-     alignment:alignment(n,d),spacing:{after:130,line:330},widowControl:true,keepLines:true,
-     keepNext:/^h[1-6]$/.test(n.tagName?.toLowerCase()||"")});
+     alignment:alignment(n,d),spacing:{after:isOffice?50:isSignature?80:110,line:Math.round(activeHalfPoints*15)},
+     widowControl:true,keepLines:heading||Boolean(isSignature),keepNext:heading});
  }
  function elements(n,d){
    if(n.nodeType===3){
@@ -69,6 +72,8 @@
    if(tag==="hr")return [new d.Paragraph({border:{bottom:{color:"B0BED3",size:4,space:1}}})];
    if(["div","section","header","article"].includes(tag)){
      const list=Array.from(n.childNodes).flatMap(ch=>elements(ch,d));
+     if(n.getAttribute('data-pai-office-header')==='1'&&list.length)
+       list.push(new d.Paragraph({border:{bottom:{color:"4B6179",size:6,space:5}},spacing:{after:160}}));
      return list.length?list:(text(n).trim()?[paragraph(n,d)]:[]);
    }
    return text(n).trim()?[paragraph(n,d)]:[];

@@ -18,5 +18,14 @@ test("Roman Hindi GP office instructions always choose plain A4 instead of perso
 test("Pradhan letterhead is used only when explicitly requested",()=>{
  assert.equal(L.mode(pradhan,"मेरे लेटरहेड पर BDO को पत्र बनाओ","पत्र"),"pradhan_letterhead");
  assert.equal(L.mode(pradhan,"प्रधान के रूप में BDO को सामान्य पत्र बनाओ","पत्र"),"plain");
- assert.equal(L.mode({role:"gpa",letterhead:pradhan.letterhead},"gp karyalay se patra","पत्र"),"plain");
+ assert.equal(L.mode({role:"gpa",letterhead:pradhan.letterhead},"gp karyalay se patra","पत्र"),"gp_office");
+});
+
+test("Secretary ordinary vs explicit GP-office stationery",()=>{
+ for(const role of ["gpa","gva","pradhan","prashasak"]){
+  const user={...pradhan,role};
+  assert.equal(L.mode(user,"ग्राम पंचायत कार्यालय की ओर से ADO को पत्र","पत्र"),"gp_office",role);
+  assert.equal(L.mode(user,"sachiv ko ADO ke liye samanya patra","पत्र"),"plain",role);
+  assert.equal(L.mode(user,"sade A4 par ADO ko patra","पत्र"),"plain",role);
+ }
 });
