@@ -20,7 +20,7 @@
    const result={stage,code:"AI_UNKNOWN",status:http,
      title:"AI सेवा से उत्तर नहीं मिला",
      message:"AI अनुरोध सफल नहीं हुआ। कुछ देर बाद दोबारा प्रयास करें।",
-     action:"अधिक जानकारी के लिए AI कनेक्शन जाँचें खोलें।",
+     action:"समस्या बनी रहने पर Error Code व्यवस्थापक को बताएँ।",
      technical: redactedTechnical()};
    function redactedTechnical(){return redact(code+" "+original);}
    function set(id,title,msg,action){
@@ -45,7 +45,7 @@
    if(/(?:ai could not load|module not loaded|module.*load|failed to load module|importing a module)/.test(all))
      return set("AI_MODULE_NOT_LOADED","AI मॉड्यूल लोड नहीं हुआ",
        "AI की आवश्यक Script पूरी तरह लोड नहीं हो सकी।",
-       "Internet जाँचें, ऐप पूरी तरह बंद करके खोलें या Refresh करें; फिर AI कनेक्शन जाँचें चलाएँ।");
+       "Internet जाँचें और ऐप पूरी तरह बंद करके दोबारा खोलें या Refresh करें।");
    if(/(?:re.?captcha|app.?check|attestation|appcheck|attest(?:ation)?)/i.test(all)
       &&/token|failed|invalid|enforc|permission|403|blocked|unauthoriz|captcha|denied/.test(all))
      return set("AI_APP_CHECK", "App Check की जाँच आवश्यक",
@@ -78,7 +78,7 @@
    if(/(?:permission.?denied|forbidden|unauthorized)|\b(401|403)\b/.test(all))
      return set("AI_PERMISSION","AI अनुरोध को अनुमति नहीं मिली",
        "Firebase/Google ने अनुरोध अस्वीकार किया। App Check, API Key Restrictions या Project की स्थिति कारण हो सकती है।",
-       "Admin: AI Connection Check चलाएँ और Firebase Console में App Check तथा AI Logic Metrics देखें।");
+       "Admin: Firebase Console में App Check तथा AI Logic Metrics देखें।");
    if(/(?:failed to fetch|network|offline|cors|dns|net::|timeout)|\b(408|502|503|504)\b/.test(all))
      return set("AI_NETWORK","AI सर्वर से कनेक्शन नहीं बना",
        "नेटवर्क या Google AI सेवा अस्थायी रूप से उपलब्ध नहीं है।",
