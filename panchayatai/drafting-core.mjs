@@ -178,8 +178,11 @@ export function render(payload,b={}) {
  if(str(payload.subject))html+='<p><b>'+(certificate||minutes?'':'विषय: ')+e(str(payload.subject))+'</b></p>';
  const suppressGreeting=certificate||minutes||/नोटिस|आदेश|notice|order/iu.test(kind)
    ||/(?:बिना\s*संबोधन|संबोधन\s*न\s*(?:लिख|डाल)|no\s*salutation)/iu.test(requestText);
- const greeting=/(?:महोदया|महिला\s*अधिकारी|madam)/iu.test(requestText+' '+finalRecipient)
-   ?'महोदया,':'महोदय,';
+ const recipientIsFemale=/(?:महोदया|महिला\s*अधिकारी|madam)/iu.test(requestText+' '+finalRecipient);
+ const modelGreeting=str(payload.salutation).replace(/[\s।]+$/u,'');
+ const greeting=requestedRecipient==='पंचायत सचिव'
+   ?(recipientIsFemale?'महोदया,':'महोदय,')
+   :(modelGreeting|| (recipientIsFemale?'महोदया,':'महोदय,'));
  if(!suppressGreeting)html+=p(greeting);
  if(staffNotice){
    if(!payload.staff||!['सफाईकर्मी','पंचायत सहायक'].includes(payload.staff.post))
