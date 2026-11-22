@@ -82,7 +82,8 @@
    const title=String(kind||"पत्र"),type=String(code||"patra"),name=profile.nameHindi||profile.name||"";
    const gps=Array.isArray(profile.gps)?profile.gps.filter(Boolean):[];
    // Only the response to a received notice needs supporting file upload.
-   const allowNoticeReplyUpload=type==="spasht";
+   const allowNoticeReplyUpload=type==="spasht"||type==="igrs";
+   const igrs=type==="igrs";
    el.innerHTML='<section class="pai-writing-workspace" aria-label="सरकारी पत्र Draft Workspace">'+
      '<header class="pai-writing-heading"><span class="pai-writing-symbol" aria-hidden="true">✍</span>'+
      '<div><small>OFFICIAL DRAFT STUDIO</small><h2>'+esc(title)+' बनाएँ</h2><p>'+esc(description||"पूरे सरकारी प्रारूप में मसौदा तैयार करें")+'</p></div></header>'+
@@ -106,13 +107,20 @@
    const target=$("#paiWritingOutput",el),input=$("#paiWritingFile",el);
    if(previous?.question)matter.value=previous.question;
    el.querySelectorAll(".pai-writing-example").forEach(btn=>btn.onclick=()=>{matter.value=btn.textContent;matter.focus()});
+   if(igrs){$("#paiWritingFile",el).previousElementSibling.textContent="IGRS शिकायत upload करें";matter.placeholder="शिकायत पर हुई वास्तविक जाँच, कार्रवाई, अभिलेख और बाकी कार्य लिखें।";el.querySelector(".pai-writing-suggestions").innerHTML="<p class=\"hint\">पहले शिकायत upload करें, फिर वास्तविक कार्रवाई बताएँ। नीचे बना मसौदा इसी स्थान पर Edit, Save और Word/PDF कर सकते हैं।</p>";}
    const chosenFiles=[];
    if(input) input.onchange=()=>{
-     chosenFiles.splice(0,...chosenFiles.length,...Array.from(input.files||[]).slice(0,3));
+     chosenFiles.splice(0,chosenFiles.length,...Array.from(input.files||[]).slice(0,3));
      $("#paiFilesInfo",el).textContent=chosenFiles.length?
        chosenFiles.map(x=>x.name).join(" · "):"No file chosen";
    };
    async function asAttachment(file){
+     if(igrs){
+       if(!window.PAI_TOOLS?.readDocument)throw Error("दस्तावेज पढ़ने की सुविधा उपलब्ध नहीं है।");
+       const text=await window.PAI_TOOLS.readDocument(file,m=>{status.textContent=m;});
+       if(!String(text).trim())throw Error("फाइल का पाठ स्पष्ट नहीं मिला। दूसरी फाइल चुनें।");
+       return {name:file.name,text:String(text).slice(0,45000)};
+     }
      if(file.size>5*1024*1024)throw Error("5 MB से छोटी Word/PDF/फोटो फ़ाइल चुनें");
      const n=file.name.slice(0,130);
      if(/\.docx$/i.test(n)){
@@ -129,21 +137,23 @@
    const create=async(revise=false)=>{
      if(submit.disabled)return;
      const request=matter.value.trim();
-     if(!request&&!revise){status.textContent="पहले पत्र का विषय बताएँ।";matter.focus();return;}
+     if(!request&&!revise&&!igrs){status.textContent="पहले पत्र का विषय बताएँ।";matter.focus();return;}
      submit.disabled=true;submit.classList.add("is-loading");submit.setAttribute("aria-busy","true");submit.innerHTML=loadingAiButton;
      status.textContent="आपकी Profile और दस्तावेज़ों के आधार पर पत्र बनाया जा रहा है…";
      try{
        if(view){view.dispose();view=null;}
        target.innerHTML="";
        const attachments=await Promise.all(chosenFiles.map(asAttachment));
+       if(igrs&&revise&&last?.sourceAttachments)attachments.push(...last.sourceAttachments);
        if(revise&&last){
          attachments.unshift({name:"पिछले पत्र का मसौदा",text:last.html.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]*>/g," ").slice(0,28000)});
        }
-       const points=String(request||last?.question||"");
+       if(igrs&&!attachments.length&&!revise)throw Error("पहले IGRS शिकायत की PDF/Word/फोटो upload करें।");
+       const points=String(request||last?.question||"")+(igrs?"\nIGRS निस्तारण आख्या: संलग्न शिकायत के बिंदुवार उत्तर दें। केवल बताई गई जाँच और कार्रवाई लिखें; समाधान/निरीक्षण/शिकायतकर्ता की संतुष्टि न गढ़ें। कार्रवाई का विवरण न हो तो मसौदे को पूर्ण निस्तारण न बताएं।":"");
        const stationery=letterhead?.mode?.(profile,points,title)||"plain";
        const gp=$("#paiSelectGp",el)?.value||"";
        const result=await api("/draft",{kind:title,profile,points,gp,att:attachments,stationery,refs:[]});
-       last={kind:title,question:points,...result,stationery,id:crypto.randomUUID()};
+       last={kind:title,question:points,...result,sourceAttachments:igrs?attachments.filter(a=>a.name!=="पिछले पत्र का मसौदा"):[],stationery,id:crypto.randomUUID()};
        const holder=document.createElement("div");target.appendChild(holder);
        if(!window.PAI_DRAFT_CARD?.mount)throw Error("Draft Preview अभी उपलब्ध नहीं है। Reload करें।");
        view=window.PAI_DRAFT_CARD.mount(holder,{

@@ -400,5 +400,12 @@
       catch(e){setStatus("Copy उपलब्ध नहीं है; नीचे का टेक्स्ट चुनकर कॉपी करें।");}
     };
   }
-  window.PAI_TOOLS={mount};
+  async function readDocument(file,progress=()=>{}){
+    if(file.size>5*1024*1024)throw Error('5 MB से छोटी फाइल चुनें।');
+    if(/\.docx$/i.test(file.name)){if(!window.mammoth)throw Error('Word सुविधा लोड नहीं हुई।');return (await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value;}
+    if(file.type==='application/pdf')return textFromPdf(file,progress);
+    if(/^image\/(png|jpeg)$/.test(file.type))return readImage(file,progress);
+    throw Error('PDF, DOCX, JPEG या PNG चुनें।');
+  }
+  window.PAI_TOOLS={mount,readDocument};
 })();

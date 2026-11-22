@@ -15,7 +15,8 @@ test("Roman Hindi GP office instructions always choose plain A4 instead of perso
    "ग्राम पंचायत थलवारा कार्यालय की ओर से पत्र"
  ])assert.equal(L.mode(pradhan,request,"पत्र"),"gp_office",request);
 });
-test("Personal Pradhan letter uses only their own saved letterhead",()=>{
- assert.equal(L.mode(pradhan,"प्रधान के रूप में BDO को पत्र बनाओ","पत्र"),"pradhan_letterhead");
+test("Pradhan letterhead is used only when explicitly requested",()=>{
+ assert.equal(L.mode(pradhan,"मेरे लेटरहेड पर BDO को पत्र बनाओ","पत्र"),"pradhan_letterhead");
+ assert.equal(L.mode(pradhan,"प्रधान के रूप में BDO को सामान्य पत्र बनाओ","पत्र"),"plain");
  assert.equal(L.mode({role:"gpa",letterhead:pradhan.letterhead},"gp karyalay se patra","पत्र"),"plain");
 });

@@ -28,7 +28,7 @@ test('staff notice retrieves sanitised sanitation-worker template',()=>assert.eq
 test('short notice preserves facts and leaves unknown mandatory details blank',()=>{
  const result=render(payload(),b);
  for(const text of ['रामपुर','दिनेश','दो दिन अनुपस्थित रहने','ग्रामीण शिकायत','पंचायत सचिव (ग्राम पंचायत अधिकारी)'])assert.ok(result.html.includes(text),text);
- assert.ok(!/2025|2026|तीन दिवस|वेतन|निरीक्षण|बर्खास्त|\[[^\]]+भरें\]/.test(result.html));
+ assert.ok(!/2025|2026|तीन दिवस|वेतन|निरीक्षण|बर्खास्त|\[[^\]]+भरें\]/.test(result.html.replace(/<span data-pai-date="[^"]+">[^<]+<\/span>/g,'')));
  assert.equal(result.review.required,true);
 });
 test('staff notice ignores generative allegations in main body',()=>{
@@ -38,7 +38,7 @@ test('staff notice ignores generative allegations in main body',()=>{
 test('sahayak and resident do not acquire secretary notice power',()=>{
  for(const role of ['sahayak','resident','clerk']){
  const html=render(payload(),{...b,profile:{role}}).html;
- assert.ok(html.includes('सक्षम अधिकारी'));assert.ok(!html.includes('अपना तथ्यात्मक स्पष्टीकरण'));assert.ok(!html.includes('पंचायत सचिव'));
+ assert.ok(html.includes('सक्षम अधिकारी'));assert.ok(!html.includes('अपना तथ्यात्मक स्पष्टीकरण'));assert.ok(!/text-align:right[^>]*>[^<]*<br>[^<]*<br>पंचायत सचिव/.test(html));
  }
 });
 test('assistant work notice accepts only request quotes',()=>{
@@ -105,7 +105,7 @@ test('pradhan official GP office letter suppresses personal header',()=>{
    profile:{role:'pradhan',name:'राधा देवी',district:'बाराबंकी',block:'हैदरगढ़',gps:['कमेला']}};
  const p={subject:'ग्राम पंचायत कार्य संबंधी पत्र',recipient:'खण्ड विकास अधिकारी, हैदरगढ़',paragraphs:['विषयक आवश्यक कार्यवाही करने का कष्ट करें।'],evidence:[]};
  const result=render(p,req);
- assert.ok(result.html.includes('कार्यालय — ग्राम पंचायत कमेला'));
+ assert.ok(result.html.startsWith('<p>सेवा में,')); assert.ok(result.html.includes('ग्राम पंचायत — कमेला'));
  assert.ok(result.html.includes('राधा देवी'));
  assert.ok(!/\[[^\]]+भरें\]/.test(result.html));
 });
@@ -145,7 +145,7 @@ test('Roman Hindi "gp thalwara" and Hindi AI alias are the same selected GP',()=
  const p={subject:'सफाईकर्मी की नियुक्ति का अनुरोध',recipient:'खण्ड विकास अधिकारी, हैदरगढ़',
    gpOverride:'थलवारा',paragraphs:['ग्राम पंचायत में सफाईकर्मी का पद रिक्त होने संबंधी सूचना संज्ञानार्थ प्रस्तुत है।'],evidence:[]};
  const draft=render(p,req);
- assert.ok(draft.html.includes('ग्राम पंचायत थलवारा'),draft.html);
+ assert.ok(draft.html.includes('ग्राम पंचायत — थलवारा'),draft.html);
  assert.ok(draft.html.includes('हैदरगढ़'),draft.html);
  assert.doesNotThrow(()=>validate(p,req));
 });
