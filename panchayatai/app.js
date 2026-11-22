@@ -268,7 +268,7 @@ function attachHindiSpeech(input,button,status){
 
 /* ---------- राउटिंग ---------- */
 function rememberNavigation(view) {
-  if (!["chat","draft","draftEdit","tools","estimate","rti","history"].includes(view)) return;
+  if (!["chat","draft","draftEdit","tools","estimate","rti","history","goSearch"].includes(view)) return;
   const key = view === "draftEdit" ? "draft" : view;
   const item = { view:key, draft:view === "draftEdit" ? (S.draftType || "patra") : "", at:Date.now() };
   const old = LS.get("navHistory") || [];
@@ -307,7 +307,7 @@ function chrome() {
   $("#planBadge").classList.toggle("hidden", !isPlus()); $("#planBadge").textContent = "PLUS";
   const adminLink = $("#adminLink"); if (adminLink) adminLink.classList.toggle("hidden", !isAdmin());
   document.querySelectorAll("#drawer [data-go]").forEach(link => {
-    link.classList.toggle("hidden", isAdmin() ? !["admin","settings"].includes(link.dataset.go) :
+    link.classList.toggle("hidden", isAdmin() ? !["admin","settings","goSearch"].includes(link.dataset.go) :
       link.dataset.go==="admin" || (link.dataset.go==="letterhead" && (!S.user||S.profile?.role!=="pradhan")));
   });
   document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.go === S.view));
@@ -339,12 +339,12 @@ function render() {
     return;
   }
   document.body.classList.remove("pai-auth-pending");
-  if (isAdmin() && !["admin","settings"].includes(S.view)) {
+  if (isAdmin() && !["admin","settings","goSearch"].includes(S.view)) {
     S.view = "admin";
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
+  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
   stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
@@ -365,6 +365,7 @@ function settingsScreen(el) {
 }
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
+function goSearch(el) { if(window.PAI_GO_SEARCH?.mount) window.PAI_GO_SEARCH.mount(el); else el.textContent="GO Search उपलब्ध नहीं है। ऐप Refresh करें।"; }
 
 /* ---------- होम ---------- */
 function home(el) {
@@ -381,6 +382,9 @@ function home(el) {
     <div class="grid draft-grid home-feature-pair">
       <button class="tile ai-tile" data-go="chat"><span class="e pai-ai-logo"><img src="ai-help-icon.svg?v=20261121-generic-ai2" alt="" width="53" height="53" decoding="async"></span><b>AI Help</b><small>UP के नियम व पंचायत कार्य</small></button>
       <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
+    </div>
+    <div class="grid draft-grid home-go-feature">
+      <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><span class="pai-go-home-copy"><b>GO Search</b><small>शासनादेश का नाम या Keyword खोजें · PDF डाउनलोड</small></span></button>
     </div>
     <div class="grid draft-grid">${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}</div>
     <div class="grid draft-grid home-news-estimate">
@@ -816,7 +820,8 @@ function assistantHtml(message,index){
     '<a href="'+esc(src.uri)+'" target="_blank" rel="noopener noreferrer">'+esc(src.title||(english?"Web source":"वेब स्रोत"))+"</a>"
   ).join(" · ");
   const followups=(message.followups||[]).filter(q=>typeof q==="string"&&q.trim().length>5).slice(0,2);
-  return chatParagraphs(answer)+(web?'<p class="hint">'+web+"</p>":"")+refsHtml(message.originalIds||[])+
+  return chatParagraphs(answer)+(Array.isArray(message.goResultIds)?(window.PAI_GO_SEARCH?.chatResultsHtml(message.goResultIds)||""):"")+
+    (Array.isArray(message.goResultIds)?'<div class="btn-row"><button class="btn-sm btn alt" data-go="goSearch">📚 GO Search खोलें</button></div>':"")+(web?'<p class="hint">'+web+"</p>":"")+refsHtml(message.originalIds||[])+
     (followups.length?'<div class="followups">'+followups.map(q=>
       '<button class="btn alt followup" data-followup="'+esc(q)+'" data-message-index="'+index+'">'+esc(q)+'</button>'
     ).join("")+"</div>":"")+'<div class="btn-row"><button class="btn-sm btn alt" data-tod="'+index+'">📝 इससे पत्र बनाएँ</button></div>';
@@ -904,6 +909,7 @@ function chat(el) {
   };
   const persistChat=()=>LS.set("chat_general_v1_" + S.user.uid,S.chat.slice(-40));
   paint();
+  window.PAI_GO_SEARCH?.load().then(()=>{if(S.view==="chat"&&document.contains(box))paint();});
   const comp = document.createElement("div"); comp.className = "composer"; comp.id = "composerWrap";
   comp.appendChild(attachBar());
   const row = document.createElement("div"); row.className = "in";
@@ -922,7 +928,14 @@ function chat(el) {
       const previous=S.chat.slice(0,-1).reverse().find(m=>m.document);
       const revising=previous&&/इसमें|इसे|बदल|सुधार|जोड़|हटा|edit|change|update/i.test(q);
       const kind = requestedDraftKind(q, S.draftMode)||(revising?previous.kind:"");
-      if(kind){
+      if(window.PAI_GO_SEARCH?.isGoLookup(q)&&!att.length&&!revising){
+        await window.PAI_GO_SEARCH.load();
+        const docs=window.PAI_GO_SEARCH.search(q,10);
+        S.chat.push({r:"a",t:docs.length
+          ?docs.length+" सत्यापित शासनादेश मिले हैं। PDF देखने या डाउनलोड करने के लिए नीचे लिंक खोलें।"
+          :"इस विषय का कोई सत्यापित GO अभी लाइब्रेरी में नहीं मिला। GO Search में दूसरे शब्द या GO नंबर से खोजें। GO का संग्रह अपलोड होने पर परिणाम उपलब्ध होंगे।",
+          goResultIds:docs.map(d=>d.id),question:q,formatVersion:4});
+      }else if(kind){
         const followup=revising;
         const source=followup?[{name:"पिछले मसौदे का संदर्भ",text:window.PAI_DRAFT_CARD.sanitize(previous.html).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ")}]:[];
         const detected=window.PAI_LETTERHEAD?.mode(S.profile,q,kind)||"plain";
