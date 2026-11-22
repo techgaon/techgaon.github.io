@@ -35,7 +35,7 @@
   const escapeHTML=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const norm=v=>String(v??"").normalize("NFKC").toLocaleLowerCase()
     .replace(/[०-९]/g,c=>String(c.charCodeAt(0)-2406))
-    .replace(/[^\p{L}\p{N}./\s-]/gu," ").replace(/\s+/g," ").trim();
+    .replace(/[^\p{L}\p{M}\p{N}./\s-]/gu," ").replace(/\s+/g," ").trim();
   const terms=value=>{
     const raw=norm(value).split(/[\s./-]+/u).filter(Boolean);
     return [...new Set(raw.map(t=>Object.hasOwn(latin,t)?latin[t]:t).filter(t=>t.length>=2&&!stop.has(t)))];
