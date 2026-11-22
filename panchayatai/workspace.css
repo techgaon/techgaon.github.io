@@ -86,3 +86,33 @@ html,body{overflow-x:clip}
   body,#app,header.top,main#view{width:100%;max-width:100%}
   .composer,.pai-bottom-nav{left:0;right:0}
 }
+/* Subtle AI animation on letter generation; spinner only while generating. */
+.pai-writing-actions .pai-ai-generate{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:48px;position:relative;overflow:hidden;
+  transition:box-shadow .22s ease,transform .22s ease;
+}
+.pai-ai-generate .pai-ai-sparkle{
+  display:inline-block;font-size:22px;line-height:1;
+  color:#fff3ba;filter:drop-shadow(0 0 3px #ffe9a466);
+  transform-origin:center;
+  animation:pai-generate-sparkle 3.2s ease-in-out infinite;
+}
+@keyframes pai-generate-sparkle{
+  0%,65%,100%{transform:scale(1) rotate(0deg);opacity:.85}
+  78%{transform:scale(1.18) rotate(16deg);opacity:1}
+  88%{transform:scale(.97) rotate(-8deg);opacity:.9}
+}
+.pai-ai-generate:not(:disabled):active{transform:scale(.98)}
+.pai-ai-generate.is-loading{cursor:progress}
+.pai-ai-generate .pai-ai-spinner{
+  width:19px;height:19px;display:inline-block;flex:none;
+  border:2px solid #ffffff70;border-top-color:#fff;border-radius:50%;
+  animation:pai-generate-spin .85s linear infinite;
+}
+@keyframes pai-generate-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+  .pai-ai-generate .pai-ai-sparkle,.pai-ai-generate .pai-ai-spinner{animation:none!important}
+}
+body.pai-motion-off .pai-ai-generate .pai-ai-sparkle,
+body.pai-motion-off .pai-ai-generate .pai-ai-spinner{animation:none!important}
