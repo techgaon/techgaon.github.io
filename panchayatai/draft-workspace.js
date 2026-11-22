@@ -3,6 +3,8 @@
  "use strict";
  const $=(s,p=document)=>p.querySelector(s);
  const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ const idleAiButton='<span class="pai-ai-sparkle" aria-hidden="true">✦</span><span>Genrate letter Via AI</span>';
+ const loadingAiButton='<span class="pai-ai-spinner" aria-hidden="true"></span><span>AI मसौदा तैयार कर रहा है…</span>';
  const examples={
    patra:["ADO पंचायत को ग्राम पंचायत की सफाई व्यवस्था के संबंध में पत्र बनाओ","BDO को आवश्यक अभिलेख उपलब्ध कराने हेतु पत्र बनाओ","ADO panchayat ko safai vyavastha ke sambandh me patra banao","BDO ko zaroori abhilekh uplabdh karane hetu patra banao"],
    notice:["ग्राम पंचायत में सार्वजनिक रास्ते पर निर्माण सामग्री रखने के संबंध में नोटिस बनाओ"],
@@ -32,7 +34,7 @@
        '<div class="pai-writing-attach"><label for="paiWritingFile">Upload File</label>'+
        '<input id="paiWritingFile" type="file" accept=".docx,.pdf,image/jpeg,image/png" multiple>'+
        '<span id="paiFilesInfo" class="hint">Upload Word, PDF or Photo for reference (optional).</span></div>':"")+
-     '<div class="pai-writing-actions"><button id="paiWrite" class="btn" type="button">Genrate letter Via AI</button></div>'+
+     '<div class="pai-writing-actions"><button id="paiWrite" class="btn pai-ai-generate" type="button">'+idleAiButton+'</button></div>'+
      '<p id="paiWriteStatus" class="hint" role="status" aria-live="polite"></p></section>'+
      '<section id="paiWritingOutput" aria-live="polite"></section></section>';
    const matter=$("#paiMatter",el),submit=$("#paiWrite",el),status=$("#paiWriteStatus",el);
@@ -63,7 +65,7 @@
      if(submit.disabled)return;
      const request=matter.value.trim();
      if(!request&&!revise){status.textContent="पहले पत्र का विषय बताएँ।";matter.focus();return;}
-     submit.disabled=true;submit.textContent="मसौदा तैयार हो रहा है…";
+     submit.disabled=true;submit.classList.add("is-loading");submit.setAttribute("aria-busy","true");submit.innerHTML=loadingAiButton;
      status.textContent="आपकी Profile और दस्तावेज़ों के आधार पर पत्र बनाया जा रहा है…";
      try{
        if(view){view.dispose();view=null;}
@@ -101,7 +103,7 @@
          await create(true);
        };
      }catch(e){status.textContent="⚠️ "+(e.message||"पत्र नहीं बना। पुनः प्रयास करें।");}
-     finally{submit.disabled=false;submit.textContent="Genrate letter Via AI";}
+     finally{submit.disabled=false;submit.classList.remove("is-loading");submit.removeAttribute("aria-busy");submit.innerHTML=idleAiButton;}
    };
    submit.onclick=()=>create(false);
    if(previous?.html){
