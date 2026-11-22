@@ -838,8 +838,8 @@ function chat(el) {
   const readArchives=()=>Array.isArray(LS.get(archiveKey))?(LS.get(archiveKey)||[]):[];
   el.innerHTML='<div class="pai-chat-mode"><button type="button" class="on" aria-current="page">✦ AI Help</button>'+
     '<button type="button" id="paiStartNewChat">＋ New Chat</button>'+
-    '<button type="button" data-ai-health>◉ AI कनेक्शन जाँचें</button></div>'+
-    '<p class="pai-ai-status" role="status" aria-live="polite" hidden></p>'+
+    '</div>'+
+
     '<p class="hint">Gemini अनुपलब्ध होने पर लिखित प्रश्न और आवश्यक Profile संदर्भ Groq/Cloudflare AI तक जा सकते हैं। Free Backup का उपयोग संबंधित Providers की अपनी सीमा तक ही संभव है।</p>'+
     '<div class="pai-chat-archive"><label for="paiChatArchive">पुरानी बातचीत</label>'+
     '<select id="paiChatArchive"><option value="">— History देखें —</option></select></div>'+
