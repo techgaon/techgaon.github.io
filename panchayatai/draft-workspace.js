@@ -137,7 +137,7 @@
    const create=async(revise=false)=>{
      if(submit.disabled)return;
      const request=matter.value.trim();
-     if(!request&&!revise){status.textContent="पहले पत्र का विषय बताएँ।";matter.focus();return;}
+     if(!request&&!revise&&!igrs){status.textContent="पहले पत्र का विषय बताएँ।";matter.focus();return;}
      submit.disabled=true;submit.classList.add("is-loading");submit.setAttribute("aria-busy","true");submit.innerHTML=loadingAiButton;
      status.textContent="आपकी Profile और दस्तावेज़ों के आधार पर पत्र बनाया जा रहा है…";
      try{

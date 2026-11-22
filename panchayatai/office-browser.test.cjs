@@ -1,11 +1,20 @@
-const fs=require('fs'),path=require('path'),assert=require('assert');
+const fs=require('fs'),path=require('path'),assert=require('assert'),http=require('http');
 const root=process.env.GITHUB_WORKSPACE,p=path.join(root,'panchayatai');
 const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr'),JSZip=require('jszip'),{PDFDocument}=require('pdf-lib');
 (async()=>{
  const {render}=await import('file://'+p+'/drafting-core.mjs');
  const input={kind:'पत्र',points:'BDO ko safai ke liye patra',promptAt:'2026-11-22T06:00:00Z',profile:{role:'gpa',nameHindi:'चंद्र भानु पांडेय',gps:['कमेला'],blockHindi:'हैदरगढ़',districtHindi:'बाराबंकी'}};
  const html=render({subject:'सफाई व्यवस्था',recipient:'खण्ड विकास अधिकारी',paragraphs:['ग्राम पंचायत की सफाई व्यवस्था हेतु अनुरोध है।','उपलब्ध जानकारी के अनुसार आवश्यक कार्यवाही करने का कष्ट करें।'],evidence:[]},input).html;
+ const server=http.createServer((req,res)=>{
+  const pathname=new URL(req.url,'http://local').pathname;
+  if(pathname.endsWith('office-test-harness.html')){res.setHeader('Content-Type','text/html');return res.end('<!doctype html><html><body></body></html>');}
+  const target=path.resolve(root,'.'+pathname);
+  if(!target.startsWith(root+path.sep)||!fs.existsSync(target)){res.statusCode=404;return res.end();}
+  res.setHeader('Content-Type',/\\.m?js$/.test(target)?'text/javascript':'application/octet-stream');fs.createReadStream(target).pipe(res);
+ });
+ await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
  const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1000,height:1000}});
+ await page.goto('http://127.0.0.1:'+server.address().port+'/panchayatai/office-test-harness.html');
  await page.setContent('<!doctype html><html><head></head><body><div id="paper"></div><div id="qr"></div></body></html>');
  const fontCandidates=['/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf','/usr/share/fonts/truetype/noto/NotoSansDevanagari[wdth,wght].ttf'];
  const font=fontCandidates.find(f=>fs.existsSync(f));
@@ -37,5 +46,27 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  const decoded=jsQR(new Uint8ClampedArray(bitmap.data),bitmap.width,bitmap.height);assert(decoded);assert.equal(decoded.data,result.uri);assert.equal(new URL(decoded.data).searchParams.get('am'),'49.00');
  fs.mkdirSync('office-test-artifacts',{recursive:true});fs.writeFileSync('office-test-artifacts/letter.pdf',Buffer.from(result.pdf));fs.writeFileSync('office-test-artifacts/letter.docx',Buffer.from(result.word));
  await page.screenshot({path:'office-test-artifacts/preview.png',fullPage:true});
- await browser.close();console.log('PASS: Real one-page A4 PDF, blank PDF day, full DOCX date, right signature, decodable UPI QR and invalid UPI rejection.');
+ const fixture=await PDFDocument.create(),fixturePage=fixture.addPage();fixturePage.drawText('IGRS complaint CASE12345: drainage problem. No inspection completed.');
+ const fixtureBytes=await fixture.save();
+ await page.addScriptTag({path:path.join(p,'tools.js')});
+ await page.addScriptTag({path:path.join(p,'draft-workspace.js')});
+ await page.evaluate(html=>{
+  const holder=document.createElement('div');holder.id='igrs';document.body.append(holder);
+  window.PAI_DRAFT_WORKSPACE.mount(holder,{kind:'IGRS निस्तारण आख्या',code:'igrs',profile:{role:'gpa',nameHindi:'परीक्षण सचिव',gps:['कमेला']},user:{uid:'test-user'},
+   api:async(path,body)=>{window.igrsReceived=body;return {html,review:{missing:['वास्तविक कार्रवाई का विवरण']}};},toast:()=>{},save:async()=>{}});
+ },html);
+ await page.locator('#igrs input[type=file]').setInputFiles({name:'case-native.pdf',mimeType:'application/pdf',buffer:Buffer.from(fixtureBytes)});
+ await page.locator('#igrs #paiWrite').click();
+ await page.waitForFunction(()=>!!window.igrsReceived);
+ const received=await page.evaluate(()=>window.igrsReceived);
+ assert(received.att[0].text.includes('CASE12345'));assert(received.points.includes('निस्तारण'));
+ await page.locator('#igrs [data-edit]').click();
+ await page.locator('#igrs .inline-draft-paper').fill('उपलब्ध अभिलेखों के आधार पर संशोधित आख्या।');
+ assert((await page.locator('#igrs .inline-draft-paper').innerText()).includes('संशोधित'));
+ await page.evaluate(()=>window.PAI_PAYMENTS.notify({name:'Plus',activationId:'test-approval',until:Date.now()+86400000},'test-user'));
+ assert(await page.locator('#paiPlusCelebration').isVisible());
+ await page.locator('#paiPlusCelebration button').click();
+ await page.evaluate(()=>window.PAI_PAYMENTS.notify({name:'Plus',activationId:'test-approval',until:Date.now()+86400000},'test-user'));
+ assert.equal(await page.locator('#paiPlusCelebration').count(),0);
+ await browser.close();server.close();console.log('PASS: Real one-page A4 PDF, blank PDF day, full DOCX date, right signature, decodable UPI QR invalid UPI rejection, real IGRS PDF text upload, editable report and one-time Plus popup.');
 })().catch(e=>{console.error(e);process.exit(1);});
