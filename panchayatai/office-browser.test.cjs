@@ -10,7 +10,7 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
   if(pathname.endsWith('office-test-harness.html')){res.setHeader('Content-Type','text/html');return res.end('<!doctype html><html><body></body></html>');}
   const target=path.resolve(root,'.'+pathname);
   if(!target.startsWith(root+path.sep)||!fs.existsSync(target)){res.statusCode=404;return res.end();}
-  res.setHeader('Content-Type',/\\.m?js$/.test(target)?'text/javascript':'application/octet-stream');fs.createReadStream(target).pipe(res);
+  res.setHeader('Content-Type',(target.endsWith('.js')||target.endsWith('.mjs'))?'text/javascript':'application/octet-stream');fs.createReadStream(target).pipe(res);
  });
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
  const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1000,height:1000}});
