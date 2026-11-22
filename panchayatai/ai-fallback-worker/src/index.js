@@ -79,7 +79,8 @@ async function cloudflareAI(body,env){
   const model=env.CF_MODEL||"@cf/meta/llama-3.1-8b-instruct-fp8-fast";
   const messages=[{role:"system",content:body.system},...body.messages];
   const j=await env.AI.run(model,{messages,max_tokens:3072,temperature:0.2,response_format:{type:"json_object"}});
-  const text=j?.response||j?.result?.response||j?.choices?.[0]?.message?.content;
+  let text=j?.response||j?.result?.response||j?.choices?.[0]?.message?.content;
+  if(text&&typeof text==="object"&&!Array.isArray(text))text=JSON.stringify(text);
   if(typeof text!=="string"||!text.trim())throw Error("CLOUDFLARE_EMPTY");
   return {text,provider:"Cloudflare Workers AI",model};
 }

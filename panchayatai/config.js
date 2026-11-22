@@ -19,7 +19,7 @@ window.PAI_CONFIG = {
   geminiModel: "gemini-3.5-flash-lite",
   // Gemini प्राथमिक, Groq → Cloudflare Worker केवल Gemini विफल होने पर।
   // Secrets और Google Login validation केवल सुरक्षित Worker में होंगे।
-  aiFallback: {enabled:true,endpoint:"/panchayatai/api/ai-fallback"},
+  aiFallback: {enabled:true,endpoint:"https://panchayat-ai-fallback.surajbhanpandey853.workers.dev/panchayatai/api/ai-fallback"},
   recaptchaSiteKey: "6Lcmdw8uAAAAALp9S2hlQaEAiLe72Att_nX7pq4G", // App Check (public site key)
 
   // UPI भुगतान (FoodGaon की तरह केवल UPI)

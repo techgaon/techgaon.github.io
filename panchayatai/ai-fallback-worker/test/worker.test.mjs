@@ -78,6 +78,10 @@ test("do not accept arbitrary model or provider override to access keys",async()
   assert.equal((await r.json()).model,"openai/gpt-oss-20b");
 });
 test.after(()=>{globalThis.fetch=originalFetch});
+test("Cloudflare JSON-mode objects are accepted as structured replies",async()=>{
+  const r=await worker.fetch(req(),{...env,GROQ_API_KEY:"",ENABLE_CF_AI:"true",AI:{run:async()=>({response:{subject:"sample"}})}});
+  assert.equal(r.status,200);const body=await r.json();assert.equal(JSON.parse(body.text).subject,"sample");
+});
 test("invalid Groq JSON switches to Cloudflare instead of failing the draft",async()=>{
   const saved=globalThis.fetch;
   globalThis.fetch=async(url,...args)=>String(url).includes("api.groq.com")?
