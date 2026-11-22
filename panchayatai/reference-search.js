@@ -23,7 +23,10 @@
     const ranked=[...scores].filter(([n])=>coverage.get(n)>=Math.min(2,terms.length)).map(([n,score])=>{
       const row=index.pages[n],doc=index.docs[row.doc];
       const titleTerms=tokens(doc.title);
-      const bonus=terms.filter(t=>titleTerms.includes(t)).length*2;
+      const pairs=terms.slice(0,-1).map((t,i)=>t+' '+terms[i+1]);
+      const title=norm(doc.title).replace(/\s+/g,' '),body=norm(row.text).replace(/\s+/g,' ');
+      const bonus=terms.filter(t=>titleTerms.includes(t)).length*2+
+        pairs.filter(p=>title.includes(p)).length*16+pairs.filter(p=>body.includes(p)).length*4;
       return {n,score:score+bonus,coverage:coverage.get(n)/terms.length};
     }).sort((a,b)=>b.coverage-a.coverage||b.score-a.score);
     const hits=[];
