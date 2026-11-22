@@ -1364,6 +1364,11 @@ async function adminPayments(panel) {
             amount = Math.max(0, Math.round((amount - (coupon.type === 'percent' ? amount * coupon.value / 100 : coupon.value)) * 100) / 100);
           }
           if (Math.abs(amount - payment.amount) > 0.001) throw new Error('Price changed. Verify the amount before proceeding');
+          if(payment.utr!=="FREE"){
+            const ledgerRef=S.db.collection("users").doc(S.user.uid),ledger=(await tx.get(ledgerRef)).data()||{};
+            if(ledger.approvedUpiRefs?.[payment.utr])throw Error("यह UTR पहले approve हो चुका है।");
+            tx.set(ledgerRef,{uid:S.user.uid,email:S.user.email,approvedUpiRefs:{[payment.utr]:id}},{merge:true});
+          }
           tx.set(userRef, { plan: { name: plan.label, activationId:id, activatedAt:Date.now(), until: Math.max(Date.now(), user.plan?.until || 0) + plan.days * 864e5 } }, { merge: true });
         }
         const receipt=payment.proof||user.paymentProofs?.[id]?.image||"";
