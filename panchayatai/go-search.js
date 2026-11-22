@@ -90,7 +90,7 @@
         key=norm(doc.keywords.join(" ")),dept=norm(doc.department);
       const hay=[title,aliases,key,dept,number].join(" ");
       const matching=words.filter(w=>hay.includes(w));
-      if(!matching.length)continue;
+      if(matching.length<Math.ceil(words.length*0.55))continue; // Avoid misleading single-keyword matches on specific queries.
       const ratio=matching.length/words.length;
       const score=ratio*100+(number&&q.includes(number)?80:0)
         +(title&&title.includes(q)?50:0)+matching.filter(w=>title.includes(w)).length*10
