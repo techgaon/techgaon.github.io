@@ -110,7 +110,7 @@
    if(igrs){$("#paiWritingFile",el).previousElementSibling.textContent="IGRS शिकायत upload करें";matter.placeholder="शिकायत पर हुई वास्तविक जाँच, कार्रवाई, अभिलेख और बाकी कार्य लिखें।";el.querySelector(".pai-writing-suggestions").innerHTML="<p class=\"hint\">पहले शिकायत upload करें, फिर वास्तविक कार्रवाई बताएँ। नीचे बना मसौदा इसी स्थान पर Edit, Save और Word/PDF कर सकते हैं।</p>";}
    const chosenFiles=[];
    if(input) input.onchange=()=>{
-     chosenFiles.splice(0,...chosenFiles.length,...Array.from(input.files||[]).slice(0,3));
+     chosenFiles.splice(0,chosenFiles.length,...Array.from(input.files||[]).slice(0,3));
      $("#paiFilesInfo",el).textContent=chosenFiles.length?
        chosenFiles.map(x=>x.name).join(" · "):"No file chosen";
    };
