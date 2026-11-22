@@ -10,13 +10,14 @@
    if(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','SVG','MATH','IMG','LINK','META'].includes(el.tagName)){el.remove();continue;}
    if(!allowed.has(el.tagName)){el.replaceWith(...el.childNodes);continue;}
    const align=el.style.textAlign,bold=el.style.fontWeight,italics=el.style.fontStyle;
-   const date=el.getAttribute('data-pai-date'),signature=el.getAttribute('data-pai-signature');
+   const date=el.getAttribute('data-pai-date'),signature=el.getAttribute('data-pai-signature'),officeHeader=el.getAttribute('data-pai-office-header');
    const span=el.getAttribute('colspan'),rowspan=el.getAttribute('rowspan');
    for(const a of Array.from(el.attributes))el.removeAttribute(a.name);
    if(['left','right','center','justify'].includes(align))el.style.textAlign=align;
    if(['bold','600','700','800'].includes(bold))el.style.fontWeight=bold;
    if(/^\d{2}\/\d{2}\/\d{4}$/.test(date||''))el.setAttribute('data-pai-date',date);
    if(signature==='1'&&el.tagName==='TABLE')el.setAttribute('data-pai-signature','1');
+   if(officeHeader==='1'&&el.tagName==='DIV')el.setAttribute('data-pai-office-header','1');
    if(italics==='italic')el.style.fontStyle='italic';
    if(/^(?:[1-9]|[1-4][0-9])$/.test(span||''))el.setAttribute('colspan',span);
    if(/^(?:[1-9]|[1-4][0-9])$/.test(rowspan||''))el.setAttribute('rowspan',rowspan);
@@ -32,7 +33,12 @@
   clone.dataset.docSize=paper.dataset.docSize||'12';
   clone.style.cssText="box-sizing:border-box;width:170mm;max-width:none;margin:0;padding:0;color:#111;background:#fff;font-family:'Noto Sans Devanagari','Nirmala UI',sans-serif;font-size:"+clone.dataset.docSize+"pt;line-height:1.65;letter-spacing:normal;word-spacing:normal;overflow-wrap:anywhere;text-align:left";
   clone.querySelectorAll('*').forEach(el=>{el.style.letterSpacing='normal';el.style.wordSpacing='normal';});
-  clone.querySelectorAll('p').forEach(p=>{p.style.margin='0 0 10pt';p.style.breakInside='avoid';});
+  clone.querySelectorAll('p').forEach(p=>{p.style.margin='0 0 10pt';p.style.lineHeight='1.65';});
+  clone.querySelectorAll('[data-pai-office-header="1"]').forEach(head=>{
+    head.style.cssText='text-align:center;margin:0 0 18pt;padding:0 0 9pt;border-bottom:1px solid #4b6179;break-inside:avoid';
+    head.querySelectorAll('h2').forEach(h=>{h.style.cssText='text-align:center;font-size:15pt;font-weight:700;line-height:1.45;margin:0 0 5pt';});
+    head.querySelectorAll('p').forEach(p=>{p.style.cssText='text-align:center;font-size:11.5pt;line-height:1.5;margin:0 0 2pt';});
+  });
   clone.querySelectorAll('table').forEach(t=>{t.style.cssText='width:100%;border-collapse:collapse;table-layout:fixed';});
   clone.querySelectorAll('td,th').forEach(c=>{c.style.border='1px solid #ccc';c.style.padding='5px';});
   clone.querySelectorAll('table[data-pai-signature]').forEach(t=>{t.style.border='0';t.style.breakInside='avoid';t.querySelectorAll('td').forEach(c=>{c.style.border='0';c.style.padding='6pt 0';c.style.verticalAlign='top';});});
@@ -50,7 +56,7 @@
   host.style.cssText='position:absolute;left:0;top:0;z-index:-9999;pointer-events:none;width:170mm;background:#fff';host.appendChild(clone);document.body.appendChild(host);
   try{
    onProgress(25);
-   const worker=window.html2pdf().set({margin:[20,20,20,20],image:{type:'jpeg',quality:.98},html2canvas:{scale:2,backgroundColor:'#ffffff',scrollX:0,scrollY:0,useCORS:false},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],avoid:['tr','p','li']}}).from(clone).toCanvas();
+   const worker=window.html2pdf().set({margin:[20,20,20,20],image:{type:'jpeg',quality:.98},html2canvas:{scale:2,backgroundColor:'#ffffff',scrollX:0,scrollY:0,useCORS:false},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],avoid:['tr','h2','h3','table[data-pai-signature]','[data-pai-office-header]']}}).from(clone).toCanvas();
    await worker;onProgress(65);await worker.toPdf();
    const pdf=await worker.get('pdf');if(!pdf.internal.getNumberOfPages())throw Error('PDF खाली है।');
    onProgress(90);const bytes=pdf.output('arraybuffer');if(bytes.byteLength<900)throw Error('PDF सही नहीं बन सकी।');
