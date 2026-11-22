@@ -1134,7 +1134,7 @@ function payUI(id) {
   box.innerHTML = `<div class="card"><h3>${esc(plan.label)}</h3><p id="payAmount">${money(plan.price)}</p><label for="coupon">Coupon code</label><input id="coupon" maxlength="40" placeholder="Optional"><button class="btn alt" id="applyCoupon">Apply coupon</button><p id="couponStatus" role="status"></p><div id="paymentInstructions"></div></div>`;
   let quote = { amount: plan.price, coupon: "" };
   function paymentInstructions() {
-    const vpa = liveSettings.upi || "";
+    const vpa = liveSettings.upiMigrateToYbl ? (liveSettings.upi || C.upi?.vpa || "") : (C.upi?.vpa || liveSettings.upi || "");
     const area = $("#paymentInstructions");
     if (quote.amount > 0 && (!window.PAI_PAYMENTS.validUpi(vpa) || /REPLACE_ME/i.test(vpa))) { area.innerHTML = '<p>Payment setup is pending. Please contact the administrator.</p>'; return; }
     const ref = "PAI" + crypto.randomUUID().replaceAll("-", "").slice(0, 20);
@@ -1219,16 +1219,34 @@ async function adminOverview(panel) {
   const values = Array.from({ length: 14 }, (_, i) => { const day = new Date(Date.now() - (13-i)*864e5).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); return { day, count: days.get(day) || 0 }; });
   const today = values[13].count, week = values.slice(-7).reduce((n,d) => n + d.count, 0), max = Math.max(1, ...values.map(d => d.count));
   panel.innerHTML = `<div class="metrics"><div class="card"><small>Total visitors</small><strong>${Number(total.data()?.count || 0).toLocaleString("en-IN")}</strong></div><div class="card"><small>Today</small><strong>${today}</strong></div><div class="card"><small>Last 7 days</small><strong>${week}</strong></div></div><div class="card"><h3>Visits over 14 days</h3><div class="visitor-chart" role="img" aria-label="Visits over the last 14 days">${values.map(d => `<div class="chart-day" title="${d.day}: ${d.count}"><span>${d.count}</span><div class="chart-bar" style="height:${Math.max(2,d.count / max * 130)}px"></div><small>${d.day.slice(8)}</small></div>`).join('')}</div><p class="hint">Visits count browser sessions. Daily tracking starts with this update.</p></div>`;
+
+  const goInventory=document.createElement("div");
+  goInventory.className="card";goInventory.style.marginTop="14px";
+  goInventory.textContent="GO संग्रह की जानकारी लोड हो रही है…";
+  panel.append(goInventory);
+  window.PAI_GO_SEARCH?.inventory?.().then(info=>{
+    goInventory.innerHTML='<h3>GO दस्तावेज संग्रह</h3><p><strong>'+
+      Number(info.documents).toLocaleString("en-IN")+'</strong> indexed दस्तावेज · <strong>'+
+      Number(info.pages).toLocaleString("en-IN")+'</strong> indexed पृष्ठ</p>'+
+      (info.incomplete?'<p class="hint">पूरी 6 GB ZIP का आयात अभी पूर्ण नहीं है।</p>':'');
+  }).catch(()=>{goInventory.textContent="GO संग्रह का आँकड़ा अभी उपलब्ध नहीं है।";});
+
 }
 async function adminPlans(panel) {
   const doc = await settingsRef().get(), config = doc.data() || {};
+  // Admin-only one-time migration; never override subsequent changes by the admin.
+  if(isAdmin() && config.upiMigrateToYbl !== true){
+    await settingsRef().set({upi:C.upi.vpa,payee:C.upi.payeeName,
+      upiMigrateToYbl:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    config.upi=C.upi.vpa;config.payee=C.upi.payeeName;config.upiMigrateToYbl=true;
+  }
   const entries = config.plans || [
     { id: "monthly", label: "Plus Monthly", price: 49, days: 30, active: false, features: "More questions and drafts\nFile attachments" },
     { id: "yearly", label: "Plus Yearly", price: 499, days: 365, active: false, features: "All Plus features for a year" },
     { id: "two-year", label: "Plus 2 Years", price: 999, days: 730, active: false, features: "All Plus features for two years" }
   ];
   panel.innerHTML = '<p class="hint">Edit prices, duration and features. Enable a plan to display it to users.</p><div id="planEditors"></div><button class="btn alt" id="addPlan">Add plan</button><h3>Payment settings</h3><label for="adminUpi">UPI ID</label><input id="adminUpi"><label for="adminPayee">Payee name</label><input id="adminPayee"><div id="adminUpiQr" class="pai-payment-qr" hidden></div><p id="adminQrStatus" role="status"></p><button class="btn" id="savePlans">Save and publish plans</button><p id="planStatus" role="status"></p>';
-  $("#adminUpi").value = config.upi || ''; $("#adminPayee").value = config.payee || C.companyName;
+  $("#adminUpi").value = config.upi || C.upi?.vpa || ''; $("#adminPayee").value = config.payee || C.upi?.payeeName || C.companyName;
   let qrTimer;
   const updateQr=()=>{clearTimeout(qrTimer);qrTimer=setTimeout(async()=>{
     const vpa=$("#adminUpi").value.trim(),box=$("#adminUpiQr");box.hidden=!window.PAI_PAYMENTS.validUpi(vpa);
@@ -1251,7 +1269,7 @@ async function adminPlans(panel) {
         if (!p.label || !Number.isFinite(p.price) || p.price < 0 || !Number.isInteger(p.days) || p.days < 1 || p.days > 3650) throw new Error("Check plan name, price and duration"); return p;
       });
       const upi = $("#adminUpi").value.trim(); if (upi && !window.PAI_PAYMENTS.validUpi(upi)) throw new Error("Check the UPI ID");
-      await settingsRef().set({ plans, upi, payee: $("#adminPayee").value.trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      await settingsRef().set({ plans, upi, payee: $("#adminPayee").value.trim(), upiMigrateToYbl:true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       $("#planStatus").textContent = "Plans published successfully";
     } catch (e) { $("#planStatus").textContent = e.message; } finally { button.disabled = false; }
   };
