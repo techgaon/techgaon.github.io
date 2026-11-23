@@ -344,7 +344,7 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, igrs, estimate: estimateMB, settings:settingsScreen }[S.view] || home;
+  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, igrs, estimate: estimateMB, gstCalc, gstNo, settings:settingsScreen }[S.view] || home;
   stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
@@ -364,6 +364,8 @@ function settingsScreen(el) {
   else el.innerHTML = '<div class="card">Display Settings अभी नहीं खुल रही हैं। Reload करें।</div>';
 }
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
+function gstCalc(el) { if(window.PAI_GST?.mountCalc) window.PAI_GST.mountCalc(el); else el.textContent="GST Calculator अभी नहीं खुल रहा। Refresh करें।"; }
+function gstNo(el) { if(window.PAI_GST?.mountDetail) window.PAI_GST.mountDetail(el); else el.textContent="GST No Detail अभी नहीं खुल रहा। Refresh करें।"; }
 function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
 function igrs(el){
  if(needLogin("igrs"))return;
@@ -393,6 +395,8 @@ function home(el) {
     <div class="grid draft-grid pai-office-tiles">
       <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>Search GO · Original PDF</small></button>
       ${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
+      <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e">🧮</span><b>GST Calculator</b></button>
+      <button class="tile gst-no-tile" data-go="gstNo"><span class="e">🔎</span><b>GST No Detail</b></button>
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
       <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
       <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
@@ -1397,7 +1401,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'settings', 'goSearch', 'igrs'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'gstCalc', 'gstNo', 'settings', 'goSearch', 'igrs'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
