@@ -17,6 +17,12 @@
     return JSON.parse(new TextDecoder().decode(bytes));
   }
   async function digest(bytes){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');}
+  // Additional public PDFs use the same pinned index and SHA-256 verification.
+  function assetURL(doc,block,data){
+    if(!/^blocks\/[a-f0-9]{24}-[1-9][0-9]*\.pdf$/.test(block.file))throw Error('अमान्य दस्तावेज भाग');
+    if(doc.assetBase!==undefined&&doc.assetBase!=='https://techgaon-panchayat-orders.pages.dev/')throw Error('अनुमति सूची से बाहर दस्तावेज सेवा');
+    return new URL(block.file,doc.assetBase||data.url);
+  }
   async function load(){
     const url=catalogURL();if(!url)return null;
     if(loaded)return loaded;
@@ -26,7 +32,7 @@
       const index=await checkedJSON(new URL(catalog.index,url),catalog.indexSha256);
       if(index.schema!==1||!Array.isArray(index.docs)||!Array.isArray(index.pages)||!index.terms)throw Error('अमान्य दस्तावेज index');
       const allowed=new Set(['act','rules','go','dm_order','cdo_order','dpro_order','ddo_order','bdo_order']);
-      for(const doc of index.docs){if(!/^[a-f0-9]{24}$/.test(doc.id)||!allowed.has(doc.documentType)||!Array.isArray(doc.blocks))throw Error('अनुमति सूची से बाहर दस्तावेज');}
+      for(const doc of index.docs){if(!/^[a-f0-9]{24}$/.test(doc.id)||!allowed.has(doc.documentType)||!Array.isArray(doc.blocks)||(doc.assetBase!==undefined&&doc.assetBase!=='https://techgaon-panchayat-orders.pages.dev/'))throw Error('अनुमति सूची से बाहर दस्तावेज');}
       loaded={catalog,index,url};return loaded;
     })().catch(e=>{loading=null;throw e;});
     return loading;
@@ -59,7 +65,7 @@
         if(!block||!/^blocks\/[a-f0-9]{24}-[1-9][0-9]*\.pdf$/.test(block.file)||!/^[a-f0-9]{64}$/.test(block.sha256))throw Error('अमान्य स्रोत');
         let source=blocks.get(block.file);
         if(!source){
-          const response=await fetch(new URL(block.file,data.url),{credentials:'omit',signal:AbortSignal.timeout(45000)});
+          const response=await fetch(assetURL(doc,block,data),{credentials:'omit',signal:AbortSignal.timeout(45000)});
           if(!response.ok)throw Error('संदर्भ पन्ने डाउनलोड नहीं हो सके');
           const bytes=await response.arrayBuffer();
           if(bytes.byteLength>25*1024*1024||await digest(bytes)!==block.sha256)throw Error('मूल पन्नों की जाँच असफल हुई');
@@ -75,5 +81,5 @@
     a.href=url;a.download='PanchayatAI-reference-pages.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
     return {pages:seen.size,bytes:bytes.length};
   }
-  window.PAI_REFERENCES={search,download:hit=>downloadMany([hit]),downloadMany,load};
+  window.PAI_REFERENCES={search,download:hit=>downloadMany([hit]),downloadMany,load,assetURL};
 })();
