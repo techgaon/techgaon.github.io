@@ -1,0 +1,181 @@
+name: Import verified official Panchayat Raj GO supplement
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/panchayat-go-official-batch.yml'
+      - '.github/scripts/panchayat-go-official-import.py'
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: panchayat-go-corpus
+  cancel-in-progress: false
+jobs:
+  verified-public-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/checkout@v4
+        with:
+          ref: panchayat-go-pdfs
+          path: go-pdfs
+          sparse-checkout: |
+            blocks
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PDF validation dependencies
+        run: python -m pip install --disable-pip-version-check pypdfium2==5.1.0 Pillow==11.3.0
+      - name: Verify new source PDFs and create audit report
+        run: |
+          python -m py_compile .github/scripts/panchayat-go-official-import.py
+          python .github/scripts/panchayat-go-official-import.py
+      - name: Check existing corpus and new blocks before upload
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          info=json.loads(Path('/tmp/panchayat-official-report.json').read_text())
+          assert info['originalZipAccessed'] is False
+          assert info['baseDocumentCount']>=445
+          assert 1<=len(info['verifiedNew'])<=12
+          for doc in info['verifiedNew']:
+              file=Path('go-pdfs/blocks')/(doc['id']+'-1.pdf')
+              data=file.read_bytes()
+              assert len(data)==doc['size'] and hashlib.sha256(data).hexdigest()==doc['sha256']
+              assert data.startswith(b'%PDF-')
+          print('Verified for upload:',len(info['verifiedNew']),'unique official PDFs')
+          PY
+      - name: Upload verified original public PDFs to separate archive branch
+        working-directory: go-pdfs
+        run: |
+          git config user.name "Panchayat AI GO verifier"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add blocks
+          git diff --cached --quiet && { echo 'No new public PDFs to upload'; exit 1; }
+          git commit -m "Upload reviewed public Uttar Pradesh Panchayati Raj GO PDFs"
+          git push origin HEAD:panchayat-go-pdfs
+      - name: Verify published PDF bytes in public archive
+        run: |
+          python - <<'PY'
+          import hashlib,json,time,urllib.request
+          info=json.load(open('/tmp/panchayat-official-report.json'))
+          for doc in info['verifiedNew']:
+              url='https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/blocks/'+doc['id']+'-1.pdf'
+              for attempt in range(12):
+                  try:
+                      request=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+                      with urllib.request.urlopen(request,timeout=40) as response:body=response.read(doc['size']+1)
+                      if hashlib.sha256(body).hexdigest()==doc['sha256']:break
+                  except Exception as e: print(type(e).__name__,doc['sourceId'])
+                  time.sleep(5)
+              else:raise RuntimeError('Remote GO PDF sha verification failed: '+doc['id'])
+              print('REMOTE_VERIFIED',doc['sourceId'],len(body))
+          PY
+      - name: Rebuild trusted GO Search and AI Chat index
+        run: |
+          node <<'JS'
+          const fs=require('fs'),crypto=require('crypto'),assert=require('assert');
+          const dir='panchayatai/go-corpus',base=JSON.parse(fs.readFileSync(dir+'/catalog.json'));
+          const original=fs.readFileSync('/tmp/panchayat-official-existing-version.txt','utf8');
+          assert.equal(base.version,original);
+          const index=JSON.parse(fs.readFileSync(dir+'/index-uncompiled-official.json'));
+          const refs=require('./panchayatai/reference-search.js');
+          assert(index.docs.length>base.documentCount&&index.pages.length>base.pageCount);
+          const verified=JSON.parse(fs.readFileSync('/tmp/panchayat-official-report.json'));
+          assert.equal(index.docs.length,verified.newDocumentCount);
+          index.terms=Object.create(null);
+          for(let i=0;i<index.pages.length;i++){
+            const page=index.pages[i],doc=index.docs[page.doc];
+            for(const t of refs.tokens(page.text+' '+doc.title+' '+(doc.officialNumber||''),Infinity))
+              (index.terms[t]??=[]).push(i);
+          }
+          const ids=new Set();
+          for(const d of index.docs){
+            assert(!ids.has(d.id),'Duplicate source ID');ids.add(d.id);
+            assert(d.blocks.every(b=>/^[a-f0-9]{64}$/.test(b.sha256)&&/^\b/.test('b')));
+          }
+          for(const doc of verified.verifiedNew){
+            const hit=index.docs.find(d=>d.id===doc.id);
+            assert(hit&&hit.sourceUrl==='https://panchayatiraj.up.nic.in/pblc_pg/DocFileForms/GOFile.ashx?download=1&id='+doc.sourceId);
+            assert.equal(hit.pageCount,doc.pages);
+            assert(refs.search(index,hit.title).some(r=>r.id===doc.id),'New official order not searchable: '+doc.sourceId);
+          }
+          const buffer=Buffer.from(JSON.stringify(index));
+          assert(buffer.length<24*1024*1024,'Client index must stay below 24 MB');
+          const sha=crypto.createHash('sha256').update(buffer).digest('hex');
+          const path=dir+'/search-'+sha.slice(0,16)+'.json';
+          fs.writeFileSync(path,buffer);
+          Object.assign(base,{index:'search-'+sha.slice(0,16)+'.json',indexSha256:sha,
+             version:sha.slice(0,16),documentCount:index.docs.length,pageCount:index.pages.length,
+             incompleteArchive:true,officialWebReviewedOn:'2026-11-23',
+             officialWebNewDocumentCount:verified.verifiedNew.length});
+          fs.writeFileSync(dir+'/catalog.json',JSON.stringify(base));
+          fs.unlinkSync(dir+'/index-uncompiled-official.json');
+          fs.writeFileSync(dir+'/official-web-import-report.json',JSON.stringify({
+            source:verified.source,baseVersion:original,added:verified.verifiedNew,
+            newDocumentCount:index.docs.length,newPageCount:index.pages.length}));
+          console.log('NEW_INDEX',base.index,'docs',base.documentCount,'pages',base.pageCount);
+          JS
+      - name: Stay below GitHub Pages repository size guard
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          skip={'.git','go-pdfs'}
+          total=0
+          for root,dirs,files in os.walk('.'):
+              dirs[:]=[d for d in dirs if d not in skip]
+              for f in files:
+                  p=Path(root)/f
+                  if p.is_file():total+=p.stat().st_size
+          if total>950*1024*1024:
+              # Drop only the oldest stale index. The previously active hashed index is preserved.
+              old=Path('panchayatai/go-corpus/search-cbcf7c97ba7d20b4.json')
+              if old.is_file():total-=old.stat().st_size;old.unlink()
+          print('GH Pages bytes',total)
+          assert total<950*1024*1024,'Hosting-size limit reached; abort index publication'
+          PY
+      - name: Publish verified metadata without overwriting other apps
+        run: |
+          git config user.name "Panchayat AI GO verifier"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add panchayatai/go-corpus/catalog.json panchayatai/go-corpus/search-*.json panchayatai/go-corpus/official-web-import-report.json
+          git add -u panchayatai/go-corpus
+          git commit -m "Index new verified public Panchayati Raj GOs for Search and AI Chat"
+          git fetch origin main
+          python - <<'PY'
+          import subprocess,json
+          expected=open('/tmp/panchayat-official-existing-version.txt').read()
+          content=subprocess.check_output(['git','show','origin/main:panchayatai/go-corpus/catalog.json'])
+          assert json.loads(content)['version']==expected,'Concurrent GO catalog changed; manual rebase required'
+          PY
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Confirm the indexed catalog and uploaded archive
+        run: |
+          python - <<'PY'
+          import json,urllib.request,time
+          expected=json.load(open('panchayatai/go-corpus/catalog.json'))
+          url='https://techgaon.in/panchayatai/go-corpus/catalog.json'
+          for attempt in range(35):
+              try:
+                  req=urllib.request.Request(url+'?v='+expected['version'],headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=30) as response:live=json.load(response)
+                  if live['version']==expected['version']:
+                      assert live['documentCount']==expected['documentCount']
+                      assert live['pageCount']==expected['pageCount']
+                      print('PUBLIC_GO_SERVER_VERIFIED',json.dumps(live));break
+              except Exception as e:print(type(e).__name__,str(e)[:80])
+              time.sleep(12)
+          else:raise RuntimeError('GO catalog has not yet deployed to production')
+          PY
