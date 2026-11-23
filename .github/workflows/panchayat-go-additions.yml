@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/panchayat-go-additions.yml']
+    paths: ['.github/workflows/panchayat-go-additions.yml', '.github/scripts/panchayat-ingest-additions.py', '.github/scripts/panchayat-additions-ocr.cjs']
 permissions:
   contents: write
   pages: write

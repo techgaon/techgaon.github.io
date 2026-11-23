@@ -42,7 +42,9 @@ def main():
                     rows=[]
                     for page_no in doc['availablePages']:
                         page=pdf[page_no-1]
-                        with page.get_textpage() as tp:native=tp.get_text_range()
+                        tp=page.get_textpage()
+                        try:native=tp.get_text_range()
+                        finally:tp.close()
                         bitmap=page.render(scale=1.5,draw_annots=True)
                         picture=bitmap.to_pil().convert('RGB')
                         visual=digest(str(picture.size).encode()+picture.tobytes())

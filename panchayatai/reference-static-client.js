@@ -9,7 +9,7 @@
     return url;
   }
   async function checkedJSON(url,hash){
-    const r=await fetch(url,{credentials:'omit',cache:'default',signal:AbortSignal.timeout(20000)});
+    const r=await fetch(url,{credentials:'omit',cache:hash?'default':'no-cache',signal:AbortSignal.timeout(20000)});
     if(!r.ok)throw Error('दस्तावेज संग्रह अभी उपलब्ध नहीं है');
     const bytes=await r.arrayBuffer();
     if(bytes.byteLength>25*1024*1024)throw Error('दस्तावेज index बहुत बड़ा है');
