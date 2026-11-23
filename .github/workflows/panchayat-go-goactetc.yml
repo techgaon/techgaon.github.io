@@ -45,7 +45,7 @@ jobs:
                       assert re.fullmatch('blocks/'+d['id']+'-[1-9][0-9]*[.]pdf',b['file'])
                       data=z.read(b['file']);assert len(data)==b['bytes'];assert data.startswith(b'%PDF-')
                       assert hashlib.sha256(data).hexdigest()==b['sha256'];expected.add(b['file'])
-              assert set(z.namelist())==expected and len(z.namelist())==len(expected)
+              names=[n for n in z.namelist() if not n.endswith('/')];assert set(names)==expected and len(names)==len(expected)
               target=Path('reviewed-goactetc');target.mkdir()
               for name in sorted(expected):
                   p=target/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(z.read(name))
