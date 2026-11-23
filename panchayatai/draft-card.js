@@ -67,12 +67,12 @@
    stationery="plain",letterhead=null,onChange=()=>{},onSave=()=>{},toast=()=>{}}={}){
   const card=document.createElement('article');card.className='inline-draft-card';
   card.innerHTML='<div class="inline-draft-top"><b>'+escape(kind)+'</b><div class="inline-draft-actions">'+
-   '<button type="button" class="inline-draft-icon" data-copy aria-label="पत्र कॉपी करें" title="कॉपी"><svg viewBox="0 0 24 24">'+icons.copy+'</svg></button>'+
-   '<button type="button" class="inline-draft-icon" data-edit aria-label="पत्र संपादित करें" aria-pressed="false" title="संपादन"><svg viewBox="0 0 24 24">'+icons.edit+'</svg></button></div></div>'+
-   '<div class="inline-draft-paper" role="document" aria-label="पूरा पत्र" contenteditable="false"></div>'+
+   '<button type="button" class="inline-draft-icon" data-copy aria-label="Copy Draft" title="Copy"><svg viewBox="0 0 24 24">'+icons.copy+'</svg></button>'+
+   '<button type="button" class="inline-draft-icon" data-edit aria-label="Edit Draft" aria-pressed="false" title="Edit"><svg viewBox="0 0 24 24">'+icons.edit+'</svg></button></div></div>'+
+   '<div class="inline-draft-paper" role="document" aria-label="Draft Document" contenteditable="false"></div>'+
    '<button class="btn draft-save" type="button" data-save hidden>Save</button>'+
    '<div class="inline-draft-review"><details><summary>Final करने से पहले Details जाँचें</summary><p>नाम, पद, पंचायत, तारीख, तथ्य, अभिलेख और समय-सीमा जाँचकर ही पत्र जारी करें।</p>'+((review?.missing||[]).length?'<p>'+escape(review.missing.join('; '))+'</p>':'')+(review?.attachmentReview?'<p>फोटो/PDF के तथ्यों का मूल से मिलान करें।</p>':'')+'</details><label><input type="checkbox" data-reviewed> मैंने Draft की Details Check कर ली हैं।</label></div>'+
-   '<div class="inline-draft-files">'+['docx','pdf'].map(type=>'<div class="inline-file" data-type="'+type+'"><button class="btn alt" data-download="'+type+'" type="button">↓ '+(type==='docx'?'Word':'PDF')+'</button><div class="inline-file-status" role="status" aria-live="polite"></div><progress class="inline-file-progress" max="100" value="0" hidden aria-label="फाइल तैयार होने की प्रगति"></progress><div class="inline-file-options" hidden><button type="button" data-open="'+type+'">खोलें ↗</button><button type="button" data-share="'+type+'">WhatsApp ↗</button></div></div>').join('')+'</div>';
+   '<div class="inline-draft-files">'+['docx','pdf'].map(type=>'<div class="inline-file" data-type="'+type+'"><button class="btn alt" data-download="'+type+'" type="button">↓ '+(type==='docx'?'Word':'PDF')+'</button><div class="inline-file-status" role="status" aria-live="polite"></div><progress class="inline-file-progress" max="100" value="0" hidden aria-label="File progress"></progress><div class="inline-file-options" hidden><button type="button" data-open="'+type+'">Open ↗</button><button type="button" data-share="'+type+'">WhatsApp ↗</button></div></div>').join('')+'</div>';
   container.appendChild(card);
   const paper=card.querySelector('.inline-draft-paper');paper.innerHTML=sanitize(html);paper.dataset.docSize=String([11,12,13,14].includes(Number(size))?Number(size):12);
   const useHeader=stationery==="pradhan_letterhead" && !!letterhead && !!window.PAI_LETTERHEAD?.header;
@@ -110,11 +110,11 @@
   // Plain-text paste prevents hidden web markup from entering office documents.
   paper.addEventListener('paste',e=>{if(paper.contentEditable!=='true')return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');});
   card.querySelector('[data-edit]').onclick=e=>{const on=paper.contentEditable!=='true';paper.contentEditable=String(on);paper.setAttribute('role',on?'textbox':'document');paper.setAttribute('aria-label',on?'पत्र का संपादन':'पूरा पत्र');e.currentTarget.setAttribute('aria-pressed',String(on));if(on)paper.focus();};
-  card.querySelector('[data-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(paper.innerText);toast('कॉपी किया ✓');}catch{toast('कॉपी करने के लिए पत्र का टेक्स्ट चुनें।');}};
-  saved.onclick=async()=>{saved.disabled=true;try{await onSave({html:sanitize(paper.innerHTML),size:Number(paper.dataset.docSize)});saved.textContent='सहेजा गया ✓';}catch(e){toast(e.message||'सहेजा नहीं जा सका।');saved.disabled=false;}};
+  card.querySelector('[data-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(paper.innerText);toast('Copied ✓');}catch{toast('कॉपी करने के लिए पत्र का टेक्स्ट चुनें।');}};
+  saved.onclick=async()=>{saved.disabled=true;try{await onSave({html:sanitize(paper.innerHTML),size:Number(paper.dataset.docSize)});saved.textContent='Saved ✓';}catch(e){toast(e.message||'सहेजा नहीं जा सका।');saved.disabled=false;}};
   for(const type of ['pdf','docx']){
    const box=card.querySelector('[data-type="'+type+'"]'),btn=box.querySelector('[data-download]'),status=box.querySelector('.inline-file-status'),progress=box.querySelector('progress');
-   const stage=n=>{progress.hidden=false;progress.value=n;status.classList.remove('success');status.textContent='तैयार हो रहा है · '+n+'%';};
+   const stage=n=>{progress.hidden=false;progress.value=n;status.classList.remove('success');status.textContent='Preparing file · '+n+'%';};
    btn.onclick=async()=>{
     if(!checked.checked)return;
     const startRevision=revision,job={busy:true};files[type]=job;lock();stage(0);
@@ -125,8 +125,8 @@
      if(disposed||revision!==startRevision||!checked.checked){if(revision===startRevision)status.textContent='पत्र बदल गया है। फिर जाँचकर डाउनलोड करें।';return;}
      const file=new File([blob],name,{type:type==='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
      const url=download(file,name);urls.push(url);files[type]={file,url,busy:false,revision};progress.value=100;
-     status.textContent='✓ 100% · Downloaded';status.classList.add('success');status.title='फाइल तैयार करके ब्राउज़र को डाउनलोड के लिए भेज दी गई है।';btn.textContent='↓ फिर डाउनलोड करें';box.querySelector('.inline-file-options').hidden=false;
-    }catch(e){if(revision===startRevision){status.textContent=e.message||'डाउनलोड नहीं हुआ। फिर कोशिश करें।';progress.hidden=true;delete files[type];}}
+     status.textContent='✓ 100% · Downloaded';status.classList.add('success');status.title='फाइल तैयार करके ब्राउज़र को डाउनलोड के लिए भेज दी गई है।';btn.textContent='↓ Download Again';box.querySelector('.inline-file-options').hidden=false;
+    }catch(e){if(revision===startRevision){status.textContent=e.message||'Download failed. फिर Try करें।';progress.hidden=true;delete files[type];}}
     finally{if(files[type]===job)delete files[type];lock();}
    };
    box.querySelector('[data-open]').onclick=()=>{const f=files[type];if(!f?.url||f.revision!==revision)return;const a=document.createElement('a');a.href=f.url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();};
