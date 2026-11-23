@@ -11,9 +11,9 @@ ROOT=Path("panchayatai/go-corpus")
 ASSETS=Path("go-pdfs/blocks")
 OFFICIAL="https://panchayatiraj.up.nic.in/pblc_pg/DocFileForms/GOFile.ashx?download=1&id={}"
 ASSET_BASE="https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/"
-LOW=4578
-HIGH=4583
-MAX_ADD=6
+LOW=4570
+HIGH=4577
+MAX_ADD=7
 MAX_PDF=14_000_000
 CANDIDATE_WORDS=("पंचायती","पंचायत","ग्राम","विकास खण्ड","विकासखंड","ग्रामीण","शासनादेश","जिला पंचायत")
 PRIVATE_WORDS=("आधार संख्या","बैंक खाता संख्या","पासवर्ड","पैन नम्बर","व्यक्तिगत सेवा पुस्तिका","क्रेडिट कार्ड")

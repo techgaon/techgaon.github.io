@@ -47,7 +47,7 @@ jobs:
           info=json.loads(Path('/tmp/panchayat-official-report.json').read_text())
           assert info['originalZipAccessed'] is False
           assert info['baseDocumentCount']>=445
-          assert 1<=len(info['verifiedNew'])<=6
+          assert 1<=len(info['verifiedNew'])<=7
           for doc in info['verifiedNew']:
               file=Path('go-pdfs/blocks')/(doc['id']+'-1.pdf')
               data=file.read_bytes()
@@ -117,6 +117,23 @@ jobs:
           const known=index.docs.find(d=>d.id==='85bfa3becb5ed17d6e0c1288');
           if(known&&known.sourceUrl==='https://panchayatiraj.up.nic.in/pblc_pg/DocFileForms/GOFile.ashx?download=1&id=4585')
             known.title='उ0प्र0 विधान सभा एवं विधान परिषद की समितियों की बैठकों से आच्छादित प्रकरणों पर समयबद्ध रूप से कार्यवाही किये जाने एवं साक्ष्य बैठकों के उपयोगार्थ कलरफुल फोटोग्राफ सहित समयानुवर्तित आख्यायें शासन को उपलब्ध कराये जाने के सम्बन्ध में।';
+          // Source-backed corrections. OCR is used for search text, but visible
+          // titles / dates come from the department's own GO listing.
+          const officialCorrections=[
+            ['12b1491e2331975a600dba84',4583,'“रिफॉर्म उत्सव” को पीपुल्स प्लान कैम्पेन के साथ एकीकृत करते हुए 02 अक्टूबर, 2026 को ग्राम सभाओं में सुधारात्मक पहलों के प्रचार-प्रसार एवं ग्राम पंचायत विकास योजनाओं में समावेशन के संबंध में।','','2026-09-30'],
+            ['fb6e2f0da0b771317910c453',4582,'तालाब/अन्य स्रोतों के पट्टों/नीलामी से गाँव निधि में प्राप्त होने वाली आय के अनुश्रवण के संबंध में।','I/1456779/2026','2026-09-08'],
+            ['11c8797a77e3a7f13727d39d',4581,'स्वतंत्रता दिवस के अवसर पर विशेष ग्राम सभा एवं नशा मुक्त भारत अभियान के अंतर्गत गतिविधियाँ आयोजित किए जाने के संबंध में।','I/1432831/2026','2026-08-14'],
+            ['d2f0e728ef147918f2f97c2c',4579,'तालाब/अन्य स्रोतों के पट्टों/नीलामी से गाँव निधि में प्राप्त होने वाली आय के अनुश्रवण के संबंध में।','I/1430960/2026','2026-08-13'],
+            ['5c92b2ac650f75676e151779',4578,'क्षेत्र पंचायत के नियामक कार्यों एवं पंचायती राज विभाग के कार्यक्रमों को प्रभावी बनाने के संबंध में।','I/1413605/2026','2026-07-29'],
+          ];
+          for(const [id,sourceId,title,number,date] of officialCorrections){
+            const doc=index.docs.find(d=>d.id===id);
+            assert(doc&&doc.sourceUrl===('https://panchayatiraj.up.nic.in/pblc_pg/DocFileForms/GOFile.ashx?download=1&id='+sourceId),
+              'Unable to verify correction source '+sourceId);
+            doc.title=title;
+            if(number)doc.officialNumber=number;
+            doc.date=date;
+          }
           index.terms=Object.create(null);
           for(let i=0;i<index.pages.length;i++){
             const page=index.pages[i],doc=index.docs[page.doc];
