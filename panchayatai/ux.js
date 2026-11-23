@@ -42,7 +42,7 @@
      '<section class="card"><h3>Display Settings</h3><div class="settings-row"><label for="paiMode">रंग / Dark Mode</label>'+
      '<select id="paiMode"><option value="light">Light</option><option value="dark">Dark</option><option value="auto">फोन के अनुसार</option></select></div>'+
      '<div class="settings-row"><label for="paiFont">अक्षरों का आकार</label><select id="paiFont"><option value="normal">सामान्य</option><option value="large">बड़े अक्षर (+12%)</option></select></div>'+
-     '<div class="settings-preview"><strong>पूर्वावलोकन · पंचायत AI</strong><p>सरकारी पत्र, नोटिस और AI सहायता को अपनी पसंद के अनुसार आसानी से पढ़ें।</p></div>'+
+     '<div class="settings-preview"><strong>Preview · Panchayat AI</strong><p>सरकारी पत्र, नोटिस और AI सहायता को अपनी पसंद के अनुसार आसानी से पढ़ें।</p></div>'+
      '<button class="btn alt" type="button" id="paiResetAppearance">डिफ़ॉल्ट सेटिंग</button>'+
      '<button class="btn" type="button" id="paiReplayTour">ऐप टूर फिर देखें</button><p id="paiPrefStatus" class="hint" role="status"></p></section></div>';
     $("#paiMode",el).value=prefs.mode;$("#paiFont",el).value=prefs.font;
@@ -105,7 +105,7 @@
       motion:$("#paiMotion",panel).checked
     });
     const status=$("#paiDesignStatus",panel);
-    $("#paiPreviewDesign",panel).onclick=()=>{applyDesign(read());status.textContent="रंगों का Preview दिख रहा है; दूसरे उपयोगकर्ताओं के लिए अभी प्रकाशित नहीं हुआ।";};
+    $("#paiPreviewDesign",panel).onclick=()=>{applyDesign(read());status.textContent="Colours का Preview दिख रहा है; बाकी Users के लिए अभी Publish नहीं हुआ।";};
     $("#paiSaveDesign",panel).onclick=async()=>{
       const btn=$("#paiSaveDesign",panel);btn.disabled=true;
       try{
@@ -117,7 +117,7 @@
           if(!/\.(png|jpg|jpeg|webp)$/i.test(url.pathname))
             throw Error("Banner Image PNG, JPG या WebP होनी चाहिए।");
         }
-        await onSave(design);applyDesign(design);status.textContent="✓ डिज़ाइन प्रकाशित। सभी उपयोगकर्ताओं को अपडेट मिलेगा।";
+        await onSave(design);applyDesign(design);status.textContent="✓ Design Published. सभी Users को Update मिलेगा।";
       }catch(e){status.textContent="Save failed: "+(e.message||"Retry");}
       finally{btn.disabled=false;}
     };
