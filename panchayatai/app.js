@@ -365,7 +365,7 @@ function settingsScreen(el) {
 }
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 function gstCalc(el) { if(window.PAI_GST?.mountCalc) window.PAI_GST.mountCalc(el); else el.textContent="GST Calculator अभी नहीं खुल रहा। Refresh करें।"; }
-function gstNo(el) { if(window.PAI_GST?.mountDetail) window.PAI_GST.mountDetail(el); else el.textContent="GST No Detail अभी नहीं खुल रहा। Refresh करें।"; }
+function gstNo(el) { if(window.PAI_GST?.mountDetail) { window.PAI_GST.mountDetail(el); S.chatCleanup=()=>window.PAI_GST?.cleanup?.(); } else el.textContent="GST No Detail अभी नहीं खुल रहा। Refresh करें।"; }
 function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
 function igrs(el){
  if(needLogin("igrs"))return;
