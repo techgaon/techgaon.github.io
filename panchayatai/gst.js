@@ -27,7 +27,7 @@ const CSS=`
 .gst-ok{color:#11743f;font-weight:700}.gst-bad{color:#b42318;font-weight:700}
 .gst-note{font-size:13px;color:#5d6b65;margin:.5em 0 0}
 .gst-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.gst-act .btn{flex:1}
+.gst-act .btn{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
 .gst-big{font-family:inherit;transition:background .2s,border-color .2s}
 .gst-big:hover,.gst-big:focus-visible{background:#e7f4ed;border-color:#178550;outline-offset:2px}
 .gst-big:disabled{opacity:.6;cursor:not-allowed}
@@ -246,14 +246,13 @@ function mountDetail(el){
    (r.valid?'✓ GSTIN format और checksum सही हैं':'✗ GSTIN format/checksum सही नहीं है')+'</p>'+
    (r.errors.length?'<p class="gst-note">'+r.errors.map(esc).join(" ")+'</p>':"")+
    (fields.length?'<table>'+fields.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+'</td></tr>').join("")+'</table>':"")+
-   (r.valid?'<div class="gst-act"><button type="button" class="btn" id="gst-portal">Full Detail on GST Portal</button>'+
+   (r.valid?'<div class="gst-act"><a class="btn" id="gst-portal" href="https://services.gst.gov.in/services/searchtp" target="_blank" rel="noopener noreferrer">Full Detail on GST Portal</a>'+
    '<button type="button" class="btn alt" id="gst-cp">Copy GSTIN</button></div>'+
    '<p class="gst-note">Format सही होने का अर्थ यह नहीं कि GST Registration Active है। Legal Name, Trade Name, Address और Status की आधिकारिक जाँच GST Portal पर करें। वहाँ Captcha भरना पड़ सकता है।</p>':"")+
    '</div><div id="gst-live"></div>';
   if(r.valid){
    $("#gst-portal").onclick=async()=>{
-    window.open("https://services.gst.gov.in/services/searchtp","_blank","noopener,noreferrer");
-    $("#gst-portal").textContent=(await copy(r.gstin))?"GSTIN Copied · Portal Open":"Open Official GST Portal";
+    $("#gst-portal").textContent=(await copy(r.gstin))?"GSTIN Copied · Check Portal":"Full Detail on GST Portal";
    };
    $("#gst-cp").onclick=async()=>{$("#gst-cp").textContent=(await copy(r.gstin))?"✓ Copied":"Copy blocked";};
    void liveLookup(r.gstin);
