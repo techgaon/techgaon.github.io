@@ -3,7 +3,7 @@
 Never ingest, expose or modify the user's original ZIP. Fail closed on ambiguous PDFs.
 The existing 445+ reference docs are preserved and deduplicated by hash and visual content.
 """
-import hashlib, json, os, re, sys, urllib.request, urllib.error, http.client, time
+import hashlib, json, os, re, sys, urllib.request, urllib.error, http.client, time, subprocess
 from pathlib import Path
 import pypdfium2 as pdfium
 
@@ -18,6 +18,30 @@ MAX_PDF=14_000_000
 CANDIDATE_WORDS=("पंचायती","पंचायत","ग्राम","विकास खण्ड","विकासखंड","ग्रामीण","शासनादेश","जिला पंचायत")
 PRIVATE_WORDS=("आधार संख्या","बैंक खाता संख्या","पासवर्ड","पैन नम्बर","व्यक्तिगत सेवा पुस्तिका","क्रेडिट कार्ड")
 SHA=lambda b:hashlib.sha256(b).hexdigest()
+WORKER=None
+def ocr_page(page):
+    global WORKER
+    assert WORKER is not None
+    w,h=page.get_size()
+    scale=min(1800/w,2700/h,3)
+    image=page.render(scale=scale,draw_annots=True)
+    raster=image.to_pil().convert("L")
+    image.close()
+    filename=Path("/tmp/panchayat-official-page.raw")
+    filename.write_bytes(raster.tobytes())
+    WORKER.stdin.write(json.dumps({"file":str(filename),"width":raster.width,"height":raster.height})+"\n")
+    WORKER.stdin.flush()
+    response=json.loads(WORKER.stdout.readline())
+    if response.get("error"):raise RuntimeError("OCR error: "+response["error"])
+    value=response.get("text","")
+    print("OCR_PAGE","length",len(value),"confidence",response.get("confidence"),flush=True)
+    return value
+def native_legible(value):
+    if not value or len(value)<65:return False
+    if sum(ord(c)<32 and c not in "\t\n\r" for c in value)>2:return False
+    devanagari=sum("\u0900"<=c<="\u097f" for c in value)
+    return devanagari>20 and devanagari/len(value)>.12
+
 def normalize(value):
     return re.sub(r'\s+'," ",str(value or "")).strip().casefold()
 def official_text_ok(s):
@@ -87,6 +111,11 @@ def main():
     assert len(index["pages"])==catalog["pageCount"]
     assert index.get("schema")==1
     index.pop("terms",None)
+    global WORKER
+    WORKER=subprocess.Popen(["node",".github/scripts/panchayat-additions-ocr.cjs"],stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,encoding="utf-8")
+    ready=json.loads(WORKER.stdout.readline())
+    assert ready.get("ready"),"Hindi OCR worker failed to initialize"
     ids={x["id"] for x in index["docs"]}
     origins={x.get("sourceSha256") for x in index["docs"]}
     numbers={(normalize(x.get("officialNumber")),x.get("date")) for x in index["docs"] if x.get("officialNumber") and x.get("date")}
@@ -107,6 +136,8 @@ def main():
                 skipped[str(num)]="page count out of bounds";pdf.close();continue
             first_page=pdf[0]
             first_text=first_page.get_textpage().get_text_range()
+            if not official_text_ok(first_text) or not subject_from(first_text) or not native_legible(first_text):
+                first_text=ocr_page(first_page)
             first_page.close()
             if not official_text_ok(first_text):
                 skipped[str(num)]="unreadable or not a verified public governance order";print("SKIP_TEXT",num,len(first_text),repr(first_text[:170]),flush=True);pdf.close();continue
@@ -124,10 +155,16 @@ def main():
                 try: page_text=tp.get_text_range()
                 finally: tp.close()
                 # Download the entire original even if a later page is an image.
-                if not official_text_ok(page_text) and len(page_text.strip())<50:
+                if k==0:
+                    page_text=first_text
+                    quality="ocr; original PDF authoritative" if not native_legible(tp.get_text_range() if False else "") else "extracted"
+                elif not native_legible(page_text):
+                    page_text=ocr_page(page)
+                    quality="ocr; original PDF authoritative"
+                else:quality="extracted"
+                if not page_text.strip():
                     page_text=""
                     quality="image-only; refer to original PDF"
-                else:quality="extracted"
                 if len(page_text)>16000:page_text=page_text[:16000]
                 bmp=page.render(scale=1.5,draw_annots=True)
                 picture=bmp.to_pil().convert("RGB")
@@ -173,5 +210,7 @@ def main():
     if not added:
         raise RuntimeError("No new public official GO passed all duplication and evidence gates; nothing is published")
     (ROOT/"index-uncompiled-official.json").write_text(json.dumps(index,ensure_ascii=False),encoding="utf-8")
+    WORKER.stdin.close()
+    WORKER.wait(timeout=30)
     Path("/tmp/panchayat-official-existing-version.txt").write_text(catalog["version"])
 if __name__=="__main__":main()
