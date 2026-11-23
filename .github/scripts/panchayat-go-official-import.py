@@ -11,9 +11,9 @@ ROOT=Path("panchayatai/go-corpus")
 ASSETS=Path("go-pdfs/blocks")
 OFFICIAL="https://panchayatiraj.up.nic.in/pblc_pg/DocFileForms/GOFile.ashx?download=1&id={}"
 ASSET_BASE="https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/"
-LOW=4579
+LOW=4584
 HIGH=4585
-MAX_ADD=6
+MAX_ADD=2
 MAX_PDF=14_000_000
 CANDIDATE_WORDS=("पंचायती","पंचायत","ग्राम","विकास खण्ड","विकासखंड","ग्रामीण","शासनादेश","जिला पंचायत")
 PRIVATE_WORDS=("आधार संख्या","बैंक खाता संख्या","पासवर्ड","पैन नम्बर","व्यक्तिगत सेवा पुस्तिका","क्रेडिट कार्ड")
@@ -28,7 +28,7 @@ def request_pdf(num):
     url=OFFICIAL.format(num)
     # Government PDFs occasionally terminate chunked transfer early; retry whole
     # transfer rather than publishing an incomplete or unverified original.
-    for attempt in range(3):
+    for attempt in range(2):
         try:
             req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (compatible; PanchayatAIOfficialGOCatalog/1.0)","Accept":"application/pdf"})
             with urllib.request.urlopen(req,timeout=18) as r:
@@ -45,7 +45,7 @@ def request_pdf(num):
                 return b
         except (urllib.error.URLError,ValueError,TimeoutError,OSError,http.client.IncompleteRead,EOFError) as ex:
             print("FETCH_RETRY",num,attempt+1,type(ex).__name__,str(ex)[:120],flush=True)
-            if attempt<2:time.sleep(2)
+            if attempt<1:time.sleep(1)
     return None
 def subject_from(text):
     lines=[normalize(x).strip(" -—–:ः।") for x in text.splitlines()]
