@@ -9,6 +9,7 @@ on:
       - 'panchayatai/go-search.css'
       - 'panchayatai/reference-search.js'
       - '.github/workflows/panchayat-go-search-test.yml'
+      - 'panchayatai/go-corpus/catalog.json'
 permissions:
   contents: read
 jobs:
@@ -34,7 +35,9 @@ jobs:
           const fs=require('fs'),assert=require('assert'),search=require('./panchayatai/reference-search.js');
           const root='panchayatai/go-corpus/',catalog=JSON.parse(fs.readFileSync(root+'catalog.json'));
           const index=JSON.parse(fs.readFileSync(root+catalog.index));
-          assert.equal(index.docs.length,290);assert.equal(index.pages.length,2542);
+          assert.equal(index.docs.length,catalog.documentCount);assert.equal(index.pages.length,catalog.pageCount);
+          assert(index.docs.length>=309&&index.pages.length>=2641);
+          assert.equal(new Set(index.docs.map(d=>d.id)).size,index.docs.length);
           const roman=search.search(index,'panchayt sahayak niyukti ka go do');
           const hindi=search.search(index,'पंचायत सहायक नियुक्ति का GO दो');
           assert(roman.length&&roman[0].title.includes('पंचायत सहायक'));
