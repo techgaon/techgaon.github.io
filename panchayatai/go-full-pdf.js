@@ -52,7 +52,7 @@ function termsFor(query){
 // entitlement, amount, eligibility condition, deadline, or similar rule.
 async function nativeHighlights(blockBytes,localIndex,original,outputPage,query,lib,budget=1){
  const terms=termsFor(query);if(!terms.length||budget<=0)return 0;
- const keyRule=/(मानदेय|भुगतान|नियुक्ति|पात्रता|अनिवार्य|निर्धारित|देय|प्रति\s*माह|राशि|वेतन|अर्हता|सीमा|स्वीकृति|प्रतिबंध|आवश्यक|अवधि|शर्त|होगा|होंगे|किया\s*जाएगा|करेगा|shall|must|eligible|payable|required|rupees|₹)/iu;
+ const keyRule=/(मानदेय|भुगतान|नियुक्ति|पात्रता|अनिवार्य|निर्धारित|देय|प्रति\s*माह|राशि|वेतन|अर्हता|सीमा|स्वीकृति|प्रतिबंध|आवश्यक|अवधि|शर्त|होगा|होंगे|किया\s*जाएगा|करेगा|shall|must|eligible|payable|required|approval|approved|sanctioned|effective|rupees|₹)/iu;
  try{
   const pdfjs=await import("./vendor/pdf.js");
   pdfjs.GlobalWorkerOptions.workerSrc=new URL("./vendor/pdf.worker.min.mjs",document.baseURI).href;
