@@ -369,7 +369,7 @@ function igrs(el){
  if(needLogin("igrs"))return;
  const workspace=window.PAI_DRAFT_WORKSPACE.mount(el,{kind:"IGRS निस्तारण आख्या",code:"igrs",
  previous:S.igrsRestore||null,description:"IGRS शिकायत upload करें और वास्तविक जाँच/कार्रवाई के आधार पर निस्तारण आख्या तैयार करें।",profile:S.profile,user:S.user,api,letterhead:window.PAI_LETTERHEAD,toast,
- save:async entry=>{const list=LS.get("drafts")||[],i=list.findIndex(x=>x.id===entry.id),saved={...entry,at:Date.now()};if(i>=0)list[i]=saved;else list.unshift(saved);if(!LS.set("drafts",list.slice(0,50)))throw Error("Draft सुरक्षित नहीं हुआ।");toast("IGRS मसौदा सुरक्षित ✓");}});
+ save:async entry=>{const list=LS.get("drafts")||[],i=list.findIndex(x=>x.id===entry.id),saved={...entry,at:Date.now()};if(i>=0)list[i]=saved;else list.unshift(saved);if(!LS.set("drafts",list.slice(0,50)))throw Error("Draft सुरक्षित नहीं हुआ।");toast("IGRS Draft saved ✓");}});
  S.igrsRestore=null;S.chatCleanup=()=>workspace?.destroy();
 }
 function goSearch(el) { if(window.PAI_GO_SEARCH?.mount) window.PAI_GO_SEARCH.mount(el); else el.textContent="GO Search उपलब्ध नहीं है। ऐप Refresh करें।"; }
@@ -946,7 +946,7 @@ function chat(el) {
           goResultIds:docs.map(d=>d.id),question:q,formatVersion:4});
       }else if(kind){
         const followup=revising;
-        const source=followup?[{name:"पिछले मसौदे का संदर्भ",text:window.PAI_DRAFT_CARD.sanitize(previous.html).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ")}]:[];
+        const source=followup?[{name:"Previous Draft reference",text:window.PAI_DRAFT_CARD.sanitize(previous.html).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ")}]:[];
         const detected=window.PAI_LETTERHEAD?.mode(S.profile,q,kind)||"plain";
         const stationery=revising && previous?.stationery==="gp_office" && detected==="pradhan_letterhead"?
           "gp_office":detected;
@@ -956,7 +956,7 @@ function chat(el) {
         S.chat.push({r:"a",document:true,id:crypto.randomUUID(),kind,html:r.html,review:r.review,stationery,refs:r.refs||[],t:kind,question:q});
       }else{
         const [r, originals] = await Promise.all([
-          api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m=>({r:m.r,t:m.document?m.kind+" का मसौदा तैयार है।":m.t})), att }),
+          api("/chat", { profile: S.profile, history: S.chat.slice(-10).map(m=>({r:m.r,t:m.document?m.kind+" Draft ready.":m.t})), att }),
           availableOriginals(q)
         ]);
         S.chat.push({r:"a",t:r.text,originalIds:originals.map(d=>d.id),referenceHits:r.referenceHits||[],goResultIds:r.referenceHits?.length?r.referenceHits.map(h=>h.id):undefined,web:r.web||[],formatVersion:3,language:r.language,followups:r.followups||[],question:q});
