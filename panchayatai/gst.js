@@ -28,6 +28,27 @@ const CSS=`
 .gst-note{font-size:13px;color:#5d6b65;margin:.5em 0 0}
 .gst-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .gst-act .btn{flex:1}
+.gst-big{font-family:inherit;transition:background .2s,border-color .2s}
+.gst-big:hover,.gst-big:focus-visible{background:#e7f4ed;border-color:#178550;outline-offset:2px}
+.gst-big:disabled{opacity:.6;cursor:not-allowed}
+.gst-camera-panel{margin-top:12px;border-radius:13px;padding:10px;background:#0d1b28}
+.gst-camera-panel[hidden]{display:none!important}
+.gst-camera-panel video{display:block;max-width:100%;width:100%;max-height:360px;object-fit:contain;border-radius:8px;background:#000}
+.gst-camera-panel .gst-act{margin-top:10px}
+.gst-camera-panel .gst-act button{font-size:13px}
+.gst-chips{margin-top:8px}
+.gst-wrap .gst-box:focus-within{border-color:#75b8a0}
+.gst-wrap .gst-res td{overflow-wrap:anywhere;vertical-align:top}
+.gst-wrap .gst-res td:last-child{max-width:240px}
+.gst-wrap .gst-in:focus{outline:2px solid #78b7a1;outline-offset:1px}
+@media(max-width:440px){
+ .gst-wrap .gst-seg button{padding:10px 6px;font-size:12px}
+ .gst-act{flex-direction:column}.gst-act .btn{width:100%}
+}
+@media(prefers-color-scheme:dark){
+ body.dark .gst-box,body.dark .gst-chip{background:var(--card,#17342b);color:inherit;border-color:var(--bd,#365b4b)}
+ body.dark .gst-in,body.dark .gst-seg button{background:var(--card,#17342b);color:inherit}
+}
 `;
 function style(){if(document.getElementById("gst-css"))return;const s=document.createElement("style");s.id="gst-css";s.textContent=CSS;document.head.appendChild(s);}
 async function copy(t){try{await navigator.clipboard.writeText(t);return true;}catch{return false;}}
