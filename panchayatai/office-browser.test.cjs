@@ -1,6 +1,6 @@
 const fs=require('fs'),path=require('path'),assert=require('assert'),http=require('http');
 const root=process.env.GITHUB_WORKSPACE,p=path.join(root,'panchayatai');
-const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr'),JSZip=require('jszip'),{PDFDocument}=require('pdf-lib');
+const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr'),JSZip=require('jszip'),{PDFDocument,PDFName}=require('pdf-lib');
 (async()=>{
  const {render}=await import('file://'+p+'/drafting-core.mjs');
  const input={kind:'पत्र',points:'BDO ko safai ke liye patra',promptAt:'2026-11-22T06:00:00Z',profile:{role:'gpa',nameHindi:'परीक्षण सचिव',gps:['कमेला'],blockHindi:'हैदरगढ़',districtHindi:'बाराबंकी'}};
@@ -93,7 +93,14 @@ const {chromium}=require('playwright'),{PNG}=require('pngjs'),jsQR=require('jsqr
  const checkedGo=await PDFDocument.load(Uint8Array.from(fullGo.bytes));
  assert.equal(checkedGo.getPageCount(),2);
  assert(checkedGo.getPage(0).getHeight()>fixturePage.getHeight()+90);
- for(const p of checkedGo.getPages())assert(p.node.Annots(),'All pages must link to the main content page');
+ for(const p of checkedGo.getPages()){
+   const annotations=p.node.Annots();
+   assert(annotations&&annotations.size()>0,'Each GO page should have a clickable app header');
+   const link=checkedGo.context.lookup(annotations.get(0));
+   const action=checkedGo.context.lookup(link.get(PDFName.of('A')));
+   assert.equal(action.get(PDFName.of('URI')).decodeText(),'https://techgaon.in/panchayatai/');
+   assert(!link.has(PDFName.of('Dest')),'Old internal main-content navigation must be removed');
+ }
  fs.writeFileSync('office-test-artifacts/full-go.pdf',Buffer.from(fullGo.bytes));
  const institutional=render({subject:'सफाई व्यवस्था',recipient:'सहायक विकास अधिकारी (पंचायत)',
    paragraphs:['ग्राम पंचायत में सफाई व्यवस्था सुनिश्चित करने हेतु आवश्यक कार्यवाही का अनुरोध है।'],evidence:[]},
