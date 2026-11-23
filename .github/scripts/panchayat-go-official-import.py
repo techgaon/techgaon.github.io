@@ -184,8 +184,10 @@ def main():
             if any(any(word in row["text"] for word in PRIVATE_WORDS) for row in rows):
                 skipped[str(num)]="private data review";continue
             block_file=f"blocks/{docid}-1.pdf"
-            assert not (ASSETS/f"{docid}-1.pdf").exists()
-            (ASSETS/f"{docid}-1.pdf").write_bytes(data)
+            staged=ASSETS/f"{docid}-1.pdf"
+            if staged.exists():
+                assert SHA(staged.read_bytes())==source_sha,"Staged source PDF hash mismatch"
+            else:staged.write_bytes(data)
             doc={
                 "id":docid,"title":title,"officialNumber":number,"date":date,
                 "jurisdiction":"उत्तर प्रदेश","documentType":"go",

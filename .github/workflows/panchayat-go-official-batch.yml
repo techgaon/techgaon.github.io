@@ -55,15 +55,35 @@ jobs:
               assert data.startswith(b'%PDF-')
           print('Verified for upload:',len(info['verifiedNew']),'unique official PDFs')
           PY
+      - name: Back up the previous pinned search index in the independent public PDF archive
+        run: |
+          git -C go-pdfs sparse-checkout add legacy-indexes
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('panchayatai/go-corpus')
+          cat=json.loads((root/'catalog.json').read_text())
+          origin=root/cat['index']
+          dest=Path('go-pdfs/legacy-indexes')/cat['index']
+          dest.parent.mkdir(exist_ok=True)
+          data=origin.read_bytes()
+          assert hashlib.sha256(data).hexdigest()==cat['indexSha256']
+          if dest.exists():assert dest.read_bytes()==data
+          else:dest.write_bytes(data)
+          print('PINNED_INDEX_BACKUP',dest,len(data),flush=True)
+          PY
       - name: Upload verified original public PDFs to separate archive branch
         working-directory: go-pdfs
         run: |
           git config user.name "Panchayat AI GO verifier"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add blocks
-          git diff --cached --quiet && { echo 'No new public PDFs to upload'; exit 1; }
-          git commit -m "Upload reviewed public Uttar Pradesh Panchayati Raj GO PDFs"
-          git push origin HEAD:panchayat-go-pdfs
+          git add blocks legacy-indexes
+          if ! git diff --cached --quiet; then
+            git commit -m "Archive verified public PDF blocks and preserve previous search index"
+            git push origin HEAD:panchayat-go-pdfs
+          else
+            echo 'All PDF blocks and previous index already verified in external archive'
+          fi
       - name: Verify published PDF bytes in public archive
         run: |
           python - <<'PY'
@@ -133,7 +153,7 @@ jobs:
       - name: Stay below GitHub Pages repository size guard
         run: |
           python - <<'PY'
-          import os
+          import os,json
           from pathlib import Path
           skip={'.git','go-pdfs'}
           total=0
@@ -143,9 +163,22 @@ jobs:
                   p=Path(root)/f
                   if p.is_file():total+=p.stat().st_size
           if total>950*1024*1024:
-              # Drop only the oldest stale index. The previously active hashed index is preserved.
-              old=Path('panchayatai/go-corpus/search-cbcf7c97ba7d20b4.json')
-              if old.is_file():total-=old.stat().st_size;old.unlink()
+              oldest=Path('panchayatai/go-corpus/search-cbcf7c97ba7d20b4.json')
+              if oldest.is_file():total-=oldest.stat().st_size;oldest.unlink()
+          if total>950*1024*1024:
+              # The old complete index remains sha-verified and recoverable in
+              # panchayat-go-pdfs/legacy-indexes. Never touch original GO PDFs.
+              import hashlib
+              base_version=Path('/tmp/panchayat-official-existing-version.txt').read_text()
+              prior=Path('panchayatai/go-corpus')/('search-'+base_version+'.json')
+              saved=Path('go-pdfs/legacy-indexes')/prior.name
+              assert prior.is_file() and saved.is_file()
+              prior_bytes=prior.read_bytes()
+              assert hashlib.sha256(prior_bytes).hexdigest()==hashlib.sha256(saved.read_bytes()).hexdigest()
+              assert Path('panchayatai/go-corpus/catalog.json').is_file()
+              assert json.loads(Path('panchayatai/go-corpus/catalog.json').read_text())['index']!=prior.name
+              total-=prior.stat().st_size;prior.unlink()
+              print('Older search index archived, original PDFs retained')
           print('GH Pages bytes',total)
           assert total<950*1024*1024,'Hosting-size limit reached; abort index publication'
           PY
