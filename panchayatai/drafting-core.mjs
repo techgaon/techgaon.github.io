@@ -216,7 +216,7 @@ export function render(payload,b={}) {
    if(f.deadline)html+=p('उत्तर प्रस्तुत करने की अवधि: '+f.deadline+'।');
  }else html+=payload.paragraphs.map(par=>'<p style="text-align:justify">'+e(str(par)).replace(/\n/g,'<br>')+'</p>').join('');
  const attachments=[...(payload.attachments||[])];
- for(const file of b.att||[])if(file.name&&!/पिछले|मसौदा|मसौदे/.test(file.name)&&!attachments.some(t=>t.includes(file.name)))attachments.push(file.name);
+ for(const file of b.att||[])if(file.name&&!/पिछले|मसौदा|मसौदे|previous.*draft/i.test(file.name)&&!attachments.some(t=>t.includes(file.name)))attachments.push(file.name);
  if(attachments.length)html+=p('संलग्नक:\n'+attachments.map((t,i)=>(i+1)+'. '+t).join('\n'));
  const application=citizen||personal||/(?:प्रार्थना\s*पत्र|व्यक्तिगत|साधारण\s*आवेदन|सामान्य\s*आवेदन|व्यक्तिगत\s*आवेदन|personal\s*application)/iu.test(requestText+' '+kind);
  const signRole=intent.otherPerson||c.roleCode==='resident'?'':c.role;
