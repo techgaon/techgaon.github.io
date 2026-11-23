@@ -155,21 +155,21 @@
   }
   function mount(el){
     if(!el)return;
-    el.innerHTML='<section class="card pai-go-intro"><div class="pai-go-heading"><span aria-hidden="true">📚</span><div><h2>GO Search</h2><p>शासनादेश खोजें। परिणाम केवल Tiles में दिखेंगे; PDF खोलने पर संबंधित मूल GO मिलेगा।</p></div></div>'+
-      '<form class="pai-go-form"><label for="paiGoQuery">शासनादेश खोजें</label><div class="pai-go-input"><input id="paiGoQuery" type="search" autocomplete="off" placeholder="जैसे पंचायत सहायक नियुक्ति का GO" /><button type="submit" class="btn">Search</button></div></form></section>'+
-      '<section class="pai-go-results" aria-live="polite"><p class="hint">शासनादेश सूची लोड हो रही है…</p></section>'+
-      '<section class="card pai-go-suggest"><h3>ऐसे खोजकर देखें</h3><p>हिंदी या Roman Hindi, दोनों में लिख सकते हैं।</p><div class="pai-go-chips">'+
+    el.innerHTML='<section class="card pai-go-intro"><div class="pai-go-heading"><span aria-hidden="true">📚</span><div><h2>GO Search</h2><p>GO नंबर या Keyword से Search करें। Results Tiles में दिखेंगे; PDF में पूरा मूल GO मिलेगा।</p></div></div>'+
+      '<form class="pai-go-form"><label for="paiGoQuery">GO Keyword / Number</label><div class="pai-go-input"><input id="paiGoQuery" type="search" autocomplete="off" placeholder="जैसे पंचायत सहायक नियुक्ति का GO" /><button type="submit" class="btn">Search</button></div></form></section>'+
+      '<section class="pai-go-results" aria-live="polite"><p class="hint">GO List Loading…</p></section>'+
+      '<section class="card pai-go-suggest"><h3>Search Examples</h3><p>Hindi या Roman Hindi, दोनों में Search कर सकते हैं।</p><div class="pai-go-chips">'+
       EXAMPLES.map(x=>'<button type="button" data-go-example="'+escapeHTML(x)+'">'+escapeHTML(x)+'</button>').join("")+
       '</div></section>';
     const input=el.querySelector("#paiGoQuery"),result=el.querySelector(".pai-go-results");
     const draw=()=>{
-      if(!loaded){result.innerHTML='<p class="hint">शासनादेश सूची लोड हो रही है…</p>';return;}
-      if(loadError){result.innerHTML='<div class="card">शासनादेश सूची अभी उपलब्ध नहीं है। कृपया दोबारा प्रयास करें।</div>';return;}
+      if(!loaded){result.innerHTML='<p class="hint">GO List Loading…</p>';return;}
+      if(loadError){result.innerHTML='<div class="card">GO List अभी नहीं खुल रही। फिर Try करें।</div>';return;}
       if(!records.length){result.innerHTML='<div class="card"><strong>GO Library में अभी PDF नहीं जोड़ी गई है।</strong></div>';return;}
       const q=input.value.trim(),matches=q?search(q):[];
       result.innerHTML=q
-        ?(matches.length?matches.map(d=>card(d,false,q)).join(""):'<div class="card">इस नाम या Keyword पर कोई उपलब्ध शासनादेश नहीं मिला। GO नंबर या दूसरे शब्दों से खोजें।</div>')
-        :'<div class="card pai-go-start">ऊपर शासनादेश का विषय या GO नंबर लिखकर खोजें।</div>';
+        ?(matches.length?matches.map(d=>card(d,false,q)).join(""):'<div class="card">इस Keyword पर कोई GO नहीं मिला। अलग Keyword या GO नंबर से Search करें।</div>')
+        :'<div class="card pai-go-start">ऊपर Keyword या GO नंबर लिखकर Search करें।</div>';
     };
     el.querySelector(".pai-go-form").onsubmit=e=>{e.preventDefault();draw();};
     let searchTimer;
@@ -177,7 +177,7 @@
     el.querySelectorAll("[data-go-example]").forEach(b=>b.onclick=()=>{
       input.value=b.dataset.goExample;draw();input.focus();result.scrollIntoView?.({behavior:"smooth",block:"start"});
     });
-    load().then(draw).catch(()=>{result.textContent="दस्तावेज़ संग्रह अभी उपलब्ध नहीं है। कृपया दोबारा प्रयास करें।";});
+    load().then(draw).catch(()=>{result.textContent="GO Library अभी उपलब्ध नहीं है। फिर Try करें।";});
   }
   document.addEventListener?.("click",async e=>{
     const button=e.target?.closest?.("[data-go-full],[data-go-excerpt]");if(!button)return;
