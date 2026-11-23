@@ -1,18 +1,23 @@
-/* Full original GO pages with navigable header and highlighted search references.
-   Indexed originals are not rewritten; layout adds separate header/footer margins. */
+/* Full original GO pages with a clickable Panchayat AI promo header and selective
+   source highlights. Original GO page imagery remains unchanged. */
 (()=>{
 "use strict";
 const TOP=78, BOTTOM=34, MAX_BYTES=85*1024*1024;
+const APP_URL="https://techgaon.in/panchayatai/";
 const objectUrls=new Set();
 const escape=v=>String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function status(emit,text){if(typeof emit==="function")emit(text);}
-function canvasPng(text,variant="regular"){
+function canvasPng(){
  const canvas=document.createElement("canvas");canvas.width=1400;canvas.height=138;
- const ctx=canvas.getContext("2d"),important=variant==="main";
- ctx.fillStyle=important?"#fff0a5":"#f4f8fe";ctx.fillRect(0,0,1400,138);
- ctx.strokeStyle=important?"#e0ad22":"#b9d1e9";ctx.lineWidth=3;ctx.strokeRect(2,2,1396,134);
- ctx.fillStyle="#17416d";ctx.font='bold 48px "Noto Sans Devanagari","Nirmala UI",sans-serif';
- ctx.textBaseline="middle";ctx.fillText(text,38,67,1320);
+ const ctx=canvas.getContext("2d");
+ ctx.fillStyle="#f2f7ff";ctx.fillRect(0,0,1400,138);
+ ctx.strokeStyle="#b9d1e9";ctx.lineWidth=3;ctx.strokeRect(2,2,1396,134);
+ ctx.fillStyle="#17416d";ctx.textBaseline="middle";
+ ctx.font='bold 35px "Noto Sans Devanagari","Nirmala UI",sans-serif';
+ ctx.fillText("पंचायत AI  |  techgaon.in/panchayatai/",30,34,1340);
+ ctx.fillStyle="#204b76";
+ ctx.font='bold 38px "Noto Sans Devanagari","Nirmala UI",sans-serif';
+ ctx.fillText("कोई भी GO कोई भी पंचायत का काम अब पंचायत AI ऐप पर सेकंडों में क्लिक करें।",30,94,1340);
  const data=canvas.toDataURL("image/png").split(",")[1];
  return Uint8Array.from(atob(data),c=>c.charCodeAt(0));
 }
@@ -33,12 +38,14 @@ async function verify(url,sha){
  }
  return data;
 }
-function addGoTo(output,page,target,lib,y){
- // Internal PDF destination: works offline in compatible PDF readers.
+function addAppLink(output,page,lib,y,height){
+ // The header is an external, clickable HTTPS hyperlink, not an internal GO jump.
+ const action=output.context.obj({
+  S:lib.PDFName.of("URI"),URI:lib.PDFString.of(APP_URL)
+ });
  const annot=output.context.obj({
   Type:lib.PDFName.of("Annot"),Subtype:lib.PDFName.of("Link"),
-  Rect:[16,y,page.getWidth()-16,y+TOP-12],Border:[0,0,0],
-  Dest:[target.ref,lib.PDFName.of("Fit")]
+  Rect:[15,y,page.getWidth()-15,y+height],Border:[0,0,0],A:action
  });
  page.node.addAnnot(output.context.register(annot));
 }
@@ -99,10 +106,10 @@ async function create(hit,query=hit?.query||"",onStatus=()=>{}){
  const incomplete=total>0&&available.length<total;
  const lib=await loadPdf(),output=await lib.PDFDocument.create();
  output.setTitle(String(doc.title||"Panchayat AI – Government Order").slice(0,240));
- output.setSubject("Original document pages with a separate Panchayat AI navigation header and footer");
+ output.setSubject("Original document pages with clickable Panchayat AI website header and separate footer");
  const relevant=[...new Set(hit.pages||[])].filter(p=>available.includes(p));
  const targetPage=relevant[0]||available[0],relevantSet=new Set(relevant);
- const banner=await output.embedPng(canvasPng("मुख्य content पर जाने के लिए यहाँ क्लिक करें"));
+ const banner=await output.embedPng(canvasPng());
  const entries=[],sourceCache=new Map(),pagesByBlock=new Map();
  for(const pageNo of available){
   const block=(doc.blocks||[]).find(b=>pageNo>=b.first&&pageNo<=b.last);
@@ -123,7 +130,9 @@ async function create(hit,query=hit?.query||"",onStatus=()=>{}){
    if(!(width>100&&height>100))throw Error("पृष्ठ का आकार अमान्य है।");
    const page=output.addPage([width,height+TOP+BOTTOM]);
    page.drawPage(original,{x:0,y:BOTTOM,width,height});
-   page.drawImage(banner,{x:15,y:height+BOTTOM+12,width:width-30,height:TOP-24});
+   const headerY=height+BOTTOM+12,headerHeight=TOP-24;
+   page.drawImage(banner,{x:15,y:headerY,width:width-30,height:headerHeight});
+   addAppLink(output,page,lib,headerY,headerHeight);
    page.drawLine({start:{x:15,y:BOTTOM-4},end:{x:width-15,y:BOTTOM-4},color:lib.rgb(.75,.81,.88),thickness:1});
    const regular=await output.embedFont(lib.StandardFonts.Helvetica);
    page.drawText("Panchayat AI | Original GO | Page "+pageNo+" of "+(total||available.length),{
@@ -135,12 +144,6 @@ async function create(hit,query=hit?.query||"",onStatus=()=>{}){
    entries.push({page,pageNo});processed++;
   }
  }
- const ordered=new Map(entries.map(e=>[e.pageNo,e]));
- const sorted=available.map(p=>ordered.get(p));
- // Each original page stays visually intact and receives a separate navigation margin.
- const target=ordered.get(targetPage)?.page;
- if(!target)throw Error("मुख्य पृष्ठ उपलब्ध नहीं है।");
- for(const {page} of entries)addGoTo(output,page,target,lib,page.getHeight()-TOP);
  if(incomplete)output.setKeywords(["Indexed GO: some original pages are missing; check source archive"]);
  status(onStatus,"PDF तैयार है — "+available.length+" पृष्ठ");
  const bytes=await output.save({useObjectStreams:true});
