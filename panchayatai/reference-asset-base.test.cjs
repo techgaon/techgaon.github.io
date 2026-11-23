@@ -48,3 +48,15 @@ test('path traversal cannot escape a document block',async()=>{
  const f=await fixture();const data=await f.api.load();
  assert.throws(()=>f.api.assetURL(data.index.docs[0],{file:'../private.pdf'},data));
 });
+
+test('reviewed PDF archive branch uses its exact approved public origin without credentials',async()=>{
+ const base='https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/';
+ const f=await fixture(base);await f.api.download({id:f.id,pages:[1]});
+ assert.equal(f.calls.at(-1).url,base+f.block.file);
+ assert.equal(f.calls.at(-1).options.credentials,'omit');assert.equal(f.loadedPDF,1);
+});
+test('other GitHub repositories and branches cannot supply reference PDFs',async()=>{
+ for(const base of ['https://raw.githubusercontent.com/other/repo/panchayat-go-pdfs/','https://raw.githubusercontent.com/techgaon/techgaon.github.io/main/']){
+  const f=await fixture(base);await assert.rejects(f.api.load());assert.equal(f.calls.length,2);
+ }
+});
