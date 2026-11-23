@@ -45,3 +45,18 @@ test("directory traversal and unsafe links cannot appear",async()=>{
   await api.load();
   assert.equal(api.search("शासनादेश").length,0);
 });
+
+test("GO results remain compact tiles without preview, snippets or highlighted keywords",async()=>{
+  const api=setup(docs);await api.load();
+  const html=api.chatResultsHtml(["go-sahayak"],"पंचायत सहायक नियुक्ति");
+  assert.match(html,/pai-go-result pai-go-tile/);
+  assert.match(html,/Download Or View Pdf/);
+  assert.doesNotMatch(html,/pai-go-snippet|pai-go-yellow|<mark|<iframe|मुख्य अंश/);
+});
+test("Full-GO screen avoids auto-preview and caps selective original highlights at three",()=>{
+  const source=fs.readFileSync(path.join(__dirname,"go-full-pdf.js"),"utf8");
+  assert.doesNotMatch(source,/<iframe/);
+  assert.match(source,/highlightCount<3/);
+  assert.match(source,/3-highlightCount/);
+  assert.match(source,/if\(!hits\.length\)continue/);
+});
