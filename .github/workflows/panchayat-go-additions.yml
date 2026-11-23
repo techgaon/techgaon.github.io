@@ -1,0 +1,99 @@
+name: Index reviewed Panchayat GO additions
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/panchayat-go-additions.yml']
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: panchayat-go-corpus
+  cancel-in-progress: false
+jobs:
+  index-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download screened public supplement
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download panchayat-go-additions-20261123 --repo techgaon/techgaon.github.io --pattern panchayat-additions-20261123.zip
+      - name: Prepare PDF renderer
+        run: python -m pip install pypdfium2==5.1.0 Pillow==11.3.0
+      - name: Verify source blocks, remove visual duplicate sources and extract searchable text
+        run: python .github/scripts/panchayat-ingest-additions.py panchayat-additions-20261123.zip 596ba5baf632058e8002760d428125a2c89f5eb22d556f916e52eb9d64eab163
+      - name: Build shared GO search and AI evidence index
+        run: |
+          node <<'JS'
+          const fs=require('fs'),crypto=require('crypto'),path=require('path'),assert=require('assert');
+          const root='panchayatai/go-corpus',catalog=JSON.parse(fs.readFileSync(root+'/catalog.json'));
+          const index=JSON.parse(fs.readFileSync(root+'/index-uncompiled.json'));
+          const core=require('./panchayatai/reference-search.js');
+          index.terms=Object.create(null);
+          for(let i=0;i<index.pages.length;i++){
+            const p=index.pages[i],d=index.docs[p.doc];
+            for(const t of core.tokens(p.text+' '+d.title+' '+(d.officialNumber||''),Infinity))(index.terms[t]??=[]).push(i);
+          }
+          const ids=new Set();
+          for(const d of index.docs){
+            assert(!ids.has(d.id));ids.add(d.id);
+            for(const b of d.blocks){const bytes=fs.readFileSync(path.join(root,b.file));assert.equal(bytes.length,b.bytes);assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),b.sha256);}
+          }
+          assert(index.docs.length>290);assert(index.pages.length>2542);
+          for(const [q,id] of [
+            ['पंचायत सहायकों मोबाइल OSR','a30c82c31bca935d84450af5'],
+            ['CSC जनसेवा केन्द्र आय वॉलेट समायोजन','433e03a844b22c11766ce61c'],
+            ['ग्राम निधि विविध खाता','1ba1fdae8cf96836d4159ea2']
+          ])assert(core.search(index,q).some(h=>h.id===id),'Supplement not found: '+q);
+          assert(core.search(index,'मिशन कर्मयोगी पाठ्यक्रम').some(h=>h.id==='3aad3fb25447955816b78f02'),'Existing search regression');
+          const bytes=Buffer.from(JSON.stringify(index)),hash=crypto.createHash('sha256').update(bytes).digest('hex');
+          assert(bytes.length<24*1024*1024);
+          const name='search-'+hash.slice(0,16)+'.json';fs.writeFileSync(root+'/'+name,bytes);
+          Object.assign(catalog,{version:hash.slice(0,16),index:name,indexSha256:hash,documentCount:index.docs.length,pageCount:index.pages.length,incompleteArchive:true,supplementReviewedOn:'2026-11-23'});
+          fs.writeFileSync(root+'/catalog.json',JSON.stringify(catalog));fs.unlinkSync(root+'/index-uncompiled.json');
+          // Keep the previous hashed index for clients with a cached old catalog.
+          const total=dir=>fs.readdirSync(dir,{withFileTypes:true}).reduce((n,e)=>{
+            if(e.name==='.git'||e.name==='panchayat-additions-20261123.zip')return n;
+            const p=path.join(dir,e.name);return n+(e.isDirectory()?total(p):fs.statSync(p).size);
+          },0);
+          const bytesOnSite=total('.');assert(bytesOnSite<950*1024*1024,'Hosting size guard: '+bytesOnSite);
+          console.log(JSON.stringify({documents:catalog.documentCount,pages:catalog.pageCount,version:catalog.version,siteBytes:bytesOnSite}));
+          JS
+      - name: Publish verified corpus
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add panchayatai/go-corpus
+          git commit -m 'Index additional screened public orders for GO search and AI chat'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh api --method POST repos/techgaon/techgaon.github.io/pages/builds
+      - name: Verify live corpus catalog
+        run: |
+          python - <<'PY'
+          import json,time,urllib.request
+          from pathlib import Path
+          expected=json.loads(Path('panchayatai/go-corpus/catalog.json').read_text())
+          for i in range(24):
+              try:
+                  request=urllib.request.Request('https://techgaon.in/panchayatai/go-corpus/catalog.json?verify='+expected['version'],headers={'Cache-Control':'no-cache'})
+                  live=json.load(urllib.request.urlopen(request,timeout=25))
+                  if live['version']==expected['version']:
+                      assert live['documentCount']==expected['documentCount'] and live['pageCount']==expected['pageCount']
+                      print('LIVE',json.dumps(live));break
+              except Exception as e:print(type(e).__name__)
+              time.sleep(15)
+          else:raise SystemExit('Live catalog did not match published supplement')
+          PY
