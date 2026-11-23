@@ -34,8 +34,8 @@
 <div id="app">
   <header class="top">
     <button class="home-back hidden" id="backBtn" aria-label="Home">‹</button>
-    <button class="icon-btn" id="menuBtn" aria-label="मेनू">☰</button>
-    <div class="brand"><img class="logo brand-logo" src="icon.svg" alt="पं AI"><div><b>पंचायत AI</b></div></div>
+    <button class="icon-btn" id="menuBtn" aria-label="Menu">☰</button>
+    <div class="brand"><img class="logo brand-logo" src="icon.svg" alt="Panchayat AI"><div><b>Panchayat AI</b></div></div>
     <div class="top-r">
       <span id="planBadge" class="badge hidden"></span>
       <button class="btn-sm hidden" id="loginTop">Login</button>
@@ -48,27 +48,27 @@
     <a data-go="chat">💬 AI Help</a>
     <a data-go="tools">🧰 AI Tools</a>
     <a data-go="goSearch">📚 GO Search</a>
-    <a data-go="draft">📝 पत्र / नोटिस बनाएँ</a>
+    <a data-go="draft">📝 Letter / Notice</a>
     <a data-go="rti">ℹ️ RTI</a>
     <a data-go="estimate">📐 Estimate & MB Calculator</a>
     <a data-go="news">📰 Panchayat News</a>
     <a data-go="history">🗂️ My Drafts</a>
-    <a href="#home" id="appTourLink">✨ ऐप टूर देखें</a>
+    <a href="#home" id="appTourLink">✨ App Tour</a>
     <a data-go="plans">⭐ Plus</a>
     <a data-go="admin" class="hidden">🛡️ Admin Panel</a>
     <a data-go="profile">👤 My Profile</a>
-    <a data-go="letterhead" id="pradhanLetterheadMenu" class="hidden">🖋️ ग्राम प्रधान लेटरहेड</a>
-    <a data-go="settings">🎨 रंग, Dark Mode और Font</a>
+    <a data-go="letterhead" id="pradhanLetterheadMenu" class="hidden">🖋️ Pradhan Letterhead</a>
+    <a data-go="settings">🎨 Theme, Dark Mode & Font</a>
     <a id="logoutBtn" class="hidden">🚪 Logout</a>
     <div class="drawer-foot"><a href="https://techgaon.in" target="_blank">TechGaon AI Services</a></div>
   </nav>
   <div id="scrim" class="scrim"></div>
 
   <main id="view"></main>
-  <nav class="pai-bottom-nav" id="paiBottomNav" aria-label="मुख्य नेविगेशन">
-    <a data-go="home" class="on" aria-current="page"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">होम</span></a>
+  <nav class="pai-bottom-nav" id="paiBottomNav" aria-label="Main Navigation">
+    <a data-go="home" class="on" aria-current="page"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">Home</span></a>
     <a data-go="chat"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.1-4.4A8.5 8.5 0 1 1 20 11.5Z"/><path d="m12 7.8.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z"/></svg></span><span class="nav-label">AI Help</span></a>
-    <a data-go="draft"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v6"/><path d="M13 2v5h5"/><path d="M8 12h6M8 16h4"/><path d="m14 20 6-6 2 2-6 6-3 1z"/></svg></span><span class="nav-label">पत्र बनाएँ</span></a>
+    <a data-go="draft"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v6"/><path d="M13 2v5h5"/><path d="M8 12h6M8 16h4"/><path d="m14 20 6-6 2 2-6 6-3 1z"/></svg></span><span class="nav-label">Create Draft</span></a>
     <a data-go="tools"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5m6 0h5M4 17h9m6 0h1"/><circle cx="12" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></svg></span><span class="nav-label">AI Tools</span></a>
   </nav>
 
@@ -80,7 +80,7 @@
     <div class="upgrade-symbol" aria-hidden="true">⭐</div>
     <h2 id="upgradeTitle">Upgrade to Plus</h2>
     <p id="upgradeMessage"></p>
-    <div class="upgrade-actions"><button type="button" id="upgradeLater" class="btn alt">बाद में</button><button type="button" id="upgradeNow" class="btn">Upgrade to Plus</button></div>
+    <div class="upgrade-actions"><button type="button" id="upgradeLater" class="btn alt">Later</button><button type="button" id="upgradeNow" class="btn">Upgrade to Plus</button></div>
   </div>
 </div>
 
