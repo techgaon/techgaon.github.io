@@ -3,7 +3,7 @@
 Never ingest, expose or modify the user's original ZIP. Fail closed on ambiguous PDFs.
 The existing 445+ reference docs are preserved and deduplicated by hash and visual content.
 """
-import hashlib, json, os, re, sys, urllib.request, urllib.error
+import hashlib, json, os, re, sys, urllib.request, urllib.error, http.client, time
 from pathlib import Path
 import pypdfium2 as pdfium
 
@@ -11,9 +11,9 @@ ROOT=Path("panchayatai/go-corpus")
 ASSETS=Path("go-pdfs/blocks")
 OFFICIAL="https://panchayatiraj.up.nic.in/pblc_pg/DocFileForms/GOFile.ashx?download=1&id={}"
 ASSET_BASE="https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/"
-LOW=4578
-HIGH=4586
-MAX_ADD=8
+LOW=4579
+HIGH=4585
+MAX_ADD=6
 MAX_PDF=14_000_000
 CANDIDATE_WORDS=("पंचायती","पंचायत","ग्राम","विकास खण्ड","विकासखंड","ग्रामीण","शासनादेश","जिला पंचायत")
 PRIVATE_WORDS=("आधार संख्या","बैंक खाता संख्या","पासवर्ड","पैन नम्बर","व्यक्तिगत सेवा पुस्तिका","क्रेडिट कार्ड")
@@ -26,18 +26,27 @@ def official_text_ok(s):
       and not any(w in s for w in PRIVATE_WORDS))
 def request_pdf(num):
     url=OFFICIAL.format(num)
-    try:
-        req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (compatible; PanchayatAIOfficialGOCatalog/1.0)","Accept":"application/pdf"})
-        with urllib.request.urlopen(req,timeout=10) as r:
-            if r.status!=200:return None
-            ctype=r.headers.get("Content-Type","").lower()
-            b=r.read(MAX_PDF+1)
-            if len(b)>MAX_PDF or len(b)<1200 or not b.startswith(b"%PDF-"):return None
-            if "pdf" not in ctype and "octet-stream" not in ctype:return None
-            return b
-    except (urllib.error.URLError,ValueError,TimeoutError,OSError) as ex:
-        print("SKIP_SOURCE",num,type(ex).__name__,flush=True)
-        return None
+    # Government PDFs occasionally terminate chunked transfer early; retry whole
+    # transfer rather than publishing an incomplete or unverified original.
+    for attempt in range(3):
+        try:
+            req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (compatible; PanchayatAIOfficialGOCatalog/1.0)","Accept":"application/pdf"})
+            with urllib.request.urlopen(req,timeout=18) as r:
+                if r.status!=200:
+                    print("FETCH_BAD_STATUS",num,r.status,flush=True)
+                    return None
+                ctype=r.headers.get("Content-Type","").lower()
+                b=r.read(MAX_PDF+1)
+                print("FETCH_PDF",num,"bytes",len(b),"ctype",ctype,"head",repr(b[:15]),flush=True)
+                if len(b)>MAX_PDF or len(b)<1200 or not b.startswith(b"%PDF-"):
+                    return None
+                # The PDF magic and complete transfer are authoritative, even if
+                # the government server uses a generic MIME type.
+                return b
+        except (urllib.error.URLError,ValueError,TimeoutError,OSError,http.client.IncompleteRead,EOFError) as ex:
+            print("FETCH_RETRY",num,attempt+1,type(ex).__name__,str(ex)[:120],flush=True)
+            if attempt<2:time.sleep(2)
+    return None
 def subject_from(text):
     lines=[normalize(x).strip(" -—–:ः।") for x in text.splitlines()]
     for i,line in enumerate(lines[:90]):
@@ -87,7 +96,7 @@ def main():
         if len(added)>=MAX_ADD:break
         data=request_pdf(num)
         if not data:
-            skipped[str(num)]="unavailable or not a bounded PDF";continue
+            skipped[str(num)]="unavailable or not a bounded PDF";print("SKIP_UNAVAILABLE",num,flush=True);continue
         source_sha=SHA(data);docid=source_sha[:24]
         if docid in ids or source_sha in origins:
             skipped[str(num)]="exact duplicate";continue
@@ -100,10 +109,10 @@ def main():
             first_text=first_page.get_textpage().get_text_range()
             first_page.close()
             if not official_text_ok(first_text):
-                skipped[str(num)]="unreadable or not a verified public governance order";pdf.close();continue
+                skipped[str(num)]="unreadable or not a verified public governance order";print("SKIP_TEXT",num,len(first_text),repr(first_text[:170]),flush=True);pdf.close();continue
             title=subject_from(first_text)
             if not title:
-                skipped[str(num)]="subject cannot be verified from original";pdf.close();continue
+                skipped[str(num)]="subject cannot be verified from original";print("SKIP_SUBJECT",num,repr(first_text[:350]),flush=True);pdf.close();continue
             number=doc_number(first_text)
             date=doc_date(first_text)
             if number and date and (normalize(number),date) in numbers:
