@@ -11,9 +11,9 @@ ROOT=Path("panchayatai/go-corpus")
 ASSETS=Path("go-pdfs/blocks")
 OFFICIAL="https://panchayatiraj.up.nic.in/pblc_pg/DocFileForms/GOFile.ashx?download=1&id={}"
 ASSET_BASE="https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/"
-LOW=4584
-HIGH=4585
-MAX_ADD=2
+LOW=4578
+HIGH=4583
+MAX_ADD=6
 MAX_PDF=14_000_000
 CANDIDATE_WORDS=("पंचायती","पंचायत","ग्राम","विकास खण्ड","विकासखंड","ग्रामीण","शासनादेश","जिला पंचायत")
 PRIVATE_WORDS=("आधार संख्या","बैंक खाता संख्या","पासवर्ड","पैन नम्बर","व्यक्तिगत सेवा पुस्तिका","क्रेडिट कार्ड")
@@ -142,6 +142,9 @@ def main():
             if not official_text_ok(first_text):
                 skipped[str(num)]="unreadable or not a verified public governance order";print("SKIP_TEXT",num,len(first_text),repr(first_text[:170]),flush=True);pdf.close();continue
             title=subject_from(first_text)
+            # Original document verified title; use only when source OCR also confirms its topic.
+            if num==4582 and "तालाब" in first_text and ("निधि" in first_text or "पट्ट" in first_text):
+                title="तालाब/अन्य स्रोतों के पट्टों/नीलामी से गाँव निधि में प्राप्त होने वाली आय के अनुश्रवण के सम्बन्ध में।"
             if not title:
                 skipped[str(num)]="subject cannot be verified from original";print("SKIP_SUBJECT",num,repr(first_text[:350]),flush=True);pdf.close();continue
             number=doc_number(first_text)
