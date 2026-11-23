@@ -1,0 +1,124 @@
+name: Publish fourth reviewed GO document batch
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/panchayat-go-batch4.yml', '.github/scripts/panchayat-go-batch4-pin.json', '.github/scripts/merge-reviewed-batch4.cjs']
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: panchayat-go-corpus
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test permitted PDF routing and integrity checks
+        run: node --test panchayatai/reference-asset-base.test.cjs
+      - name: Download reviewed public PDF package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download panchayat-go-batch4-20261123 --repo techgaon/techgaon.github.io --pattern panchayat-reviewed-batch4.zip
+      - name: Verify the complete package and every PDF before extraction
+        run: |
+          python - <<'PY'
+          import hashlib,json,re,zipfile
+          from pathlib import Path
+          pin=json.loads(Path('.github/scripts/panchayat-go-batch4-pin.json').read_text())
+          archive=Path('panchayat-reviewed-batch4.zip')
+          assert hashlib.sha256(archive.read_bytes()).hexdigest()==pin['zipSha256']
+          with zipfile.ZipFile(archive) as z:
+              content=z.read(pin['index']);assert hashlib.sha256(content).hexdigest()==pin['sha256']
+              index=json.loads(content);assert len(index['docs'])==pin['documents'] and len(index['pages'])==pin['pages']
+              expected={pin['index']}
+              for d in index['docs']:
+                  assert re.fullmatch('[a-f0-9]{24}',d['id'])
+                  for b in d['blocks']:
+                      assert re.fullmatch('blocks/'+d['id']+'-[1-9][0-9]*[.]pdf',b['file'])
+                      data=z.read(b['file']);assert len(data)==b['bytes'];assert data.startswith(b'%PDF-')
+                      assert hashlib.sha256(data).hexdigest()==b['sha256'];expected.add(b['file'])
+              assert set(z.namelist())==expected and len(z.namelist())==len(expected)
+              target=Path('reviewed-batch4');target.mkdir()
+              for name in sorted(expected):
+                  p=target/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(z.read(name))
+              print('Verified',len(index['docs']),'documents,',len(index['pages']),'pages and',len(expected)-1,'PDF blocks')
+          PY
+      - name: Store reviewed public PDFs on the archive branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          assets="$RUNNER_TEMP/panchayat-reviewed-pdf-assets"
+          mkdir -p "$assets"
+          git -C "$assets" init
+          git -C "$assets" remote add origin https://github.com/techgaon/techgaon.github.io.git
+          gh auth setup-git
+          if git -C "$assets" ls-remote --exit-code --heads origin panchayat-go-pdfs >/dev/null; then
+            git -C "$assets" fetch --depth=1 origin panchayat-go-pdfs
+            git -C "$assets" checkout -B panchayat-go-pdfs FETCH_HEAD
+          else
+            git -C "$assets" checkout --orphan panchayat-go-pdfs
+          fi
+          cp -r reviewed-batch4/. "$assets/"
+          git -C "$assets" config user.name 'github-actions[bot]'
+          git -C "$assets" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$assets" add blocks search-*.json
+          if ! git -C "$assets" diff --cached --quiet; then
+            git -C "$assets" commit -m 'Add reviewed GPDP and statutory public documents'
+            git -C "$assets" push origin HEAD:panchayat-go-pdfs
+          fi
+      - name: Verify all remote PDF hashes and update shared search index
+        run: |
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+          node .github/scripts/merge-reviewed-batch4.cjs
+      - name: Publish verified shared catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          published=0
+          for attempt in 1 2 3; do
+            if [ "$attempt" != 1 ]; then
+              git fetch --depth=1 origin main
+              git reset --hard origin/main
+              node .github/scripts/merge-reviewed-batch4.cjs
+            fi
+            git add panchayatai/go-corpus
+            git commit -m 'Index reviewed GPDP and statutory public documents for GO search and AI chat'
+            if git push origin HEAD:main; then
+              published=1
+              break
+            fi
+          done
+          test "$published" = 1
+          gh api --method POST repos/techgaon/techgaon.github.io/pages/builds
+      - name: Verify live catalog and shared search index
+        run: |
+          python -u - <<'PY'
+          import hashlib,json,time,urllib.request
+          from pathlib import Path
+          expected=json.loads(Path('panchayatai/go-corpus/catalog.json').read_text())
+          base='https://techgaon.in/panchayatai/go-corpus/'
+          for i in range(40):
+              try:
+                  req=urllib.request.Request(base+'catalog.json?verify='+expected['version'],headers={'Cache-Control':'no-cache'})
+                  live=json.load(urllib.request.urlopen(req,timeout=25))
+                  if live['version']==expected['version']:
+                      data=urllib.request.urlopen(base+live['index'],timeout=60).read()
+                      assert hashlib.sha256(data).hexdigest()==live['indexSha256']
+                      assert live['documentCount']==expected['documentCount'] and live['pageCount']==expected['pageCount']
+                      print('LIVE',json.dumps(live));break
+              except Exception as e:print(type(e).__name__)
+              time.sleep(15)
+          else:raise SystemExit('Live catalog has not reached the verified version')
+          PY
