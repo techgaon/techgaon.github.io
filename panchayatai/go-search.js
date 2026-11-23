@@ -156,7 +156,7 @@
   function mount(el){
     if(!el)return;
     el.innerHTML='<section class="card pai-go-intro"><div class="pai-go-heading"><span aria-hidden="true">📚</span><div><h2>GO Search</h2><p>शासनादेश खोजें। परिणाम केवल Tiles में दिखेंगे; PDF खोलने पर संबंधित मूल GO मिलेगा।</p></div></div>'+
-      '<form class="pai-go-form"><label for="paiGoQuery">शासनादेश खोजें</label><div class="pai-go-input"><input id="paiGoQuery" type="search" autocomplete="off" placeholder="जैसे पंचायत सहायक नियुक्ति का GO" /><button type="submit" class="btn">खोजें</button></div></form></section>'+
+      '<form class="pai-go-form"><label for="paiGoQuery">शासनादेश खोजें</label><div class="pai-go-input"><input id="paiGoQuery" type="search" autocomplete="off" placeholder="जैसे पंचायत सहायक नियुक्ति का GO" /><button type="submit" class="btn">Search</button></div></form></section>'+
       '<section class="pai-go-results" aria-live="polite"><p class="hint">शासनादेश सूची लोड हो रही है…</p></section>'+
       '<section class="card pai-go-suggest"><h3>ऐसे खोजकर देखें</h3><p>हिंदी या Roman Hindi, दोनों में लिख सकते हैं।</p><div class="pai-go-chips">'+
       EXAMPLES.map(x=>'<button type="button" data-go-example="'+escapeHTML(x)+'">'+escapeHTML(x)+'</button>').join("")+
