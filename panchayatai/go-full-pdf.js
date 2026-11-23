@@ -121,7 +121,9 @@ async function create(hit,query=hit?.query||"",onStatus=()=>{}){
  let processed=0,highlightCount=0;
  for(const {block,pages} of pagesByBlock.values()){
   status(onStatus,"मूल GO के पृष्ठ तैयार हो रहे हैं: "+processed+"/"+available.length);
-  const bytes=await verify(new URL(block.file,data.url),block.sha256);
+  if(doc.assetBase&&!window.PAI_REFERENCES.assetURL)throw Error("नया दस्तावेज खोलने के लिए ऐप दोबारा खोलें।");
+  const sourceURL=window.PAI_REFERENCES.assetURL?window.PAI_REFERENCES.assetURL(doc,block,data):new URL(block.file,data.url);
+  const bytes=await verify(sourceURL,block.sha256);
   sourceCache.set(block.file,bytes);
   const offsets=pages.map(p=>p-block.first),embeds=await output.embedPdf(bytes,offsets);
   for(let i=0;i<pages.length;i++){
