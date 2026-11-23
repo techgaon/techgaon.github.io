@@ -1,7 +1,7 @@
 plugins { id 'com.android.application' }
 android {
  namespace 'in.techgaon.panchayatai'
- compileSdk 35
+ compileSdk 36
  defaultConfig {
    applicationId 'in.techgaon.panchayatai'
    minSdk 24

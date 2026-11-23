@@ -33,7 +33,7 @@ jobs:
         run: |
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
-          "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_ROOT" 'platforms;android-35' 'build-tools;35.0.0'
+          "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_ROOT" 'platforms;android-36' 'build-tools;35.0.0'
       - name: Create Panchayat AI launcher icon
         run: |
           sudo apt-get update -qq
