@@ -1,0 +1,20 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'in.techgaon.panchayatai'
+ compileSdk 35
+ defaultConfig {
+   applicationId 'in.techgaon.panchayatai'
+   minSdk 24
+   targetSdk 35
+   versionCode 20261123
+   versionName '2026.11.23'
+ }
+ buildTypes {
+   debug { minifyEnabled false }
+   release { minifyEnabled false }
+ }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+ implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
+}

@@ -1,0 +1,77 @@
+name: Panchayat AI Android APK (test)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/panchayat-ai-android-apk.yml'
+      - 'panchayatai/android-twa/**'
+      - 'panchayatai/icon.svg'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/workflows/panchayat-ai-android-apk.yml
+            panchayatai/android-twa
+            panchayatai/icon.svg
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android platform 35
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Create Panchayat AI launcher icon
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin
+          for dpi in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            case "$dpi" in mdpi) width=48;; hdpi) width=72;; xhdpi) width=96;; xxhdpi) width=144;; xxxhdpi) width=192;; esac
+            mkdir -p "panchayatai/android-twa/app/src/main/res/mipmap-$dpi"
+            rsvg-convert -w "$width" -h "$width" panchayatai/icon.svg -o "panchayatai/android-twa/app/src/main/res/mipmap-$dpi/ic_launcher.png"
+          done
+      - name: Compile installable Android APK
+        working-directory: panchayatai/android-twa
+        run: gradle :app:assembleDebug --stacktrace --no-daemon
+      - name: Validate APK package, signature and embedded website
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pai-apk
+          cp panchayatai/android-twa/app/build/outputs/apk/debug/app-debug.apk /tmp/pai-apk/Panchayat-AI-Latest.apk
+          unzip -t /tmp/pai-apk/Panchayat-AI-Latest.apk | tail -n 2
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs /tmp/pai-apk/Panchayat-AI-Latest.apk | tee /tmp/pai-apk/signature.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging /tmp/pai-apk/Panchayat-AI-Latest.apk | head -n 10 | tee /tmp/pai-apk/package-info.txt
+          grep -q "name='in.techgaon.panchayatai'" /tmp/pai-apk/package-info.txt
+          grep -q "application-label:'Panchayat AI'" /tmp/pai-apk/package-info.txt
+          unzip -p /tmp/pai-apk/Panchayat-AI-Latest.apk resources.arsc | strings | grep -q "techgaon.in/panchayatai" || grep -q "techgaon.in/panchayatai" panchayatai/android-twa/app/src/main/AndroidManifest.xml
+          sha256sum /tmp/pai-apk/Panchayat-AI-Latest.apk | tee /tmp/pai-apk/sha256.txt
+          ls -lh /tmp/pai-apk/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Panchayat-AI-Latest-test-apk
+          path: |
+            /tmp/pai-apk/Panchayat-AI-Latest.apk
+            /tmp/pai-apk/sha256.txt
+            /tmp/pai-apk/signature.txt
+            /tmp/pai-apk/package-info.txt
+          retention-days: 30
+      - name: Publish APK for direct install
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG='panchayat-ai-apk-test-20261123'
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --prerelease --title 'Panchayat AI Android APK — test build' --notes 'Latest live Panchayat AI via Chrome TWA; test-only debug signed build. Not a production signing key. Fullscreen requires matching assetlinks certificate. Package: in.techgaon.panchayatai.'
+          gh release upload "$TAG" /tmp/pai-apk/Panchayat-AI-Latest.apk /tmp/pai-apk/sha256.txt /tmp/pai-apk/signature.txt --clobber
+          gh release view "$TAG" --json assets --jq '.assets[].url'
