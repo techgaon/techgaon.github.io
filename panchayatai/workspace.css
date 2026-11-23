@@ -43,6 +43,24 @@ body[data-theme="dark"] .pai-writing-hint{background:#253b58}
 @media(max-width:400px){.pai-writing-actions .btn{flex:1}.pai-writing-heading{padding:13px}.pai-writing-heading h2{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.pai-auth-loading-icon{animation:none}}
 
+/* Accessible document-generation progress beneath the English AI button. */
+.pai-draft-generation-progress{
+  display:grid;gap:7px;padding:11px 13px;border:1px solid #c9dff1;
+  border-radius:12px;background:#f3f8fe;min-width:0;
+}
+.pai-draft-generation-progress[hidden]{display:none!important}
+.pai-draft-progress-info{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font:600 12px/1.4 "Manrope","Noto Sans Devanagari",sans-serif;color:#30597e}
+.pai-draft-progress-info strong{font-size:14px;font-variant-numeric:tabular-nums;color:#1c568d}
+.pai-draft-generation-progress progress{display:block;width:100%;height:10px;border:0;
+  border-radius:99px;overflow:hidden;accent-color:#2676bd;background:#d5e7f6}
+.pai-draft-generation-progress progress::-webkit-progress-bar{background:#d5e7f6;border-radius:99px}
+.pai-draft-generation-progress progress::-webkit-progress-value{background:#2676bd;border-radius:99px;transition:width .3s ease}
+.pai-draft-generation-progress progress::-moz-progress-bar{background:#2676bd;border-radius:99px}
+body[data-theme="dark"] .pai-draft-generation-progress{background:#192e45;border-color:#3d627d}
+body[data-theme="dark"] .pai-draft-progress-info,body[data-theme="dark"] .pai-draft-progress-info strong{color:#d4e7f7}
+@media(prefers-reduced-motion:reduce){.pai-draft-generation-progress progress::-webkit-progress-value{transition:none}}
+
 /* Hindi profile completion: correct spellings before using letterhead or drafts. */
 #pNameHindi,#aBlockHindi,#aGpHindi,.pai-hindi-gp-row input{font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
 #pHindiStatus{margin-top:8px;font-size:12px;line-height:1.55}
