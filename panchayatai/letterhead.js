@@ -145,7 +145,7 @@
      '<button class="btn" type="button" id="lhSave">💾 Save Letterhead</button>'+
      '<button class="btn alt" type="button" id="lhLater">अभी नहीं</button></div>'+
      '<p class="hint" id="lhStatus" role="status"></p></div>'+
-     '<section class="pai-lh-preview" id="lhResult" aria-label="लेटरहेड पूर्वावलोकन" hidden></section>'+
+     '<section class="pai-lh-preview" id="lhResult" aria-label="Letterhead Preview" hidden></section>'+
      '<div class="card"><p class="hint">प्रधान के व्यक्तिगत पत्रों में सहेजा गया लेटरहेड लगेगा। “ग्राम पंचायत कार्यालय की ओर से पत्र” लिखने पर सादा A4 बनेगा।</p></div></div>';
    const form=$(".pai-lh-fields",el),result=$("#lhResult",el),status=$("#lhStatus",el);
    const keys=["name","gp","block","district","address","phone","email","motto"];
@@ -176,10 +176,10 @@
    };
    $("#lhPreview",el).onclick=()=>{try{showPreview()}catch(e){status.textContent=e.message}};
    $("#lhLater",el).onclick=()=>{onSkip?.();};
-   $("#lhEdit",el).onclick=()=>{result.hidden=true;form.scrollIntoView({behavior:"smooth",block:"start"});status.textContent="विवरण बदलकर फिर Preview देखें।"};
+   $("#lhEdit",el).onclick=()=>{result.hidden=true;form.scrollIntoView({behavior:"smooth",block:"start"});status.textContent="Details बदलकर फिर Preview देखें।"};
    el.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{
      config.type=b.dataset.type;drawFields();result.hidden=true;
-     status.textContent=config.type==="uploaded"?"फ़ाइल चुनें और Preview देखें।":"विवरण भरकर Preview देखें।";
+     status.textContent=config.type==="uploaded"?"File चुनें और Preview देखें।":"Details भरकर Preview देखें।";
    });
    $("#lhCrop",el).oninput=e=>{$("#lhCropLabel",el).textContent="ऊपरी "+e.target.value+"%";};
    const upload=async()=>{
