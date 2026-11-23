@@ -1,4 +1,5 @@
 /* Panchayat AI — non-AI Government Order (GO) search.
+   Results render as compact document tiles; original PDF text stays in the PDF.
    Catalog is owner-verified and starts empty until original PDFs are imported.
    Never invent results or route a download to the Google Drive staging ZIP. */
 (() => {
