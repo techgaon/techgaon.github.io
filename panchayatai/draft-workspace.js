@@ -4,7 +4,12 @@
  const $=(s,p=document)=>p.querySelector(s);
  const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const idleAiButton='<span class="pai-ai-sparkle" aria-hidden="true">✦</span><span>Genrate letter Via AI</span>';
- const loadingAiButton='<span class="pai-ai-spinner" aria-hidden="true"></span><span>AI मसौदा तैयार कर रहा है…</span>';
+ const englishDocumentKind=code=>({
+   patra:"letter",notice:"notice",spasht:"explanation",aakhya:"report",
+   aadesh:"order",igrs:"report",prarthna:"application",shikayat:"complaint",
+   samiksha:"review",tippani:"note",anusmarak:"reminder",chetavni:"warning"
+ }[code]||"draft");
+ const loadingAiButton=(kind,percent)=>'<span class="pai-ai-spinner" aria-hidden="true"></span><span>AI is generating your '+esc(kind)+'... '+percent+'%</span>';
  const examples={
    patra:["ADO पंचायत को ग्राम पंचायत की सफाई व्यवस्था के संबंध में पत्र बनाओ","BDO को आवश्यक अभिलेख उपलब्ध कराने हेतु पत्र बनाओ","ADO panchayat ko safai vyavastha ke sambandh me patra banao","BDO ko zaroori abhilekh uplabdh karane hetu patra banao"],
    notice:["ग्राम पंचायत में सार्वजनिक रास्ते पर निर्माण सामग्री रखने के संबंध में नोटिस बनाओ"],
@@ -101,10 +106,12 @@
        '<input id="paiWritingFile" type="file" accept=".docx,.pdf,image/jpeg,image/png" multiple>'+
        '<span id="paiFilesInfo" class="hint">Upload Word, PDF or Photo for reference (optional).</span></div>':"")+
      '<div class="pai-writing-actions"><button id="paiWrite" class="btn pai-ai-generate" type="button">'+idleAiButton+'</button></div>'+
+     '<div class="pai-draft-generation-progress" id="paiDraftGenerationProgress" hidden><div class="pai-draft-progress-info"><span>Estimated progress</span><strong id="paiDraftProgressValue">0%</strong></div><progress id="paiDraftProgressBar" max="100" value="0" aria-label="Estimated AI draft generation progress"></progress></div>'+
      '<p id="paiWriteStatus" class="hint" role="status" aria-live="polite"></p></section>'+
      '<section id="paiWritingOutput" aria-live="polite"></section></section>';
    const matter=$("#paiMatter",el),submit=$("#paiWrite",el),status=$("#paiWriteStatus",el);
    const target=$("#paiWritingOutput",el),input=$("#paiWritingFile",el);
+   const documentKind=englishDocumentKind(type),progressPanel=$("#paiDraftGenerationProgress",el),progressBar=$("#paiDraftProgressBar",el),progressValue=$("#paiDraftProgressValue",el);
    if(previous?.question)matter.value=previous.question;
    el.querySelectorAll(".pai-writing-example").forEach(btn=>btn.onclick=()=>{matter.value=btn.textContent;matter.focus()});
    if(igrs){$("#paiWritingFile",el).previousElementSibling.textContent="IGRS शिकायत upload करें";matter.placeholder="शिकायत पर हुई वास्तविक जाँच, कार्रवाई, अभिलेख और बाकी कार्य लिखें।";el.querySelector(".pai-writing-suggestions").innerHTML="<p class=\"hint\">पहले शिकायत upload करें, फिर वास्तविक कार्रवाई बताएँ। नीचे बना मसौदा इसी स्थान पर Edit, Save और Word/PDF कर सकते हैं।</p>";}
@@ -138,12 +145,28 @@
      if(submit.disabled)return;
      const request=matter.value.trim();
      if(!request&&!revise&&!igrs){status.textContent="पहले पत्र का विषय बताएँ।";matter.focus();return;}
-     submit.disabled=true;submit.classList.add("is-loading");submit.setAttribute("aria-busy","true");submit.innerHTML=loadingAiButton;
-     status.textContent="आपकी Profile और दस्तावेज़ों के आधार पर पत्र बनाया जा रहा है…";
+     let completed=false,percent=0;
+     submit.disabled=true;submit.classList.add("is-loading");submit.setAttribute("aria-busy","true");
+     progressPanel.hidden=false;
+     const updateProgress=value=>{
+       percent=Math.max(percent,Math.min(100,Math.round(value)));
+       progressBar.value=percent;progressValue.textContent=percent+"%";
+       submit.innerHTML=loadingAiButton(documentKind,percent);
+     };
+     const startedAt=Date.now();
+     updateProgress(5);
+     // The AI endpoint does not expose token-level progress. Percentage is
+     // therefore explicitly estimated, and never reaches 100% before success.
+     const timer=setInterval(()=>{
+       const elapsed=Date.now()-startedAt;
+       updateProgress(Math.min(92,5+88*(1-Math.exp(-elapsed/18000))));
+     },400);
+     status.textContent="Reviewing your instructions and preparing the draft...";
      try{
        if(view){view.dispose();view=null;}
        target.innerHTML="";
        const attachments=await Promise.all(chosenFiles.map(asAttachment));
+       updateProgress(22);
        if(igrs&&revise&&last?.sourceAttachments)attachments.push(...last.sourceAttachments);
        if(revise&&last){
          attachments.unshift({name:"पिछले पत्र का मसौदा",text:last.html.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]*>/g," ").slice(0,28000)});
@@ -153,6 +176,7 @@
        const stationery=letterhead?.mode?.(profile,points,title)||"plain";
        const gp=$("#paiSelectGp",el)?.value||"";
        const result=await api("/draft",{kind:title,profile,points,gp,att:attachments,stationery,refs:[]});
+       updateProgress(95);
        last={kind:title,question:points,...result,sourceAttachments:igrs?attachments.filter(a=>a.name!=="पिछले पत्र का मसौदा"):[],stationery,id:crypto.randomUUID()};
        const holder=document.createElement("div");target.appendChild(holder);
        if(!window.PAI_DRAFT_CARD?.mount)throw Error("Draft Preview अभी उपलब्ध नहीं है। Reload करें।");
@@ -165,7 +189,8 @@
            await save({...last,at:Date.now()});
          }
        });
-       status.textContent=(result.fallback?"✓ Gemini उपलब्ध नहीं था; "+(result.provider||"Free AI")+" से मसौदा तैयार हुआ। सभी विवरण जाँचें। ":"✓ मसौदा तैयार है। ")+ "नीचे Preview देखें, ज़रूरत हो तो Edit करें और फिर Save/Word/PDF करें।";
+       status.textContent=(result.fallback?"✓ Draft ready. Generated with "+(result.provider||"Free AI")+"; please review the details. ":"✓ Draft ready. ")+ "नीचे Preview देखें, ज़रूरत हो तो Edit करें और फिर Save/Word/PDF करें।";
+       completed=true;updateProgress(100);
        const ref=document.createElement("div");ref.className="pai-writing-revise";
        ref.innerHTML='<label for="paiRevision">मसौदे में कुछ बदलना है?</label>'+
          '<textarea id="paiRevision" rows="2" placeholder="जैसे: दूसरे अनुच्छेद को संक्षिप्त करें"></textarea>'+
@@ -178,7 +203,7 @@
          await create(true);
        };
      }catch(e){status.textContent="⚠️ "+(e.message||"पत्र नहीं बना। पुनः प्रयास करें।");}
-     finally{submit.disabled=false;submit.classList.remove("is-loading");submit.removeAttribute("aria-busy");submit.innerHTML=idleAiButton;}
+     finally{clearInterval(timer);if(!completed)progressPanel.hidden=true;submit.disabled=false;submit.classList.remove("is-loading");submit.removeAttribute("aria-busy");submit.innerHTML=idleAiButton;}
    };
    submit.onclick=()=>create(false);
    if(previous?.html){
