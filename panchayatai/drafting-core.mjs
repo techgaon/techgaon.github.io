@@ -120,7 +120,7 @@ export function validate(payload,b={}) {
  if(payload.senderAddress&&!sources.includes(str(payload.senderAddress)))throw Error('प्रेषक का पता निर्देश से सत्यापित नहीं है।');
  const narrative=payload.paragraphs.join(' ');
  if(intent.otherPerson&&/(?:मैं\s*(?:ग्राम\s*प्रधान|पंचायत\s*सचिव)|ग्राम\s*प्रधान\s*के\s*रूप\s*में|ग्राम\s*पंचायत\s*कार्यालय\s*की\s*ओर\s*से)/u.test(narrative))
-   throw Error('अन्य व्यक्ति के पत्र में Profile का पद गलत जुड़ गया। मसौदा पुनः तैयार करें।');
+   throw Error('अन्य व्यक्ति के पत्र में Profile का पद गलत जुड़ गया। Draft पुनः तैयार करें।');
  if(intent.personalLeave&&/(?:कार्यालय\s*ग्राम\s*पंचायत\s*की\s*(?:ओर|तरफ)\s*से)/u.test(narrative))
    throw Error('व्यक्तिगत अवकाश आवेदन में ग्राम पंचायत कार्यालय को प्रेषक बना दिया गया।');
  // Fail closed rather than display a draft with invented numerical facts.
