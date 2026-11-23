@@ -175,7 +175,7 @@ async function draft(b) {
     let payload;
     try{
       payload=JSON.parse(generated.raw.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""));
-    }catch(e){previousError=Error("AI ने स्पष्ट JSON मसौदा नहीं दिया।");continue;}
+    }catch(e){previousError=Error("AI did not return a valid JSON Draft.");continue;}
     // The model may translate a Roman-Hindi quote into Devanagari; that is not
     // a literal source quote. Drop it rather than asserting false evidence.
     if(!Array.isArray(payload.evidence))payload.evidence=[];
@@ -190,7 +190,7 @@ async function draft(b) {
     try{return {...renderDraft(payload,b),provider:generated.provider,fallback:generated.fallback};}
     catch(e){previousError=e;if(attempt===1)break;}
   }
-  throw previousError||Error("मसौदा तैयार नहीं हुआ। कृपया निर्देश दोबारा लिखें।");
+  throw previousError||Error("Draft could not be generated. कृपया निर्देश दोबारा लिखें।");
 }
 // पंचायत न्यूज़ — Google समाचार RSS (निःशुल्क) → Gemini से 60 शब्द का हिन्दी सार (केवल दिए गए पाठ से)
 async function news(area) {
