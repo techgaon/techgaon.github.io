@@ -1,4 +1,4 @@
-name: Publish fifth reviewed GO batch (GO ACT ETC: 54 screened orders)
+name: Publish GO ACT ETC screened orders batch
 on:
   workflow_dispatch:
   push:
