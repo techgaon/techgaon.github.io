@@ -91,13 +91,13 @@
    const igrs=type==="igrs";
    el.innerHTML='<section class="pai-writing-workspace" aria-label="सरकारी पत्र Draft Workspace">'+
      '<header class="pai-writing-heading"><span class="pai-writing-symbol" aria-hidden="true">✍</span>'+
-     '<div><small>OFFICIAL DRAFT STUDIO</small><h2>'+esc(title)+' बनाएँ</h2><p>'+esc(description||"पूरे सरकारी प्रारूप में Draft तैयार करें")+'</p></div></header>'+
+     '<div><small>OFFICIAL DRAFT STUDIO</small><h2>'+esc(title)+' बनाएँ</h2><p>'+esc(description||"सरकारी Format में Draft बनाएँ")+'</p></div></header>'+
      '<section class="card pai-writing-form">'+
-     '<p class="pai-writing-hint">लॉगिन प्रोफ़ाइल: <b>'+esc(name)+'</b> · '+esc(profile.sign||"पंचायत कार्यालय")+'<small style="display:block;font-weight:400">वास्तविक प्रेषक आपके निर्देश के अनुसार तय होगा।</small></p>'+
-     '<label for="paiMatter">किस विषय पर '+esc(title)+' लिखना है?</label>'+
+     '<p class="pai-writing-hint">Your Profile: <b>'+esc(name)+'</b> · '+esc(profile.sign||"पंचायत कार्यालय")+'<small style="display:block;font-weight:400">पत्र किसकी तरफ से बनेगा, यह आपके Prompt से तय होगा।</small></p>'+
+     '<label for="paiMatter">किस बारे में '+esc(title)+' लिखना है?</label>'+
      '<textarea id="paiMatter" rows="5" maxlength="7000" placeholder="उदाहरण: ADO पंचायत को सफाई व्यवस्था की रिपोर्ट भेजने के लिए पत्र बनाओ।"></textarea>'+
-     (gps.length?'<label for="paiSelectGp">संबंधित ग्राम पंचायत</label><select id="paiSelectGp">'+
-       (gps.length!==1?'<option value="">— ग्राम पंचायत चुनें —</option>':"")+
+     (gps.length?'<label for="paiSelectGp">Gram Panchayat</label><select id="paiSelectGp">'+
+       (gps.length!==1?'<option value="">— Select Gram Panchayat —</option>':"")+
        gps.map(g=>'<option value="'+esc(g)+'">'+esc(g)+'</option>').join("")+'</select>':"")+
      '<div class="pai-writing-suggestions">'+(suggestionsFor(profile.role,type)).map(v=>
        '<button type="button" class="pai-writing-example">'+esc(v)+'</button>').join("")+'</div>'+
@@ -144,7 +144,7 @@
    const create=async(revise=false)=>{
      if(submit.disabled)return;
      const request=matter.value.trim();
-     if(!request&&!revise&&!igrs){status.textContent="पहले पत्र का विषय बताएँ।";matter.focus();return;}
+     if(!request&&!revise&&!igrs){status.textContent="पहले बताइए कि क्या Draft बनाना है।";matter.focus();return;}
      let completed=false,percent=0;
      submit.disabled=true;submit.classList.add("is-loading");submit.setAttribute("aria-busy","true");
      progressPanel.hidden=false;
@@ -179,7 +179,7 @@
        updateProgress(95);
        last={kind:title,question:points,...result,sourceAttachments:igrs?attachments.filter(a=>a.name!=="Previous letter Draft"):[],stationery,id:crypto.randomUUID()};
        const holder=document.createElement("div");target.appendChild(holder);
-       if(!window.PAI_DRAFT_CARD?.mount)throw Error("Draft Preview अभी उपलब्ध नहीं है। Reload करें।");
+       if(!window.PAI_DRAFT_CARD?.mount)throw Error("Draft Preview नहीं खुल रहा। Reload करें।");
        view=window.PAI_DRAFT_CARD.mount(holder,{
          html:last.html,kind:title,review:result.review,size:12,stationery,
          letterhead:profile.role==="pradhan"?profile.letterhead:null,toast,
@@ -189,16 +189,16 @@
            await save({...last,at:Date.now()});
          }
        });
-       status.textContent=(result.fallback?"✓ Draft ready. Generated with "+(result.provider||"Free AI")+"; please review the details. ":"✓ Draft ready. ")+ "नीचे Preview देखें, ज़रूरत हो तो Edit करें और फिर Save/Word/PDF करें।";
+       status.textContent=(result.fallback?"✓ Draft ready. Generated with "+(result.provider||"Free AI")+"; please review the details. ":"✓ Draft ready. ")+ "नीचे Preview देखें, Edit करें और Save या Word/PDF Download करें।";
        completed=true;updateProgress(100);
        const ref=document.createElement("div");ref.className="pai-writing-revise";
-       ref.innerHTML='<label for="paiRevision">Want to improve this Draft?</label>'+
+       ref.innerHTML='<label for="paiRevision">Want to edit this Draft?</label>'+
          '<textarea id="paiRevision" rows="2" placeholder="जैसे: दूसरे अनुच्छेद को संक्षिप्त करें"></textarea>'+
          '<button type="button" class="btn alt" id="paiRevise">✨ Improve with AI</button>';
        target.appendChild(ref);
        $("#paiRevise",ref).onclick=async()=>{
          const instruction=$("#paiRevision",ref).value.trim();
-         if(!instruction)return toast("सुधार का निर्देश लिखें।");
+         if(!instruction)return toast("Draft में क्या बदलना है, लिखें।");
          matter.value="पिछले Draft को संशोधित करो: "+instruction;
          await create(true);
        };
