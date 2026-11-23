@@ -1,0 +1,57 @@
+name: Apply current relevance filter to GO archive
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/panchayat-go-current-scope.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: panchayat-go-corpus
+  cancel-in-progress: false
+jobs:
+  filter:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Hold unverified current construction rates from search
+        run: |
+          node <<'JS'
+          const fs=require('fs'),crypto=require('crypto'),assert=require('assert');
+          const root='panchayatai/go-corpus',cat=JSON.parse(fs.readFileSync(root+'/catalog.json'));
+          const bytes=fs.readFileSync(root+'/'+cat.index),sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          assert.equal(sha(bytes),cat.indexSha256);
+          const index=JSON.parse(bytes),held='bdffb19d9fcdfe49e9d0cc13';
+          const prior=index.docs.find(d=>d.id===held);
+          assert(prior && /2024/.test(prior.title));
+          const map=new Map(),docs=index.docs.filter((d,i)=>{if(d.id===held)return false;map.set(i,map.size);return true;});
+          const pages=index.pages.filter(p=>map.has(p.doc)).map(p=>({...p,doc:map.get(p.doc)}));
+          assert.equal(docs.length,index.docs.length-1);assert.equal(pages.length,index.pages.length-2);
+          index.docs=docs;index.pages=pages;index.terms=Object.create(null);
+          const search=require('./panchayatai/reference-search.js');
+          for(let i=0;i<pages.length;i++)for(const t of search.tokens(pages[i].text+' '+docs[pages[i].doc].title+' '+(docs[pages[i].doc].officialNumber||''),Infinity))(index.terms[t]??=[]).push(i);
+          const result=Buffer.from(JSON.stringify(index)),hash=sha(result),name='search-'+hash.slice(0,16)+'.json';
+          fs.writeFileSync(root+'/'+name,result);
+          for(const n of fs.readdirSync(root))if(/^search-[a-f0-9]{16}\.json$/.test(n)&&n!==name&&n!==cat.index)fs.unlinkSync(root+'/'+n);
+          Object.assign(cat,{version:hash.slice(0,16),index:name,indexSha256:hash,documentCount:docs.length,pageCount:pages.length,incompleteArchive:true});
+          fs.writeFileSync(root+'/catalog.json',JSON.stringify(cat));
+          fs.writeFileSync('/tmp/base-version',JSON.stringify({index:JSON.parse(bytes).docs.length,version:JSON.parse(fs.readFileSync('panchayatai/go-corpus/catalog.json')).version}));
+          console.log('Current relevance scope:',docs.length,pages.length);
+          JS
+      - name: Publish and preserve concurrent work
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add panchayatai/go-corpus
+          git commit -m 'Hold historical construction-rate order pending current applicability verification'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh api --method POST repos/techgaon/techgaon.github.io/pages/builds
