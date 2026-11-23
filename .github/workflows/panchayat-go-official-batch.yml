@@ -11,11 +11,11 @@ permissions:
   pages: write
 concurrency:
   group: panchayat-go-corpus
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   verified-public-source:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,7 +47,7 @@ jobs:
           info=json.loads(Path('/tmp/panchayat-official-report.json').read_text())
           assert info['originalZipAccessed'] is False
           assert info['baseDocumentCount']>=445
-          assert 1<=len(info['verifiedNew'])<=12
+          assert 1<=len(info['verifiedNew'])<=8
           for doc in info['verifiedNew']:
               file=Path('go-pdfs/blocks')/(doc['id']+'-1.pdf')
               data=file.read_bytes()
