@@ -140,10 +140,10 @@
      '<label>मोटो / संदेश (वैकल्पिक)<input data-k="motto" maxlength="100"></label>'+
      '<label class="pai-lh-design">रंग<input id="lhColor" type="color"></label>'+
      '<label class="pai-lh-design">डिज़ाइन<select id="lhStyle"><option value="classic">औपचारिक सरकारी</option><option value="modern">आधुनिक साफ-सुथरा</option></select></label></div>'+
-     '<div class="btn-row"><button class="btn" type="button" id="lhPreview">👁 Preview देखें</button>'+
-     '<button class="btn alt" type="button" id="lhEdit" hidden>✎ Edit करें</button>'+
+     '<div class="btn-row"><button class="btn" type="button" id="lhPreview">👁 Preview</button>'+
+     '<button class="btn alt" type="button" id="lhEdit" hidden>✎ Edit</button>'+
      '<button class="btn" type="button" id="lhSave">💾 Save Letterhead</button>'+
-     '<button class="btn alt" type="button" id="lhLater">अभी नहीं</button></div>'+
+     '<button class="btn alt" type="button" id="lhLater">Later</button></div>'+
      '<p class="hint" id="lhStatus" role="status"></p></div>'+
      '<section class="pai-lh-preview" id="lhResult" aria-label="Letterhead Preview" hidden></section>'+
      '<div class="card"><p class="hint">प्रधान के व्यक्तिगत पत्रों में सहेजा गया लेटरहेड लगेगा। “ग्राम पंचायत कार्यालय की ओर से पत्र” लिखने पर सादा A4 बनेगा।</p></div></div>';
