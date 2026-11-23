@@ -70,8 +70,8 @@
    '<button type="button" class="inline-draft-icon" data-copy aria-label="पत्र कॉपी करें" title="कॉपी"><svg viewBox="0 0 24 24">'+icons.copy+'</svg></button>'+
    '<button type="button" class="inline-draft-icon" data-edit aria-label="पत्र संपादित करें" aria-pressed="false" title="संपादन"><svg viewBox="0 0 24 24">'+icons.edit+'</svg></button></div></div>'+
    '<div class="inline-draft-paper" role="document" aria-label="पूरा पत्र" contenteditable="false"></div>'+
-   '<button class="btn draft-save" type="button" data-save hidden>सहेजें</button>'+
-   '<div class="inline-draft-review"><details><summary>जारी करने से पहले विवरण जाँचें</summary><p>नाम, पद, पंचायत, तारीख, तथ्य, अभिलेख और समय-सीमा जाँचकर ही पत्र जारी करें।</p>'+((review?.missing||[]).length?'<p>'+escape(review.missing.join('; '))+'</p>':'')+(review?.attachmentReview?'<p>फोटो/PDF के तथ्यों का मूल से मिलान करें।</p>':'')+'</details><label><input type="checkbox" data-reviewed> मैंने पत्र के विवरण जाँच लिए हैं।</label></div>'+
+   '<button class="btn draft-save" type="button" data-save hidden>Save</button>'+
+   '<div class="inline-draft-review"><details><summary>Final करने से पहले Details जाँचें</summary><p>नाम, पद, पंचायत, तारीख, तथ्य, अभिलेख और समय-सीमा जाँचकर ही पत्र जारी करें।</p>'+((review?.missing||[]).length?'<p>'+escape(review.missing.join('; '))+'</p>':'')+(review?.attachmentReview?'<p>फोटो/PDF के तथ्यों का मूल से मिलान करें।</p>':'')+'</details><label><input type="checkbox" data-reviewed> मैंने Draft की Details Check कर ली हैं।</label></div>'+
    '<div class="inline-draft-files">'+['docx','pdf'].map(type=>'<div class="inline-file" data-type="'+type+'"><button class="btn alt" data-download="'+type+'" type="button">↓ '+(type==='docx'?'Word':'PDF')+'</button><div class="inline-file-status" role="status" aria-live="polite"></div><progress class="inline-file-progress" max="100" value="0" hidden aria-label="फाइल तैयार होने की प्रगति"></progress><div class="inline-file-options" hidden><button type="button" data-open="'+type+'">खोलें ↗</button><button type="button" data-share="'+type+'">WhatsApp ↗</button></div></div>').join('')+'</div>';
   container.appendChild(card);
   const paper=card.querySelector('.inline-draft-paper');paper.innerHTML=sanitize(html);paper.dataset.docSize=String([11,12,13,14].includes(Number(size))?Number(size):12);
@@ -102,7 +102,7 @@
    if(disposed)return;
    const current=sanitize(paper.innerHTML);if(current===baseline)return;
    revision++;baseline=current;checked.checked=false;
-   saved.hidden=false;saved.disabled=false;saved.textContent='सहेजें';
+   saved.hidden=false;saved.disabled=false;saved.textContent='Save';
    for(const type of ['pdf','docx']){if(files[type]?.url)URL.revokeObjectURL(files[type].url);delete files[type];const box=card.querySelector('[data-type="'+type+'"]');box.querySelector('.inline-file-options').hidden=true;box.querySelector('progress').hidden=true;box.querySelector('.inline-file-status').textContent='';box.querySelector('.inline-file-status').classList.remove('success');box.querySelector('[data-download]').textContent='↓ '+(type==='pdf'?'PDF':'Word');}
    lock();onChange({html:current,size:Number(paper.dataset.docSize)});
   }
