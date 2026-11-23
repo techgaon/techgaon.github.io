@@ -23,7 +23,7 @@
      patra:["Gramvasi Rahul ki taraf se BDO ko uske mohalle ki safai ke sambandh me patra banao",
        "BDO को ग्राम पंचायत में पेयजल की समस्या के संबंध में सामान्य पत्र बनाओ",
        "मेरे लेटरहेड पर ADO पंचायत को विकास कार्य के संबंध में पत्र बनाओ"],
-     notice:["सार्वजनिक स्थान पर निर्माण सामग्री रखने के संबंध में तथ्यात्मक नोटिस का मसौदा बनाओ"],
+     notice:["सार्वजनिक स्थान पर निर्माण सामग्री रखने के संबंध में तथ्यात्मक नोटिस का Draft बनाओ"],
      spasht:["प्राप्त नोटिस में लगाए गए आरोपों का क्रमवार जवाब तैयार करो"]
    },
    gpa:{
@@ -77,7 +77,7 @@
    if(type==="aadesh")
      return nonIssuers.includes(role)
        ? ["सक्षम अधिकारी को आवश्यक कार्यालय आदेश जारी कराने हेतु आवेदन बनाओ"]
-       : ["कार्यालय के कार्य वितरण के संबंध में आदेश का मसौदा बनाओ"];
+       : ["कार्यालय के कार्य वितरण के संबंध में आदेश का Draft बनाओ"];
    if(type==="patra")return examples.patra;
    return examples[type]||["उपलब्ध तथ्यों के आधार पर संबंधित अधिकारी को पत्र तैयार करो"];
  };
@@ -91,7 +91,7 @@
    const igrs=type==="igrs";
    el.innerHTML='<section class="pai-writing-workspace" aria-label="सरकारी पत्र Draft Workspace">'+
      '<header class="pai-writing-heading"><span class="pai-writing-symbol" aria-hidden="true">✍</span>'+
-     '<div><small>OFFICIAL DRAFT STUDIO</small><h2>'+esc(title)+' बनाएँ</h2><p>'+esc(description||"पूरे सरकारी प्रारूप में मसौदा तैयार करें")+'</p></div></header>'+
+     '<div><small>OFFICIAL DRAFT STUDIO</small><h2>'+esc(title)+' बनाएँ</h2><p>'+esc(description||"पूरे सरकारी प्रारूप में Draft तैयार करें")+'</p></div></header>'+
      '<section class="card pai-writing-form">'+
      '<p class="pai-writing-hint">लॉगिन प्रोफ़ाइल: <b>'+esc(name)+'</b> · '+esc(profile.sign||"पंचायत कार्यालय")+'<small style="display:block;font-weight:400">वास्तविक प्रेषक आपके निर्देश के अनुसार तय होगा।</small></p>'+
      '<label for="paiMatter">किस विषय पर '+esc(title)+' लिखना है?</label>'+
@@ -114,7 +114,7 @@
    const documentKind=englishDocumentKind(type),progressPanel=$("#paiDraftGenerationProgress",el),progressBar=$("#paiDraftProgressBar",el),progressValue=$("#paiDraftProgressValue",el);
    if(previous?.question)matter.value=previous.question;
    el.querySelectorAll(".pai-writing-example").forEach(btn=>btn.onclick=()=>{matter.value=btn.textContent;matter.focus()});
-   if(igrs){$("#paiWritingFile",el).previousElementSibling.textContent="IGRS शिकायत upload करें";matter.placeholder="शिकायत पर हुई वास्तविक जाँच, कार्रवाई, अभिलेख और बाकी कार्य लिखें।";el.querySelector(".pai-writing-suggestions").innerHTML="<p class=\"hint\">पहले शिकायत upload करें, फिर वास्तविक कार्रवाई बताएँ। नीचे बना मसौदा इसी स्थान पर Edit, Save और Word/PDF कर सकते हैं।</p>";}
+   if(igrs){$("#paiWritingFile",el).previousElementSibling.textContent="IGRS शिकायत upload करें";matter.placeholder="शिकायत पर हुई वास्तविक जाँच, कार्रवाई, अभिलेख और बाकी कार्य लिखें।";el.querySelector(".pai-writing-suggestions").innerHTML="<p class=\"hint\">पहले शिकायत upload करें, फिर वास्तविक कार्रवाई बताएँ। तैयार Draft को यहीं Edit, Save और Word/PDF कर सकते हैं।</p>";}
    const chosenFiles=[];
    if(input) input.onchange=()=>{
      chosenFiles.splice(0,chosenFiles.length,...Array.from(input.files||[]).slice(0,3));
@@ -169,15 +169,15 @@
        updateProgress(22);
        if(igrs&&revise&&last?.sourceAttachments)attachments.push(...last.sourceAttachments);
        if(revise&&last){
-         attachments.unshift({name:"पिछले पत्र का मसौदा",text:last.html.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]*>/g," ").slice(0,28000)});
+         attachments.unshift({name:"Previous letter Draft",text:last.html.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]*>/g," ").slice(0,28000)});
        }
        if(igrs&&!attachments.length&&!revise)throw Error("पहले IGRS शिकायत की PDF/Word/फोटो upload करें।");
-       const points=String(request||last?.question||"")+(igrs?"\nIGRS निस्तारण आख्या: संलग्न शिकायत के बिंदुवार उत्तर दें। केवल बताई गई जाँच और कार्रवाई लिखें; समाधान/निरीक्षण/शिकायतकर्ता की संतुष्टि न गढ़ें। कार्रवाई का विवरण न हो तो मसौदे को पूर्ण निस्तारण न बताएं।":"");
+       const points=String(request||last?.question||"")+(igrs?"\nIGRS निस्तारण आख्या: संलग्न शिकायत के बिंदुवार उत्तर दें। केवल बताई गई जाँच और कार्रवाई लिखें; समाधान/निरीक्षण/शिकायतकर्ता की संतुष्टि न गढ़ें। कार्रवाई का विवरण न हो तो Draft को पूर्ण निस्तारण न बताएं।":"");
        const stationery=letterhead?.mode?.(profile,points,title)||"plain";
        const gp=$("#paiSelectGp",el)?.value||"";
        const result=await api("/draft",{kind:title,profile,points,gp,att:attachments,stationery,refs:[]});
        updateProgress(95);
-       last={kind:title,question:points,...result,sourceAttachments:igrs?attachments.filter(a=>a.name!=="पिछले पत्र का मसौदा"):[],stationery,id:crypto.randomUUID()};
+       last={kind:title,question:points,...result,sourceAttachments:igrs?attachments.filter(a=>a.name!=="Previous letter Draft"):[],stationery,id:crypto.randomUUID()};
        const holder=document.createElement("div");target.appendChild(holder);
        if(!window.PAI_DRAFT_CARD?.mount)throw Error("Draft Preview अभी उपलब्ध नहीं है। Reload करें।");
        view=window.PAI_DRAFT_CARD.mount(holder,{
@@ -192,14 +192,14 @@
        status.textContent=(result.fallback?"✓ Draft ready. Generated with "+(result.provider||"Free AI")+"; please review the details. ":"✓ Draft ready. ")+ "नीचे Preview देखें, ज़रूरत हो तो Edit करें और फिर Save/Word/PDF करें।";
        completed=true;updateProgress(100);
        const ref=document.createElement("div");ref.className="pai-writing-revise";
-       ref.innerHTML='<label for="paiRevision">मसौदे में कुछ बदलना है?</label>'+
+       ref.innerHTML='<label for="paiRevision">Want to improve this Draft?</label>'+
          '<textarea id="paiRevision" rows="2" placeholder="जैसे: दूसरे अनुच्छेद को संक्षिप्त करें"></textarea>'+
-         '<button type="button" class="btn alt" id="paiRevise">✨ AI से सुधार कराएँ</button>';
+         '<button type="button" class="btn alt" id="paiRevise">✨ Improve with AI</button>';
        target.appendChild(ref);
        $("#paiRevise",ref).onclick=async()=>{
          const instruction=$("#paiRevision",ref).value.trim();
          if(!instruction)return toast("सुधार का निर्देश लिखें।");
-         matter.value="पिछले मसौदे को संशोधित करो: "+instruction;
+         matter.value="पिछले Draft को संशोधित करो: "+instruction;
          await create(true);
        };
      }catch(e){status.textContent="⚠️ "+(e.message||"पत्र नहीं बना। पुनः प्रयास करें।");}
