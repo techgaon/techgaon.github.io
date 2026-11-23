@@ -129,32 +129,6 @@
     const drafting=/(?:पत्र|नोटिस|प्रस्ताव|आख्या|letter|patra|notice).{0,30}(?:बनाओ|बनाइ|बनाय|तैयार|लिखो|banao|bana|draft)/iu.test(q);
     return go&&!explaining&&!drafting&&(retrieval||q.split(" ").length<=10);
   }
-  function markedExcerpt(text,query){
-    const tokens=(window.PAI_REFERENCE_SEARCH?.tokens?.(query)||terms(query)).filter(t=>t.length>=3).slice(0,8);
-    if(!tokens.length)return escapeHTML(text);
-    const pattern=new RegExp(tokens.map(t=>t.replace(/[.*+?^$()|[\]{}]/g,"\\$&")).join("|"),"giu");
-    let last=0,part="",match;
-    while((match=pattern.exec(text))){
-      part+=escapeHTML(text.slice(last,match.index))+'<mark class="pai-go-yellow">'+escapeHTML(match[0])+'</mark>';
-      last=match.index+match[0].length;
-    }
-    return part+escapeHTML(text.slice(last));
-  }
-  function extractPreview(doc,query){
-    const passage=doc?.passages?.find(p=>typeof p.text==="string"&&p.text.trim());
-    if(!passage)return "";
-    const plain=passage.text.replace(/\s+/gu," ").trim();
-    const tokens=(window.PAI_REFERENCE_SEARCH?.tokens?.(query)||terms(query)).filter(t=>t.length>=3);
-    let first=-1;
-    for(const token of tokens){
-      const position=plain.toLowerCase().indexOf(token.toLowerCase());
-      if(position>=0&&(first<0||position<first))first=position;
-    }
-    const start=first>=0?Math.max(0,first-75):0;
-    const snippet=plain.slice(start,start+390);
-    return '<p class="pai-go-snippet"><small>मुख्य अंश · मूल पृष्ठ '+escapeHTML(passage.page)+'</small>'+
-      (start?'…':'')+markedExcerpt(snippet,query)+(start+390<plain.length?'…':'')+'</p>';
-  }
   function card(doc,chat=false,query=""){
     if(!doc)return "";
     const hit=excerptHits.get(doc.id)||doc;
@@ -169,7 +143,7 @@
       '<div class="pai-go-result-info"><strong>'+escapeHTML(hit.title||doc.title)+'</strong>'+
       (sub?'<small>'+sub+'</small>':"")+
       (pageCount?'<small>मूल PDF के उपलब्ध '+pageCount+' पृष्ठ</small>':"")+
-      extractPreview(hit,query||hit.query||"")+
+
       '<div class="pai-go-actions">'+action+'</div></div></article>';
   }
   function chatResultsHtml(ids,query){
@@ -180,7 +154,7 @@
   }
   function mount(el){
     if(!el)return;
-    el.innerHTML='<section class="card pai-go-intro"><div class="pai-go-heading"><span aria-hidden="true">📚</span><div><h2>GO Search</h2><p>शासनादेश का नाम, GO नंबर या Keyword लिखें। संबंधित पूरा मूल GO देखें और प्रमुख अंश पीले रंग में पहचानें।</p></div></div>'+
+    el.innerHTML='<section class="card pai-go-intro"><div class="pai-go-heading"><span aria-hidden="true">📚</span><div><h2>GO Search</h2><p>शासनादेश खोजें। परिणाम केवल Tiles में दिखेंगे; PDF खोलने पर संबंधित मूल GO मिलेगा।</p></div></div>'+
       '<form class="pai-go-form"><label for="paiGoQuery">शासनादेश खोजें</label><div class="pai-go-input"><input id="paiGoQuery" type="search" autocomplete="off" placeholder="जैसे पंचायत सहायक नियुक्ति का GO" /><button type="submit" class="btn">खोजें</button></div></form></section>'+
       '<section class="pai-go-results" aria-live="polite"><p class="hint">शासनादेश सूची लोड हो रही है…</p></section>'+
       '<section class="card pai-go-suggest"><h3>ऐसे खोजकर देखें</h3><p>हिंदी या Roman Hindi, दोनों में लिख सकते हैं।</p><div class="pai-go-chips">'+
@@ -193,8 +167,7 @@
       if(!records.length){result.innerHTML='<div class="card"><strong>GO Library में अभी PDF नहीं जोड़ी गई है।</strong></div>';return;}
       const q=input.value.trim(),matches=q?search(q):[];
       result.innerHTML=q
-        ?'<div class="pai-go-count">'+matches.length+' परिणाम</div>'+
-          (matches.length?matches.map(d=>card(d,false,q)).join(""):'<div class="card">इस नाम या Keyword पर कोई उपलब्ध शासनादेश नहीं मिला। GO नंबर या दूसरे शब्दों से खोजें।</div>')
+        ?(matches.length?matches.map(d=>card(d,false,q)).join(""):'<div class="card">इस नाम या Keyword पर कोई उपलब्ध शासनादेश नहीं मिला। GO नंबर या दूसरे शब्दों से खोजें।</div>')
         :'<div class="card pai-go-start">ऊपर शासनादेश का विषय या GO नंबर लिखकर खोजें।</div>';
     };
     el.querySelector(".pai-go-form").onsubmit=e=>{e.preventDefault();draw();};
