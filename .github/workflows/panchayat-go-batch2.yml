@@ -1,0 +1,58 @@
+name: Publish additional reviewed GO documents
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/panchayat-go-batch2.yml', '.github/scripts/panchayat-go-batch2-pin.json', '.github/scripts/merge-go-storage.cjs']
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: panchayat-go-corpus
+  cancel-in-progress: false
+jobs:
+  merge-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test verified PDF routing
+        run: node --test panchayatai/reference-asset-base.test.cjs
+      - name: Verify every new remote PDF and merge shared search index
+        run: node .github/scripts/merge-go-storage.cjs
+      - name: Publish verified catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add panchayatai/go-corpus
+          git commit -m 'Connect additional reviewed government documents to GO search and AI chat'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh api --method POST repos/techgaon/techgaon.github.io/pages/builds
+      - name: Verify live shared corpus
+        run: |
+          python - <<'PY'
+          import json,time,urllib.request,hashlib
+          from pathlib import Path
+          expected=json.loads(Path('panchayatai/go-corpus/catalog.json').read_text())
+          base='https://techgaon.in/panchayatai/go-corpus/'
+          for i in range(32):
+              try:
+                  req=urllib.request.Request(base+'catalog.json?verify='+expected['version'],headers={'Cache-Control':'no-cache'})
+                  live=json.load(urllib.request.urlopen(req,timeout=25))
+                  if live['version']==expected['version']:
+                      assert live['documentCount']==expected['documentCount'] and live['pageCount']==expected['pageCount']
+                      data=urllib.request.urlopen(base+live['index'],timeout=60).read()
+                      assert hashlib.sha256(data).hexdigest()==live['indexSha256']
+                      print('LIVE',json.dumps(live));break
+              except Exception as e:print(type(e).__name__)
+              time.sleep(15)
+          else:raise SystemExit('Live catalog did not match published index')
+          PY
