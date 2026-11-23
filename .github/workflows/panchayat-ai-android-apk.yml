@@ -28,7 +28,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.14'
-      - uses: android-actions/setup-android@v3
+      # Ubuntu hosted runners already include the Android SDK; avoid setup-android's obsolete 'tools' package install.
       - name: Install Android platform 35
         run: |
           yes | sdkmanager --licenses >/dev/null || true
