@@ -353,7 +353,7 @@ function render() {
 function letterheadScreen(el) {
   if(!S.user)return go("login");
   if(S.profile?.role!=="pradhan")return go("profile");
-  if(!window.PAI_LETTERHEAD?.mount){el.innerHTML='<div class="card">Letterhead उपलब्ध नहीं। Refresh करें।</div>';return;}
+  if(!window.PAI_LETTERHEAD?.mount){el.innerHTML='<div class="card">Letterhead अभी नहीं खुल रहा। Refresh करें।</div>';return;}
   window.PAI_LETTERHEAD.mount(el,{profile:S.profile,user:S.user,db:S.db,
     onSaved:()=>{LS.set("profile",S.profile);LS.set("pradhanLetterheadSeen_"+S.user.uid,true);},
     onSkip:()=>{LS.set("pradhanLetterheadSeen_"+S.user.uid,true);go("home");},
@@ -361,7 +361,7 @@ function letterheadScreen(el) {
 }
 function settingsScreen(el) {
   if (window.PAI_UX?.preferences) window.PAI_UX.preferences(el);
-  else el.innerHTML = '<div class="card">Display Settings उपलब्ध नहीं हैं। पेज Reload करें।</div>';
+  else el.innerHTML = '<div class="card">Display Settings अभी नहीं खुल रही हैं। Reload करें।</div>';
 }
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
@@ -369,10 +369,10 @@ function igrs(el){
  if(needLogin("igrs"))return;
  const workspace=window.PAI_DRAFT_WORKSPACE.mount(el,{kind:"IGRS निस्तारण आख्या",code:"igrs",
  previous:S.igrsRestore||null,description:"IGRS शिकायत upload करें और वास्तविक जाँच/कार्रवाई के आधार पर निस्तारण आख्या तैयार करें।",profile:S.profile,user:S.user,api,letterhead:window.PAI_LETTERHEAD,toast,
- save:async entry=>{const list=LS.get("drafts")||[],i=list.findIndex(x=>x.id===entry.id),saved={...entry,at:Date.now()};if(i>=0)list[i]=saved;else list.unshift(saved);if(!LS.set("drafts",list.slice(0,50)))throw Error("Draft सुरक्षित नहीं हुआ।");toast("IGRS Draft saved ✓");}});
+ save:async entry=>{const list=LS.get("drafts")||[],i=list.findIndex(x=>x.id===entry.id),saved={...entry,at:Date.now()};if(i>=0)list[i]=saved;else list.unshift(saved);if(!LS.set("drafts",list.slice(0,50)))throw Error("Draft Save नहीं हुआ।");toast("IGRS Draft saved ✓");}});
  S.igrsRestore=null;S.chatCleanup=()=>workspace?.destroy();
 }
-function goSearch(el) { if(window.PAI_GO_SEARCH?.mount) window.PAI_GO_SEARCH.mount(el); else el.textContent="GO Search उपलब्ध नहीं है। ऐप Refresh करें।"; }
+function goSearch(el) { if(window.PAI_GO_SEARCH?.mount) window.PAI_GO_SEARCH.mount(el); else el.textContent="GO Search अभी नहीं खुल रहा। Refresh करें।"; }
 
 /* ---------- होम ---------- */
 function home(el) {
@@ -391,13 +391,13 @@ function home(el) {
       <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
     </div>
     <div class="grid draft-grid pai-office-tiles">
-      <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>शासनादेश खोजें · संबंधित PDF</small></button>
+      <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>Search GO · Original PDF</small></button>
       ${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
       <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
       <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
       <button class="tile plus-tile" data-go="plans"><span class="e">⭐</span><b>Plus</b><small>More features</small></button>
-      <button class="tile igrs-tile" type="button" data-go="igrs"><span class="e">📋</span><b>IGRS</b><small>शिकायत Upload · आख्या · Word / PDF</small></button>
+      <button class="tile igrs-tile" type="button" data-go="igrs"><span class="e">📋</span><b>IGRS</b><small>Complaint Upload · Report · Word/PDF</small></button>
     </div>
   </div>
   <div class="card" style="margin-top:14px"><b>Try asking:</b>
@@ -569,20 +569,20 @@ function profile(el) {
   if (!S.user) return go("login");
   const p = S.profile || { role: "resident" },H=window.PAI_HINDI;
   const initialName=String(p.nameHindi||H?.guess(p.name||S.user.displayName||"")||"");
-  el.innerHTML = `<div class="card"><h2 style="margin-top:0">अपनी प्रोफ़ाइल पूरी करें</h2>
+  el.innerHTML = `<div class="card"><h2 style="margin-top:0">Complete Your Profile</h2>
    <p class="hint">नाम और स्थानों की हिंदी वर्तनी जाँचें। कोई नाम गलत हो तो यहीं सुधारकर Save करें। पत्र लिखते समय दोबारा नहीं पूछा जाएगा।</p>
-   <label for="pNameHindi">आपका पूरा नाम (हिंदी में)</label>
+   <label for="pNameHindi">Full Name (हिंदी में)</label>
    <input id="pNameHindi" lang="hi" maxlength="80" value="${esc(initialName)}" placeholder="जैसे: चंद्र भानु पांडेय">
-   <label for="pPhone">मोबाइल नंबर</label>
+   <label for="pPhone">Mobile Number</label>
    <input id="pPhone" inputmode="tel" maxlength="13" value="${esc(p.phone||S.user.phoneNumber||"")}" placeholder="10 अंकों का मोबाइल नंबर">
-   <label for="pAddressHindi">पत्र के अंत में दिखाने हेतु पूरा पत्राचार पता</label>
+   <label for="pAddressHindi">Full Address (पत्र के नीचे आएगा)</label>
    <textarea id="pAddressHindi" lang="hi" maxlength="350" rows="2" placeholder="मकान/मोहल्ला, ग्राम, पोस्ट, विकास खण्ड, जनपद, पिनकोड">${esc(p.addressHindi||p.address||"")}</textarea>
    <p class="hint">यह पता केवल आपके नाम से बनने वाले पत्रों में लगेगा। दूसरे व्यक्ति की ओर से बने पत्र में उसका अलग पता देना होगा।</p>
-   <label for="pRole">आपका पद</label>
+   <label for="pRole">Select Your Role</label>
    <select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
-   <div class="btn-row"><button class="btn alt" id="pSuggestHindi" type="button">✦ हिंदी वर्तनी के सुझाव</button>
-   <button class="btn" id="pSave">✓ प्रोफ़ाइल Save करें</button></div>
+   <div class="btn-row"><button class="btn alt" id="pSuggestHindi" type="button">✦ Hindi Spelling Suggestions</button>
+   <button class="btn" id="pSave">✓ Save Profile</button></div>
    <p class="hint" id="pHindiStatus" role="status">नाम और स्थान की वर्तनी बदल सकते हैं। सही करके Save करें।</p>
    <div id="pradhanLetterheadCard" class="card ${p.role==="pradhan"?"":"hidden"}" style="margin-top:15px">
       <b>🖋️ ग्राम प्रधान लेटरहेड</b>
@@ -830,7 +830,7 @@ function assistantHtml(message,index){
   const followups=(message.followups||[]).filter(q=>typeof q==="string"&&q.trim().length>5).slice(0,2);
   window.PAI_GO_SEARCH?.registerHits(message.referenceHits||[]);
   return (Array.isArray(message.goResultIds)?(window.PAI_GO_SEARCH?.chatResultsHtml(message.goResultIds,message.question)||""):"")+chatParagraphs(answer)+
-    (Array.isArray(message.goResultIds)?'<div class="btn-row"><button class="btn-sm btn alt" data-go="goSearch">📚 GO Search खोलें</button></div>':"")+(web?'<p class="hint">'+web+"</p>":"")+refsHtml(message.originalIds||[])+
+    (Array.isArray(message.goResultIds)?'<div class="btn-row"><button class="btn-sm btn alt" data-go="goSearch">📚 Open GO Search</button></div>':"")+(web?'<p class="hint">'+web+"</p>":"")+refsHtml(message.originalIds||[])+
     (followups.length?'<div class="followups">'+followups.map(q=>
       '<button class="btn alt followup" data-followup="'+esc(q)+'" data-message-index="'+index+'">'+esc(q)+'</button>'
     ).join("")+"</div>":"")+'<div class="btn-row"><button class="btn-sm btn alt" data-tod="'+index+'">📝 इससे पत्र बनाएँ</button></div>';
@@ -847,10 +847,10 @@ function chat(el) {
     '</div>'+
 
     '<p class="hint">Gemini अनुपलब्ध होने पर लिखित प्रश्न और आवश्यक Profile संदर्भ Groq/Cloudflare AI तक जा सकते हैं। Free Backup का उपयोग संबंधित Providers की अपनी सीमा तक ही संभव है।</p>'+
-    '<div class="pai-chat-archive"><label for="paiChatArchive">पुरानी बातचीत</label>'+
-    '<select id="paiChatArchive"><option value="">— History देखें —</option></select></div>'+
+    '<div class="pai-chat-archive"><label for="paiChatArchive">Chat History</label>'+
+    '<select id="paiChatArchive"><option value="">— Select Chat —</option></select></div>'+
     '<div class="draft-chat-header"><h2>AI Help</h2></div>'+
-    ((S.profile.gps||[]).length>1?'<div class="pai-chat-gp"><label for="chatDraftGP">पत्र बनाते समय संबंधित ग्राम पंचायत (वैकल्पिक)</label>'+
+    ((S.profile.gps||[]).length>1?'<div class="pai-chat-gp"><label for="chatDraftGP">Gram Panchayat for Draft (Optional)</label>'+
     '<select id="chatDraftGP"><option value="">— ग्राम पंचायत चुनें —</option>'+
     (S.profile.gps||[]).map(raw=>'<option value="'+esc(raw)+'" '+
       (S.chatGP===raw?'selected':'')+'>'+esc(S.profile.gpsHindi?.[raw]||window.PAI_HINDI?.label(raw)||raw)+'</option>').join('')+
@@ -859,7 +859,7 @@ function chat(el) {
   if($("#chatDraftGP"))$("#chatDraftGP").onchange=e=>{S.chatGP=e.target.value;};
   function paintArchives(){
     const picker=$("#paiChatArchive");if(!picker)return;
-    picker.innerHTML='<option value="">— पुरानी बातचीत —</option>'+
+    picker.innerHTML='<option value="">— Previous Chats —</option>'+
       readArchives().map((item,i)=>'<option value="'+i+'">'+
       esc(String(item.title||"पुरानी Chat").slice(0,55))+'</option>').join("");
   }
@@ -872,11 +872,11 @@ function chat(el) {
       const archive={title:(first?.t||"नई बातचीत").slice(0,80),at:Date.now(),
         messages:S.chat.slice(-40)};
       if(!LS.set(archiveKey,[archive,...old].slice(0,12)))
-        return toast("पुरानी बातचीत सुरक्षित नहीं हुई; नई Chat नहीं खोली गई।");
+        return toast("पुरानी Chat Save नहीं हुई; नई Chat नहीं खुली।");
     }
     S.chat=[];S.att=[];LS.set(activeKey,[]);
     S.draftSeed=null;S.pendingAsk=null;
-    toast("नई Chat शुरू ✓");
+    toast("New Chat started ✓");
     go("chat");
   };
   $("#paiChatArchive").onchange=e=>{
@@ -889,7 +889,7 @@ function chat(el) {
       const item={title:(first?.t||"पिछली Chat").slice(0,80),at:Date.now(),
         messages:S.chat.slice(-40)};
       if(!LS.set(archiveKey,[item,...old].slice(0,12)))
-        return toast("वर्तमान बातचीत सुरक्षित नहीं हुई।");
+        return toast("Current Chat Save नहीं हुई।");
     }
     S.chat=Array.isArray(chosen.messages)?chosen.messages:[];
     LS.set(activeKey,S.chat.slice(-40));go("chat");
@@ -909,7 +909,7 @@ function chat(el) {
         toast,onChange:change=>{Object.assign(m,change,{dirty:true});},onSave:change=>{
           const list=LS.get("drafts")||[], entry={id:m.id,kind:m.kind,html:m.html,stationery:m.stationery||"plain",refs:m.refs||[],review:m.review,size:m.size||12,at:Date.now()};
           const index=list.findIndex(x=>x.id&&x.id===m.id);if(index>=0)list[index]=entry;else list.unshift(entry);
-          if(!LS.set("drafts",list.slice(0,50)))throw Error("फोन की जगह भर गई है। पत्र सहेजा नहीं जा सका।");
+          if(!LS.set("drafts",list.slice(0,50)))throw Error("Phone Storage Full. Draft Save नहीं हुआ।");
           Object.assign(m,change,{dirty:false});persistChat();
         }}));
     });
@@ -1052,8 +1052,8 @@ function draftEdit(el) {
       size:entry.size||12,question:entry.question||"",at:Date.now()};
     const i=list.findIndex(x=>x.id===draft.id);
     if(i>=0)list[i]=draft;else list.unshift(draft);
-    if(!LS.set("drafts",list.slice(0,50)))throw Error("फ़ोन में Draft सुरक्षित नहीं हो सका");
-    toast("पत्र सुरक्षित ✓");
+    if(!LS.set("drafts",list.slice(0,50)))throw Error("फोन में Draft Save नहीं हो सका");
+    toast("Draft saved ✓");
   };
   const previous=S.draftRestore||(S.draftSeed?{question:S.draftSeed}:null);
   const workspace=window.PAI_DRAFT_WORKSPACE.mount(el,{
@@ -1222,14 +1222,14 @@ async function adminOverview(panel) {
 
   const goInventory=document.createElement("div");
   goInventory.className="card";goInventory.style.marginTop="14px";
-  goInventory.textContent="GO संग्रह की जानकारी लोड हो रही है…";
+  goInventory.textContent="GO Library Loading…";
   panel.append(goInventory);
   window.PAI_GO_SEARCH?.inventory?.().then(info=>{
-    goInventory.innerHTML='<h3>GO दस्तावेज संग्रह</h3><p><strong>'+
-      Number(info.documents).toLocaleString("en-IN")+'</strong> indexed दस्तावेज · <strong>'+
-      Number(info.pages).toLocaleString("en-IN")+'</strong> indexed पृष्ठ</p>'+
+    goInventory.innerHTML='<h3>GO Library</h3><p><strong>'+
+      Number(info.documents).toLocaleString("en-IN")+'</strong> indexed Documents · <strong>'+
+      Number(info.pages).toLocaleString("en-IN")+'</strong> indexed Pages</p>'+
       (info.incomplete?'<p class="hint">पूरी 6 GB ZIP का आयात अभी पूर्ण नहीं है।</p>':'');
-  }).catch(()=>{goInventory.textContent="GO संग्रह का आँकड़ा अभी उपलब्ध नहीं है।";});
+  }).catch(()=>{goInventory.textContent="GO Library stats अभी नहीं मिल रहे।";});
 
 }
 async function adminPlans(panel) {
@@ -1251,7 +1251,7 @@ async function adminPlans(panel) {
   const updateQr=()=>{clearTimeout(qrTimer);qrTimer=setTimeout(async()=>{
     const vpa=$("#adminUpi").value.trim(),box=$("#adminUpiQr");box.hidden=!window.PAI_PAYMENTS.validUpi(vpa);
     if(box.hidden){$("#adminQrStatus").textContent=vpa?"मान्य UPI ID भरें।":"";return;}
-    try{await window.PAI_PAYMENTS.qr(box,window.PAI_PAYMENTS.uri(vpa,$("#adminPayee").value.trim()||C.companyName));$("#adminQrStatus").textContent="UPI QR तैयार है। Save करके प्रकाशित करें।";}catch(e){$("#adminQrStatus").textContent=e.message;}
+    try{await window.PAI_PAYMENTS.qr(box,window.PAI_PAYMENTS.uri(vpa,$("#adminPayee").value.trim()||C.companyName));$("#adminQrStatus").textContent="UPI QR Ready. Save करके Publish करें।";}catch(e){$("#adminQrStatus").textContent=e.message;}
   },250);};
   $("#adminUpi").addEventListener("input",updateQr);$("#adminPayee").addEventListener("input",updateQr);updateQr();
   function add(p) {
