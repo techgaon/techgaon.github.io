@@ -154,48 +154,152 @@ async function ocrGstins(file,progress){
 /* ---------------- GST No Detail ---------------- */
 function mountDetail(el){
  style();
- el.innerHTML=`<div class="gst-wrap"><h2>🔎 GST No Detail</h2>
- <div class="gst-box"><label>Scan or Upload</label><div class="gst-two">
-  <label class="gst-big" for="gst-cam"><span>📷</span>Scan</label>
-  <label class="gst-big" for="gst-gal"><span>🖼️</span>Upload</label></div>
-  <input id="gst-cam" type="file" accept="image/*" capture="environment" hidden>
-  <input id="gst-gal" type="file" accept="image/*" hidden>
-  <p class="gst-note" id="gst-scan-msg">बिल/रसीद पर लिखा GST नंबर साफ़ दिखे, ऐसी फ़ोटो लें।</p></div>
- <div class="gst-box"><label for="gst-no">Type GST No</label>
-  <input id="gst-no" class="gst-in code" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="09ABCDE1234F1Z5">
-  <div class="gst-act"><button type="button" class="btn" id="gst-go">See Detail</button></div></div>
- <div id="gst-res"></div></div>`;
- const $=s=>el.querySelector(s);
- const show=g=>{
-  const r=decode(g);$("#gst-no").value=r.gstin;
-  const rows=[["GSTIN",r.gstin],["State",r.stateCode?`${r.state} (${r.stateCode})`:""],["PAN",r.pan],["Holder Type",r.holder],["Registration No. (same PAN, this state)",r.regNo],["Registration Type",r.kind]].filter(x=>x[1]);
-  $("#gst-res").innerHTML=`<div class="gst-box gst-res">
-   <p class="${r.valid?"gst-ok":"gst-bad"}">${r.valid?"✓ Valid GSTIN format":"✗ Invalid GSTIN"}</p>
-   ${r.errors.length?`<p class="gst-note">${r.errors.map(esc).join("<br>")}</p>`:""}
-   ${r.gstin.length===15?`<table>${rows.map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(x[1])}</td></tr>`).join("")}</table>`:""}
-   ${r.valid?`<div class="gst-act"><button type="button" class="btn" id="gst-portal">Full Detail on GST Portal</button><button type="button" class="btn alt" id="gst-cp">📋 Copy</button></div>
-   <p class="gst-note">फ़र्म का नाम, पता और स्थिति (Active/Cancelled) GST पोर्टल पर दिखेगी। GSTIN अपने-आप copy हो जाता है — पोर्टल पर Paste करें और Captcha भरकर Search दबाएँ।</p>`:""}</div>`;
-  if(r.valid){
-   $("#gst-portal").onclick=()=>{copy(r.gstin);location.href="https://services.gst.gov.in/services/searchtp";};
-   $("#gst-cp").onclick=()=>{copy(r.gstin);$("#gst-cp").textContent="✓ Copied";};
-  }
-  $("#gst-res").scrollIntoView({behavior:"smooth",block:"start"});
- };
- $("#gst-go").onclick=()=>show($("#gst-no").value);
- $("#gst-no").onkeydown=e=>{if(e.key==="Enter")show($("#gst-no").value);};
- const pick=async inp=>{
-  const f=inp.files&&inp.files[0];inp.value="";if(!f)return;
-  const msg=$("#gst-scan-msg");msg.textContent="GST नंबर पढ़ा जा रहा है…";
+ el.innerHTML='<div class="gst-wrap"><h2>🔎 GST No Detail</h2>'+
+ '<div class="gst-box"><label>Scan Or Upload</label><div class="gst-two">'+
+ '<button type="button" class="gst-big" id="gst-scan"><span>📷</span>Scan</button>'+
+ '<button type="button" class="gst-big" id="gst-upload"><span>🖼️</span>Upload</button></div>'+
+ '<input id="gst-cam" type="file" accept="image/*" capture="environment" hidden>'+
+ '<input id="gst-gal" type="file" accept="image/*" hidden>'+
+ '<div id="gst-camera-panel" class="gst-camera-panel" hidden><video id="gst-video" autoplay muted playsinline></video>'+
+ '<div class="gst-act"><button type="button" class="btn" id="gst-take">Take Photo</button><button type="button" class="btn alt" id="gst-cancel">Cancel</button></div></div>'+
+ '<p class="gst-note" id="gst-scan-msg" role="status" aria-live="polite">बिल या रसीद में GSTIN साफ दिखाई दे, ऐसी Photo लें। Image से Text आपके Browser में पढ़ा जाएगा; Photo सर्वर पर नहीं भेजी जाएगी।</p></div>'+
+ '<div class="gst-box"><label for="gst-no">Type GST No</label>'+
+ '<input id="gst-no" class="gst-in code" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="27AAPFU0939F1ZV">'+
+ '<div class="gst-act"><button type="button" class="btn" id="gst-go">See Detail</button><button type="button" class="btn alt" id="gst-reset">Clear</button></div></div>'+
+ '<div id="gst-res" aria-live="polite"></div></div>';
+ const $=q=>el.querySelector(q);
+ let activeStream=null,scanning=false;
+ function stopCamera(){
+  if(activeStream){for(const track of activeStream.getTracks())track.stop();activeStream=null;}
+  const panel=$("#gst-camera-panel");
+  if(panel)panel.hidden=true;
+  const video=$("#gst-video");
+  if(video)video.srcObject=null;
+ }
+ // Main app calls cleanup on navigation; a user can always close the camera manually.
+ window.PAI_GST.cleanup=stopCamera;
+ const liveLookup=async gstin=>{
+  const endpoint=window.PAI_GST_LOOKUP_ENDPOINT;
+  if(typeof endpoint!=="string"||!endpoint.trim())return;
+  const target=$("#gst-live");
+  if(!target)return;
+  let uri;
   try{
-   const list=await ocrGstins(f,p=>{msg.textContent="GST नंबर पढ़ा जा रहा है… "+p+"%";});
-   if(!list.length){msg.innerHTML='<span class="gst-bad">फ़ोटो में सही GST नंबर नहीं मिला।</span> नज़दीक से, सीधी और साफ़ फ़ोटो लें या नंबर टाइप करें।';return;}
-   if(list.length===1){msg.innerHTML='<span class="gst-ok">✓ GST नंबर मिला</span>';show(list[0]);return;}
-   msg.innerHTML='<span class="gst-ok">'+list.length+' GST नंबर मिले — एक चुनें:</span><div class="gst-chips" style="margin-top:8px">'+list.map(g=>`<button type="button" class="gst-chip" data-g="${g}">${g}</button>`).join("")+"</div>";
-   msg.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>show(b.dataset.g));
-  }catch(e){msg.innerHTML='<span class="gst-bad">फ़ोटो पढ़ी नहीं जा सकी।</span> इंटरनेट जाँचें या नंबर टाइप करें।';}
+   uri=new URL(endpoint,location.href);
+   if(uri.origin!==location.origin||uri.protocol!=="https:")throw Error("Unsafe API URL");
+  }catch{target.textContent="Live GST API configuration सही नहीं है।";return;}
+  target.textContent="Official GST details लोड हो रही हैं…";
+  try{
+   const response=await fetch(uri.href,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({gstin})});
+   if(!response.ok)throw Error("Lookup unavailable");
+   const raw=await response.json();
+   if($("#gst-no").value.trim().toUpperCase()!==gstin||!el.isConnected)return;
+   if(!raw||raw.verified!==true||!raw.data||typeof raw.data!=="object")throw Error("Unverified API response");
+   const data=raw.data;
+   const fields=[
+    ["Legal Name",data.legalName],["Trade Name",data.tradeName],["Registration Status",data.status],
+    ["Registration Date",data.registrationDate],["Constitution of Business",data.constitution],
+    ["Principal Address",data.address],["Taxpayer Type",data.taxpayerType],
+    ["State Jurisdiction",data.stateJurisdiction],["Central Jurisdiction",data.centralJurisdiction]
+   ].filter(x=>typeof x[1]==="string"&&x[1].trim());
+   if(!fields.length)throw Error("Empty API response");
+   target.innerHTML='<div class="gst-box gst-res"><b>Verified Taxpayer Details</b><table>'+
+    fields.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+'</td></tr>').join("")+'</table>'+
+    '<p class="gst-note">Source: '+esc(typeof raw.source==="string"?raw.source:"Authorised GST provider")+
+    (typeof raw.checkedAt==="string"?' · Checked: '+esc(raw.checkedAt):"")+'</p></div>';
+  }catch{
+   if(target&&el.isConnected)target.innerHTML='<p class="gst-note">Live GST Details अभी उपलब्ध नहीं हैं। नीचे Official GST Portal पर पुष्टि करें।</p>';
+  }
  };
- $("#gst-cam").onchange=e=>pick(e.target);
- $("#gst-gal").onchange=e=>pick(e.target);
+ function show(g){
+  const r=decode(g),input=$("#gst-no");
+  input.value=r.gstin;
+  stopCamera();
+  const display=$("#gst-res");
+  const fields=r.valid?[
+   ["GSTIN",r.gstin],["State",r.state+" ("+r.stateCode+")"],["PAN (from GSTIN)",r.pan],
+   ["PAN Holder Type (inferred)",r.holder],["State Registration Code",r.regNo]
+  ]:[];
+  display.innerHTML='<div class="gst-box gst-res">'+
+   '<p class="'+(r.valid?'gst-ok':'gst-bad')+'">'+
+   (r.valid?'✓ GSTIN format और checksum सही हैं':'✗ GSTIN format/checksum सही नहीं है')+'</p>'+
+   (r.errors.length?'<p class="gst-note">'+r.errors.map(esc).join(" ")+'</p>':"")+
+   (fields.length?'<table>'+fields.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+'</td></tr>').join("")+'</table>':"")+
+   (r.valid?'<div class="gst-act"><button type="button" class="btn" id="gst-portal">Full Detail on GST Portal</button>'+
+   '<button type="button" class="btn alt" id="gst-cp">Copy GSTIN</button></div>'+
+   '<p class="gst-note">Format सही होने का अर्थ यह नहीं कि GST Registration Active है। Legal Name, Trade Name, Address और Status की आधिकारिक जाँच GST Portal पर करें। वहाँ Captcha भरना पड़ सकता है।</p>':"")+
+   '</div><div id="gst-live"></div>';
+  if(r.valid){
+   $("#gst-portal").onclick=async()=>{
+    window.open("https://services.gst.gov.in/services/searchtp","_blank","noopener,noreferrer");
+    $("#gst-portal").textContent=(await copy(r.gstin))?"GSTIN Copied · Portal Open":"Open Official GST Portal";
+   };
+   $("#gst-cp").onclick=async()=>{$("#gst-cp").textContent=(await copy(r.gstin))?"✓ Copied":"Copy blocked";};
+   void liveLookup(r.gstin);
+  }
+  display.scrollIntoView({behavior:"smooth",block:"start"});
+ }
+ const pick=async file=>{
+  if(!file||scanning)return;
+  const msg=$("#gst-scan-msg");
+  if(!file.type.startsWith("image/")||file.size>20*1024*1024){
+   msg.textContent="केवल 20 MB तक की Image चुनें।";return;
+  }
+  scanning=true;
+  $("#gst-scan").disabled=true;$("#gst-upload").disabled=true;
+  msg.textContent="Image से GST नंबर पढ़ा जा रहा है…";
+  try{
+   const list=await ocrGstins(file,p=>{if(el.isConnected)msg.textContent="GST नंबर पढ़ा जा रहा है… "+p+"%";});
+   if(!el.isConnected)return;
+   if(!list.length){
+    msg.textContent="Image में सही GST नंबर नहीं मिला। नज़दीक से, सीधी और साफ Photo लें या नंबर Type करें।";return;
+   }
+   if(list.length===1){msg.textContent="✓ GST नंबर मिला";show(list[0]);return;}
+   msg.innerHTML='<b>'+list.length+' GST नंबर मिले — एक चुनें:</b><div class="gst-chips">'+
+    list.slice(0,8).map(g=>'<button type="button" class="gst-chip" data-g="'+esc(g)+'">'+esc(g)+'</button>').join("")+'</div>';
+   msg.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>show(b.dataset.g));
+  }catch{if(el.isConnected)msg.textContent="Image पढ़ी नहीं जा सकी। इंटरनेट जाँचें या GSTIN टाइप करें।";}
+  finally{
+   scanning=false;
+   if(el.isConnected){$("#gst-scan").disabled=false;$("#gst-upload").disabled=false;}
+  }
+ };
+ $("#gst-cam").onchange=e=>{const file=e.target.files?.[0];e.target.value="";if(file)void pick(file);};
+ $("#gst-gal").onchange=e=>{const file=e.target.files?.[0];e.target.value="";if(file)void pick(file);};
+ $("#gst-upload").onclick=()=>$("#gst-gal").click();
+ $("#gst-scan").onclick=async()=>{
+  stopCamera();
+  // Android/iOS: capture="environment" opens the rear camera capture flow.
+  if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
+   $("#gst-cam").click();return;
+  }
+  if(!navigator.mediaDevices?.getUserMedia){$("#gst-cam").click();return;}
+  try{
+   activeStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"}}});
+   if(!el.isConnected){stopCamera();return;}
+   $("#gst-video").srcObject=activeStream;
+   $("#gst-camera-panel").hidden=false;
+   await $("#gst-video").play().catch(()=>{});
+  }catch{
+   stopCamera();
+   $("#gst-scan-msg").textContent="Camera खोलने की अनुमति नहीं मिली। Scan के लिए Camera Permission दें या Upload चुनें।";
+  }
+ };
+ $("#gst-take").onclick=async()=>{
+  const video=$("#gst-video");
+  if(!video.videoWidth||!video.videoHeight)return;
+  const canvas=document.createElement("canvas");canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+  canvas.getContext("2d").drawImage(video,0,0);
+  stopCamera();
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.95));
+  canvas.width=0;canvas.height=0;
+  if(blob)void pick(new File([blob],"gst-scan.jpg",{type:"image/jpeg"}));
+ };
+ $("#gst-cancel").onclick=stopCamera;
+ $("#gst-go").onclick=()=>show($("#gst-no").value);
+ $("#gst-no").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();show(e.target.value);}};
+ $("#gst-no").oninput=()=>{$("#gst-res").replaceChildren();};
+ $("#gst-reset").onclick=()=>{stopCamera();$("#gst-no").value="";$("#gst-res").replaceChildren();$("#gst-no").focus();};
 }
 
 window.PAI_GST={mountCalc,mountDetail,decode,findGstins,checkChar,calculate};
