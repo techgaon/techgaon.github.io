@@ -31,8 +31,9 @@ jobs:
       # Ubuntu hosted runners already include the Android SDK; avoid setup-android's obsolete 'tools' package install.
       - name: Install Android platform 35
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+          "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_ROOT" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Create Panchayat AI launcher icon
         run: |
           sudo apt-get update -qq
