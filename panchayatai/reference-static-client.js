@@ -20,7 +20,7 @@
   // Additional public PDFs use the same pinned index and SHA-256 verification.
   function assetURL(doc,block,data){
     if(!/^blocks\/[a-f0-9]{24}-[1-9][0-9]*\.pdf$/.test(block.file))throw Error('अमान्य दस्तावेज भाग');
-    if(doc.assetBase!==undefined&&doc.assetBase!=='https://techgaon-panchayat-orders.pages.dev/')throw Error('अनुमति सूची से बाहर दस्तावेज सेवा');
+    if(doc.assetBase!==undefined&&!['https://techgaon-panchayat-orders.pages.dev/','https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/'].includes(doc.assetBase))throw Error('अनुमति सूची से बाहर दस्तावेज सेवा');
     return new URL(block.file,doc.assetBase||data.url);
   }
   async function load(){
@@ -32,7 +32,7 @@
       const index=await checkedJSON(new URL(catalog.index,url),catalog.indexSha256);
       if(index.schema!==1||!Array.isArray(index.docs)||!Array.isArray(index.pages)||!index.terms)throw Error('अमान्य दस्तावेज index');
       const allowed=new Set(['act','rules','go','dm_order','cdo_order','dpro_order','ddo_order','bdo_order']);
-      for(const doc of index.docs){if(!/^[a-f0-9]{24}$/.test(doc.id)||!allowed.has(doc.documentType)||!Array.isArray(doc.blocks)||(doc.assetBase!==undefined&&doc.assetBase!=='https://techgaon-panchayat-orders.pages.dev/'))throw Error('अनुमति सूची से बाहर दस्तावेज');}
+      for(const doc of index.docs){if(!/^[a-f0-9]{24}$/.test(doc.id)||!allowed.has(doc.documentType)||!Array.isArray(doc.blocks)||(doc.assetBase!==undefined&&!['https://techgaon-panchayat-orders.pages.dev/','https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/'].includes(doc.assetBase)))throw Error('अनुमति सूची से बाहर दस्तावेज');}
       loaded={catalog,index,url};return loaded;
     })().catch(e=>{loading=null;throw e;});
     return loading;
