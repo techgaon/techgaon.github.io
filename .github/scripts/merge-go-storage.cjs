@@ -29,7 +29,7 @@ async function main(){
  index.docs.push(...add.docs);index.pages.push(...add.pages);
  const core=require(path.resolve('panchayatai/reference-search.js'));index.terms=Object.create(null);
  for(let i=0;i<index.pages.length;i++){const p=index.pages[i],d=index.docs[p.doc];for(const t of core.tokens(p.text+' '+d.title+' '+(d.officialNumber||''),Infinity))(index.terms[t]??=[]).push(i);}
- assert(core.search(index,'???? ???????? ?????????').length>0);assert(core.search(index,'RRC ?????? ??? ???????').some(h=>add.docs.some(d=>d.id===h.id)));
+ assert(core.search(index,'मिशन कर्मयोगी पाठ्यक्रम').length>0);assert(core.search(index,'RRC संचालन ठोस अपशिष्ट').some(h=>add.docs.some(d=>d.id===h.id)));
  const out=Buffer.from(JSON.stringify(index));assert(out.length<24*1024*1024);
  const sha=hash(out),name='search-'+sha.slice(0,16)+'.json';fs.writeFileSync(root+'/'+name,out);
  // Retain the currently published index for clients already reading that catalog.
