@@ -91,3 +91,20 @@
 
 /* Preserve short conversion warnings and file notices on separate lines. */
 .pai-status{white-space:pre-line}
+
+
+/* File selection appears inside the tools grid, immediately below the selected row. */
+.pai-tool-grid > .pai-tool-panel{
+  grid-column:1/-1;
+  width:100%;
+  min-width:0;
+  margin:0 0 8px;
+  box-sizing:border-box;
+  border:1px solid var(--bd);
+  border-top:3px solid var(--g2);
+  box-shadow:var(--pai-shadow,0 6px 18px #1d37530d);
+}
+.pai-tool-grid > .pai-tool-panel:not(.hidden){animation:pai-rise .24s ease-out both}
+@media(prefers-reduced-motion:reduce){
+  .pai-tool-grid > .pai-tool-panel:not(.hidden){animation:none}
+}
