@@ -310,7 +310,18 @@
       convert.disabled=true;
       result.classList.add("hidden");
       setStatus("");
+      // Place upload controls immediately after the selected tile's row,
+      // not at the end of all ten conversion tiles.
+      const tiles=Array.from(el.querySelectorAll("[data-tool]"));
+      const selected=tiles.findIndex(button=>button.dataset.tool===key);
+      const columns=window.matchMedia?.("(min-width: 650px)")?.matches?3:2;
+      const rowEnd=Math.min(tiles.length-1,Math.floor(Math.max(0,selected)/columns)*columns+columns-1);
+      if(tiles[rowEnd])tiles[rowEnd].after(panel);
       panel.classList.remove("hidden");
+      requestAnimationFrame(()=>{
+        if(panel.isConnected&&!panel.classList.contains("hidden"))
+          panel.scrollIntoView({behavior:"smooth",block:"nearest"});
+      });
     }
     function closeTool(){
       if(busy)return;
