@@ -566,28 +566,38 @@ async function saveProfile() {
 /* ---------- प्रोफ़ाइल: पद + क्षेत्र ---------- */
 const geoCache = {};
 async function loadDistrict(d) {
-  if (geoCache[d] !== undefined) return geoCache[d];
-  try { geoCache[d] = await (await fetch("data/geo/" + G.districts.indexOf(d) + ".json")).json(); } catch { geoCache[d] = null; }
-  return geoCache[d]; // {tehsils:[..], blocks:{ "हैदरगढ़": ["कमेला", ...] }}
+  const canonical=G.resolveDistrict?.(d)||d;
+  const index=G.districts.indexOf(canonical);
+  if(index<0)return null; // Never request a wrong district, e.g. -1.json.
+  if(geoCache[canonical]!==undefined)return geoCache[canonical];
+  try{
+    const response=await fetch("data/geo/"+index+".json");
+    if(!response.ok)throw Error("जिले का डेटा उपलब्ध नहीं है");
+    const geo=await response.json();
+    if(!geo||!geo.blocks||Array.isArray(geo.blocks)||typeof geo.blocks!=="object")
+      throw Error("जिले का ब्लॉक डेटा अमान्य है");
+    geoCache[canonical]={tehsils:Array.isArray(geo.tehsils)?geo.tehsils:[],blocks:geo.blocks};
+  }catch(error){console.warn("Profile location list unavailable",canonical,error);geoCache[canonical]=null;}
+  return geoCache[canonical];
 }
 function profile(el) {
   if (!S.user) return go("login");
   const p = S.profile || { role: "resident" },H=window.PAI_HINDI;
   const initialName=String(p.nameHindi||H?.guess(p.name||S.user.displayName||"")||"");
-  el.innerHTML = `<div class="card"><h2 style="margin-top:0">Complete Your Profile</h2>
+  el.innerHTML = `<div class="card"><h2 style="margin-top:0">अपनी प्रोफ़ाइल पूरी करें</h2>
    <p class="hint">नाम और स्थानों की हिंदी वर्तनी जाँचें। कोई नाम गलत हो तो यहीं सुधारकर Save करें। पत्र लिखते समय दोबारा नहीं पूछा जाएगा।</p>
-   <label for="pNameHindi">Full Name (हिंदी में)</label>
+   <label for="pNameHindi">आपका पूरा नाम (हिंदी में)</label>
    <input id="pNameHindi" lang="hi" maxlength="80" value="${esc(initialName)}" placeholder="जैसे: चंद्र भानु पांडेय">
-   <label for="pPhone">Mobile Number</label>
+   <label for="pPhone">मोबाइल नंबर</label>
    <input id="pPhone" inputmode="tel" maxlength="13" value="${esc(p.phone||S.user.phoneNumber||"")}" placeholder="10 अंकों का मोबाइल नंबर">
    <label for="pAddressHindi">Full Address (पत्र के नीचे आएगा)</label>
    <textarea id="pAddressHindi" lang="hi" maxlength="350" rows="2" placeholder="मकान/मोहल्ला, ग्राम, पोस्ट, विकास खण्ड, जनपद, पिनकोड">${esc(p.addressHindi||p.address||"")}</textarea>
    <p class="hint">यह पता केवल आपके नाम से बनने वाले पत्रों में लगेगा। दूसरे व्यक्ति की ओर से बने पत्र में उसका अलग पता देना होगा।</p>
-   <label for="pRole">Select Your Role</label>
+   <label for="pRole">आपका पद चुनें</label>
    <select id="pRole">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${(p.role || "resident") === k ? "selected" : ""}>${r.n}</option>`).join("")}</select>
    <div id="pArea"></div>
-   <div class="btn-row"><button class="btn alt" id="pSuggestHindi" type="button">✦ Hindi Spelling Suggestions</button>
-   <button class="btn" id="pSave">✓ Save Profile</button></div>
+   <div class="btn-row"><button class="btn alt" id="pSuggestHindi" type="button">✦ हिंदी नाम के सुझाव</button>
+   <button class="btn" id="pSave">✓ प्रोफ़ाइल Save करें</button></div>
    <p class="hint" id="pHindiStatus" role="status">नाम और स्थान की वर्तनी बदल सकते हैं। सही करके Save करें।</p>
    <div id="pradhanLetterheadCard" class="card ${p.role==="pradhan"?"":"hidden"}" style="margin-top:15px">
       <b>🖋️ ग्राम प्रधान लेटरहेड</b>
@@ -607,8 +617,9 @@ function profile(el) {
     }
     go("letterhead");
   };
-  const st = { district:p.district||"",tehsil:p.tehsil||"",block:p.block||"",
-    districtHindi:p.districtHindi||p.district||"",blockHindi:p.blockHindi||"",
+  const savedDistrict=G.resolveDistrict?.(p.district,p.districtHindi)||p.district||"";
+  const st = { district:savedDistrict,tehsil:p.tehsil||"",block:p.block||"",
+    districtHindi:savedDistrict||p.districtHindi||"",blockHindi:p.blockHindi||"",
     gpsHindi:{...(p.gpsHindi||{})},
     clusters:(Array.isArray(p.clusters)?p.clusters:p.cluster?[p.cluster]:[]).slice(0,3),
     gps:(Array.isArray(p.gps)?p.gps:[]).slice(0,25),
@@ -625,10 +636,24 @@ function profile(el) {
     let scope = ROLES[role].scope; if (scope === "clerk") scope = st.clerkLevel === "district" ? "district" : "block";
     const geo = st.district ? await loadDistrict(st.district) : null;
     if(thisDraw!==drawEpoch)return;
-    const tehsils = geo && geo.tehsils || [], blocks = geo && geo.blocks ? Object.keys(geo.blocks) : [], gpsAll = geo && geo.blocks && geo.blocks[st.block] || [];
-    availableGpNames=[...new Set(gpsAll.filter(x=>typeof x==="string" && x.trim()))];
-    if(ROLES[role].scope==="multigp" && availableGpNames.length)
-      st.clusters=st.clusters.filter(name=>availableGpNames.includes(name)).slice(0,3);
+    const tehsils = geo?.tehsils||[], blocks = geo?.blocks?Object.keys(geo.blocks):[];
+    // Preserve the stable Roman IDs, but accept older saved Hindi/uppercase spellings.
+    if(st.block&&blocks.length){
+      const restored=G.matchPlace?.(blocks,st.block)||"";
+      if(restored)st.block=restored;
+    }
+    const gpsAll=geo?.blocks?.[st.block]||[];
+    availableGpNames=[...new Set(gpsAll.filter(x=>typeof x==="string"&&x.trim()))];
+    if(availableGpNames.length){
+      const restoreNames=values=>[...new Set(values.map(name=>{
+        const restored=G.matchPlace?.(availableGpNames,name,st.gpsHindi);
+        if(restored&&restored!==name&&st.gpsHindi[name]&&!st.gpsHindi[restored])
+          st.gpsHindi[restored]=st.gpsHindi[name];
+        return restored||name; // Never silently discard an existing assignment.
+      }))];
+      st.clusters=restoreNames(st.clusters).slice(0,3);
+      st.gps=restoreNames(st.gps).slice(0,25);
+    }
     const sel = (id,label,list,val,ph) => list.length
       ? `<label for="${id}">${label}</label><select id="${id}"><option value="">— ${label} चुनें —</option>${list.map(x => `<option value="${esc(x)}" ${x===val?"selected":""}>${esc(id==="aDist"?x:id==="aBlock"?(x===st.block?st.blockHindi||hintFor(x):H?.label(x)||x):hindiName(x))}</option>`).join("")}</select>`
       : `<label for="${id}">${label}</label><input id="${id}" value="${esc(val)}" placeholder="${ph}">`;
@@ -637,7 +662,11 @@ function profile(el) {
     if (role === "other_staff") h += `<label>विभाग एवं पदनाम (Optional)</label><input id="aDesignation" maxlength="100" value="${esc(st.designation)}" placeholder="जैसे: राजस्व विभाग, कनिष्ठ सहायक">`;
     h += sel("aDist", "जनपद", G.districts, st.district, "");
     if(scope!=="district"){
+      // Some legacy Geo files lack a vetted tehsil list: permit an editable value
+      // rather than inventing a tehsil, without blocking the GP/Block selection.
+      h += sel("aTeh","तहसील (वैकल्पिक)",tehsils,st.tehsil,"तहसील का नाम हिंदी में लिखें");
       h += sel("aBlock","विकास खण्ड",blocks,st.block,"विकास खण्ड लिखें");
+      if(st.district&&!geo)h += '<p class="hint" role="status">जनपद की ब्लॉक सूची लोड नहीं हुई। इंटरनेट चालू करके Profile दोबारा खोलें।</p>';
       if(st.block)h += `<label for="aBlockHindi">विकास खण्ड का हिंदी नाम (सही करें)</label><input lang="hi" maxlength="100" id="aBlockHindi" value="${esc(st.blockHindi||hintFor(st.block))}">`;
     }
     if(scope==="gp"){
@@ -663,7 +692,7 @@ function profile(el) {
     area.innerHTML = h;
     const on = (id, f) => { const x = $("#" + id); if (x) x.onchange = f; };
     on("aLvl", e => { st.clerkLevel = e.target.value; draw(); });
-    on("aDist", e => { st.district = e.target.value; st.tehsil = st.block = ""; st.clusters = []; st.gps = []; draw(); });
+    on("aDist", e => { st.district = e.target.value; st.districtHindi=st.district;st.tehsil = st.block = "";st.blockHindi=""; st.clusters = []; st.gps = [];st.gpsHindi={}; draw(); });
     on("aTeh", e => { st.tehsil = e.target.value; });
     on("aBlock", e => { st.block = e.target.value; st.blockHindi=hintFor(st.block);st.clusters=[];st.gps=[];st.gpsHindi={};draw(); });
     on("aGp", e => { st.gps = e.target.value?[e.target.value]:[];draw(); });
@@ -710,6 +739,8 @@ function profile(el) {
     if(st.block&&!touchedHindi.has("block")&&!p.blockHindi&&H.canUseHindi(hints[st.block])){
       st.blockHindi=hints[st.block];
       const field=$("#aBlockHindi");if(field)field.value=st.blockHindi;
+      const blockSelect=$("#aBlock");
+      if(blockSelect?.selectedOptions?.[0])blockSelect.selectedOptions[0].textContent=st.blockHindi;
     }
     for(const raw of [...new Set([...st.clusters,...st.gps])]){
       if(touchedHindi.has("gp:"+raw)||p.gpsHindi?.[raw])continue;
@@ -719,6 +750,11 @@ function profile(el) {
         if(inp.dataset.hindiGp===raw)inp.value=hints[raw];
       });
       const single=$("#aGpHindi");if(single&&st.gps[0]===raw)single.value=hints[raw];
+      for(const id of ["aGp","aGpAdd","aClusterSelect"]){
+        const select=$("#"+id);
+        if(select)for(const option of select.options||[])
+          if(option.value===raw)option.textContent=hints[raw]+(id==="aClusterSelect"&&st.clusters.includes(raw)?" ✓":"");
+      }
     }
     if(force&&state)state.textContent="सुझाव आ गए हैं। हिंदी वर्तनी जाँचें; गलत हो तो यहीं सुधारकर Save करें।";
   }
