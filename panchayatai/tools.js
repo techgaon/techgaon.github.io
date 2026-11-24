@@ -1,4 +1,4 @@
-/* पंचायत AI — six private, browser-side document tools */
+/* पंचायत AI — ten private, browser-side document tools */
 (() => {
   "use strict";
   const tasks = [
@@ -7,7 +7,11 @@
     {key:"image-pdf", icon:"🗃️", title:"Image to PDF", note:"फोटो को साफ PDF में बदलें", type:"image"},
     {key:"pdf-text", icon:"📄", title:"PDF to Text", note:"PDF से टेक्स्ट निकालें, स्कैन पर OCR", type:"pdf"},
     {key:"pdf-word", icon:"📘", title:"PDF to Word", note:"PDF का टेक्स्ट editable DOCX में", type:"pdf"},
-    {key:"word-pdf", icon:"📑", title:"Word to PDF", note:"DOCX दस्तावेज़ को PDF में बदलें", type:"word"}
+    {key:"word-pdf", icon:"📑", title:"Word to PDF", note:"DOCX दस्तावेज़ को PDF में बदलें", type:"word"},
+    {key:"pdf-excel", icon:"📊", title:"PDF to Excel", note:"PDF का Table/Text XLSX में निकालें", type:"pdf"},
+    {key:"word-excel", icon:"📗", title:"Word to Excel", note:"DOCX Tables को Excel Sheets में बदलें", type:"word"},
+    {key:"excel-pdf", icon:"📄", title:"Excel to PDF", note:"XLSX/XLS Sheets को PDF Tables में बदलें", type:"excel"},
+    {key:"excel-word", icon:"📘", title:"Excel to Word", note:"XLSX/XLS Sheets को Word Tables में बदलें", type:"excel"}
   ];
   const libraryLoaders = {};
   function loadScript(src, test) {
@@ -292,7 +296,7 @@
       find("pai-image-source").classList.toggle("hidden",type.type!=="image");
       find("pai-document-source").classList.toggle("hidden",type.type==="image");
       find("pai-literal-ocr-note").classList.toggle("hidden",!["image-text","image-word"].includes(type.key));
-      find("pai-document-input").accept=type.type==="pdf"?".pdf,application/pdf":".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      find("pai-document-input").accept=type.type==="pdf"?".pdf,application/pdf":type.type==="excel"?".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel":".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
       find("pai-force-ocr-wrap").classList.toggle("hidden",type.type!=="pdf");
       find("pai-force-ocr").checked=false;
       el.querySelectorAll("[data-tool]").forEach(button=>{
@@ -325,8 +329,8 @@
       if(!f||busy)return;
       const name=(f.name||"").toLowerCase();
       const valid=type.type==="image" ? (/^image\/(jpeg|png|webp|bmp|gif)$/.test(f.type)||/\.(jpg|jpeg|png|webp|bmp|gif)$/.test(name)) :
-        type.type==="pdf"?(f.type==="application/pdf"||name.endsWith(".pdf")):name.endsWith(".docx");
-      if(!valid){setStatus("इस टूल के लिए सही JPG/PNG/WebP, PDF या DOCX फ़ाइल चुनें।");return;}
+        type.type==="pdf"?(f.type==="application/pdf"||name.endsWith(".pdf")):type.type==="excel"?/\.(xlsx|xls)$/.test(name):name.endsWith(".docx");
+      if(!valid){setStatus("इस टूल के लिए सही JPG/PNG/WebP, PDF, DOCX या XLSX/XLS फ़ाइल चुनें।");return;}
       const limit=type.type==="image"?25:50;
       if(!f.size||f.size>limit*1024*1024){setStatus("फ़ाइल 0 से "+limit+" MB के बीच होनी चाहिए।");return;}
       const id=++serial;
@@ -358,7 +362,7 @@
       if(!file||busy)return;
       busy=true;convert.disabled=true;result.classList.add("hidden");status.classList.add("pai-working");progressBar("conversion",null,"Preparing conversion");
       const task=type.key,source=file,stem=filename(source);
-      let text="",blob=null,ext="";
+      let text="",blob=null,ext="",conversionNote="";
       const onProgress=(message,pct)=>{
         setStatus(message);
         if(Number.isFinite(pct))progressBar("conversion",pct,message);
@@ -373,6 +377,12 @@
         if(task==="image-text"||task==="image-word"){text=await readImage(source,onProgress);ext=task==="image-word"?".docx":".txt";}
         if(task==="pdf-text"||task==="pdf-word"){text=await textFromPdf(source,onProgress,loadedBytes,find("pai-force-ocr").checked);ext=task==="pdf-word"?".docx":".txt";}
         if(task==="word-pdf"){blob=await wordToPdf(source,onProgress,loadedBytes);ext=".pdf";}
+        if(["pdf-excel","word-excel","excel-pdf","excel-word"].includes(task)){
+          if(!window.PAI_EXCEL_CONVERT?.convert)throw Error("Excel Conversion module लोड नहीं हुआ। Refresh करें।");
+          const converted=await window.PAI_EXCEL_CONVERT.convert(task,source,
+            {loadScript,loadDocx,loadPdfjs,textFromPdf},onProgress,loadedBytes,find("pai-force-ocr").checked);
+          blob=converted.blob;ext=converted.ext;conversionNote=converted.note||"";
+        }
         if(!blob){
           if(!text.trim())throw new Error("फोटो/फ़ाइल में स्पष्ट पढ़ने योग्य अक्षर नहीं मिले। फोटो का अर्थ या अनुमान लगाकर टेक्स्ट नहीं बनाया जाएगा।");
           onProgress("फ़ाइल बनाई जा रही है…");
@@ -384,7 +394,8 @@
         copy.classList.toggle("hidden",!text);
         preview.classList.toggle("hidden",!text);
         if(text)preview.textContent=text.slice(0,20000)+(text.length>20000?"\n\n…आगे का टेक्स्ट डाउनलोड की गई फ़ाइल में है।":"");
-        progressBar("conversion",100,"Conversion complete",true);setStatus("✅ तैयार: "+outName+" — Download पर क्लिक करें।");
+        progressBar("conversion",100,"Conversion complete",true);
+        setStatus("✅ तैयार: "+outName+" — Download पर क्लिक करें।"+(conversionNote?"\n"+conversionNote:""));
       }catch(e){output=null;progressBar("conversion",null,"Conversion failed");setStatus("❌ "+reportError(e));console.error("Panchayat conversion failed",e);}
       finally {busy=false;convert.disabled=!file;status.classList.remove("pai-working");}
     };
