@@ -63,7 +63,7 @@
 .pai-progress-track>span,.pai-green-tick{animation:none!important;transition:none!important}
 }
 
-/* Six animated choices, with conversion controls only after selection */
+/* Ten animated conversion choices; controls appear only after selection */
 .pai-tool-header{padding:18px 12px 14px;text-align:center}
 .pai-tool-header h2{font-size:21px;margin:0;color:var(--g)}
 .pai-demo-flow{gap:12px;margin:8px auto 10px}
@@ -88,3 +88,6 @@
  .pai-tool-tab b{font-size:13px}
  .pai-demo-flow{gap:8px}
 }
+
+/* Preserve short conversion warnings and file notices on separate lines. */
+.pai-status{white-space:pre-line}
