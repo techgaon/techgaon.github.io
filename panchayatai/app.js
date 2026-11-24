@@ -394,9 +394,10 @@ function home(el) {
     </div>
     <div class="grid draft-grid pai-office-tiles">
       <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>Search GO · Original PDF</small></button>
-      ${BASE_DRAFTS.map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
+      ${BASE_DRAFTS.slice(0,1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e">🧮</span><b>GST Calculator</b></button>
       <button class="tile gst-no-tile" data-go="gstNo"><span class="e">🔎</span><b>GST No Detail</b></button>
+      ${BASE_DRAFTS.slice(1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
       <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
       <button class="tile" data-go="rti"><span class="e">ℹ️</span><b>RTI</b></button>
