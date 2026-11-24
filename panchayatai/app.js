@@ -666,7 +666,7 @@ function profile(el) {
       // rather than inventing a tehsil, without blocking the GP/Block selection.
       h += sel("aTeh","तहसील (वैकल्पिक)",tehsils,st.tehsil,"तहसील का नाम हिंदी में लिखें");
       h += sel("aBlock","विकास खण्ड",blocks,st.block,"विकास खण्ड लिखें");
-      if(st.district&&!geo)h += '<p class="hint" role="status">जनपद की ब्लॉक सूची लोड नहीं हुई। इंटरनेट चालू करके Profile दोबारा खोलें।</p>';
+      if(st.district&&!geo)h += '<p class="hint" role="status">जनपद की ब्लॉक सूची लोड नहीं हुई। इंटरनेट चालू करके <button type="button" class="btn alt" id="aGeoRetry">Retry</button> करें।</p>';
       if(st.block)h += `<label for="aBlockHindi">विकास खण्ड का हिंदी नाम (सही करें)</label><input lang="hi" maxlength="100" id="aBlockHindi" value="${esc(st.blockHindi||hintFor(st.block))}">`;
     }
     if(scope==="gp"){
@@ -691,6 +691,8 @@ function profile(el) {
     if (scope === "multigp" && !st.block) h += `<p class="hint">पहले Block चुनें, फिर अधिकतम 3 Cluster और 25 ग्राम पंचायतें जोड़ सकेंगे।</p>`;
     area.innerHTML = h;
     const on = (id, f) => { const x = $("#" + id); if (x) x.onchange = f; };
+    const geoRetry=$("#aGeoRetry");
+    if(geoRetry)geoRetry.onclick=()=>{delete geoCache[st.district];draw();};
     on("aLvl", e => { st.clerkLevel = e.target.value; draw(); });
     on("aDist", e => { st.district = e.target.value; st.districtHindi=st.district;st.tehsil = st.block = "";st.blockHindi=""; st.clusters = []; st.gps = [];st.gpsHindi={}; draw(); });
     on("aTeh", e => { st.tehsil = e.target.value; });
