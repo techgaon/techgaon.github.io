@@ -104,9 +104,9 @@
   }
   function ocrPages(full){
     const pages={};
-    const re=/^पृष्ठ\s+(\d+)\s*\n([\s\S]*?)(?=^पृष्ठ\s+\d+\s*\n|\s*$)/gm;
-    let m;
-    while((m=re.exec(full))){
+    for(const block of String(full).split(/(?=^पृष्ठ\s+\d+\s*\n)/m)){
+      const m=block.match(/^पृष्ठ\s+(\d+)\s*\n([\s\S]*)$/);
+      if(!m)continue;
       const text=m[2].replace(/\[इस पृष्ठ का टेक्स्ट पढ़ा नहीं जा सका\]/g,"").trim();
       if(text)pages[Number(m[1])]=text.split(/\n/).map(x=>x.trim()).filter(Boolean).map(x=>[x]);
     }
@@ -169,7 +169,7 @@
     for(let index=0;index<sheets.length;index++){
       const sheet=sheets[index];
       const section=document.createElement("section");
-      section.style.cssText="margin-bottom:24px;page-break-after:always;";
+      section.style.cssText="margin-bottom:24px;"+(index<sheets.length-1?"page-break-after:always;":"");
       const maxCols=Math.max(...sheet.rows.map(r=>r.length),1);
       section.innerHTML='<h2 style="font-size:20px;color:#243c65;margin:12px 0">'+esc(sheet.name)+'</h2>'+
         '<table style="border-collapse:collapse;width:100%;table-layout:fixed">'+
@@ -187,7 +187,7 @@
         margin:[10,9,10,9],filename:"spreadsheet.pdf",image:{type:"jpeg",quality:.95},
         html2canvas:{scale:1.5,backgroundColor:"#ffffff",useCORS:false},
         jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},
-        pagebreak:{mode:["css","legacy"],after:".pai-excel-print section"}
+        pagebreak:{mode:["css","legacy"]}
       }).from(root).outputPdf("blob");
       if(!result||result.size<500)throw Error("PDF बन नहीं सका।");
       return {blob:result,ext:".pdf",
