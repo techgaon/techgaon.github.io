@@ -135,6 +135,7 @@ const CSS=`
 .gst-or-divider{display:flex;align-items:center;gap:13px;color:var(--mut);font-family:inherit;font-size:14px;font-weight:700;margin:10px 4px 15px}
 .gst-or-divider::before,.gst-or-divider::after{content:"";height:1px;background:var(--bd);flex:1}
 .gst-or-divider span{letter-spacing:.06em}
+#gst-no::placeholder{text-transform:none;letter-spacing:normal;font-family:inherit;opacity:.62}
 `;
 function style(){if(document.getElementById("gst-css"))return;const s=document.createElement("style");s.id="gst-css";s.textContent=CSS;document.head.appendChild(s);}
 async function copy(t){try{await navigator.clipboard.writeText(t);return true;}catch{return false;}}
