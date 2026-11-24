@@ -40,7 +40,8 @@ window.PAI_GEO = {
     const raw=String(value||"").trim();if(!raw)return "";
     if(list.includes(raw))return raw;
     const key=fold(raw);
-    const byName=list.find(x=>fold(x)===key);
+    const variants=new Set([key,key.replace(/haidergarh/g,"haidargarh").replace(/sandwa/g,"sandva")]);
+    const byName=list.find(x=>variants.has(fold(x)));
     if(byName)return byName;
     // Old profiles may have a Hindi display label instead of its stable Roman ID.
     return list.find(x=>fold(translations[x]||window.PAI_HINDI?.label(x))===key)||"";
