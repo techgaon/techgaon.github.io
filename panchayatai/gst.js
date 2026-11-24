@@ -57,6 +57,7 @@ const CSS=`
 .gst-launch-card:nth-child(2){background:linear-gradient(140deg,#fcfbf2,#edf9ee);animation-delay:.1s;color:#205d46}
 .gst-launch-card:hover,.gst-launch-card:focus-visible{transform:translateY(-4px);box-shadow:0 10px 22px rgba(30,58,94,.13)}
 .gst-launch-art{font-size:42px;line-height:1.3;animation:gst-float 3.6s ease-in-out infinite}
+.gst-launch-art img{display:block;width:60px;height:60px;max-width:100%;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(25,72,125,.16))}
 .gst-launch-card strong{font-size:18px}
 .gst-launch-card small{font-size:12px;line-height:1.5;color:#4b5e5b}
 @keyframes gst-tile-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -153,9 +154,9 @@ const RATE_GROUPS=["सभी","निर्माण सामग्री","�
 const rateItems=()=>Array.isArray(window.PAI_GST_RATES)?window.PAI_GST_RATES:[];
 function mountCalc(el){
  style();
- el.innerHTML='<div class="gst-wrap gst-landing"><h2>🧮 GST Calculator</h2>'+
+ el.innerHTML='<div class="gst-wrap gst-landing"><h2>GST Calculator</h2>'+
  '<div class="gst-launch-grid">'+
- '<button type="button" class="gst-launch-card" id="gst-launch-calc"><span class="gst-launch-art">🧮</span><strong>Calculate</strong></button>'+
+ '<button type="button" class="gst-launch-card" id="gst-launch-calc"><span class="gst-launch-art"><img src="gst-calculator-icon.svg?v=20261124-premium1" alt="" width="60" height="60"></span><strong>Calculate</strong></button>'+
  '<button type="button" class="gst-launch-card" id="gst-launch-rates"><span class="gst-launch-art">📦</span><strong>GST दरें जानें</strong><small>ईंट, गिट्टी, मौरंग आदि की GST दर जानें</small></button>'+
  '</div></div>';
  el.querySelector("#gst-launch-calc").onclick=()=>mountCalculator(el);
