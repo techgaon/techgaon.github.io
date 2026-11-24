@@ -1,13 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="पं AI">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#076744"/><stop offset="1" stop-color="#083b2f"/></linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe2a0"/><stop offset="1" stop-color="#ed9a34"/></linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="405" cy="108" r="34" fill="url(#accent)"/>
-  <path d="M57 192Q256 47 456 192" fill="none" stroke="#a2ceae" stroke-width="15" opacity=".19"/>
-  <path d="M77 373Q254 460 435 373" fill="none" stroke="#a2ceae" stroke-width="11" opacity=".21"/>
-  <text x="256" y="323" font-family="'Noto Sans Devanagari','Mangal',sans-serif" font-size="246" font-weight="800" text-anchor="middle" fill="#fff">पं</text>
-  <path d="M129 352H384" stroke="#b8d6c3" stroke-width="5" stroke-linecap="round" opacity=".7"/>
-  <text x="258" y="448" font-family="Arial,Helvetica,sans-serif" font-size="79" font-weight="800" letter-spacing="6" text-anchor="middle" fill="#ffdf91">AI</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+ <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d7a4e"/><stop offset="1" stop-color="#064d33"/></linearGradient></defs>
+ <rect width="1024" height="1024" rx="210" fill="url(#g)"/>
+ <path d="M232 330 L512 150 L792 330 Z" fill="#ffd166"/>
+ <rect x="268" y="330" width="488" height="26" rx="6" fill="#ffd166"/>
+ <g fill="#ffffff" opacity=".9"><rect x="320" y="372" width="34" height="70" rx="6"/><rect x="420" y="372" width="34" height="70" rx="6"/><rect x="570" y="372" width="34" height="70" rx="6"/><rect x="670" y="372" width="34" height="70" rx="6"/></g>
+ <circle cx="512" cy="262" r="30" fill="#0d7a4e"/>
+ <text x="512" y="640" text-anchor="middle" font-family="Noto Sans Devanagari, Mukta, sans-serif" font-weight="800" font-size="210" fill="#ffffff">पंचायत</text>
+ <text x="512" y="870" text-anchor="middle" font-family="Poppins, Arial, sans-serif" font-weight="900" font-size="230" fill="#ffd166" letter-spacing="10">AI</text>
 </svg>
