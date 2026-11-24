@@ -85,15 +85,16 @@
     return inflight;
   }
   const baseLoad=load;
-  load=async function(){
+  load=async function(onProgress){
     const local=await baseLoad();
     if(!window.PAI_REFERENCES)return local;
     if(!corpus){
-      const data=await window.PAI_REFERENCES.load();
+      const data=await window.PAI_REFERENCES.load(onProgress);
       if(data){
         corpus=data;
+        const seen=new Set(records.map(d=>d.id));
         for(const doc of data.index.docs){
-          if(!records.some(d=>d.id===doc.id))records.push({...doc,url:"",keywords:[],aliases:[]});
+          if(!seen.has(doc.id)){records.push({...doc,url:"",keywords:[],aliases:[]});seen.add(doc.id);}
         }
       }
     }
@@ -162,22 +163,36 @@
       EXAMPLES.map(x=>'<button type="button" data-go-example="'+escapeHTML(x)+'">'+escapeHTML(x)+'</button>').join("")+
       '</div></section>';
     const input=el.querySelector("#paiGoQuery"),result=el.querySelector(".pai-go-results");
+    let preparing=true,loadFailure=null,progressMessage="GO का सत्यापित Index लोड हो रहा है…";
+    const showStatus=message=>{progressMessage=message;if(preparing&&el.isConnected)draw();};
     const draw=()=>{
-      if(!loaded){result.innerHTML='<p class="hint">GO List Loading…</p>';return;}
-      if(loadError){result.innerHTML='<div class="card">GO List अभी नहीं खुल रही। फिर Try करें।</div>';return;}
-      if(!records.length){result.innerHTML='<div class="card"><strong>GO Library में अभी PDF नहीं जोड़ी गई है।</strong></div>';return;}
+      if(preparing){result.innerHTML='<div class="card pai-go-loading" role="status"><span class="pai-go-spinner" aria-hidden="true"></span><span>'+escapeHTML(progressMessage)+'<small>पहली बार Search Index डाउनलोड होने में थोड़ा समय लग सकता है।</small></span></div>';return;}
+      if(loadFailure&&!records.length){
+        result.innerHTML='<div class="card pai-go-error-box"><strong>GO Search का दस्तावेज Index लोड नहीं हो सका।</strong>'+
+          '<p>'+escapeHTML(loadFailure)+'</p><button type="button" class="btn" id="paiGoRetry">Retry</button></div>';
+        result.querySelector("#paiGoRetry").onclick=beginLoad;
+        return;
+      }
+      if(!records.length){result.innerHTML='<div class="card"><strong>GO Library में अभी सत्यापित PDF नहीं मिली।</strong></div>';return;}
       const q=input.value.trim(),matches=q?search(q):[];
       result.innerHTML=q
         ?(matches.length?matches.map(d=>card(d,false,q)).join(""):'<div class="card">इस Keyword पर कोई GO नहीं मिला। अलग Keyword या GO नंबर से Search करें।</div>')
-        :'<div class="card pai-go-start">ऊपर Keyword या GO नंबर लिखकर Search करें।</div>';
+        :'<div class="card pai-go-start">संग्रह तैयार: '+(corpus?.index?.docs?.length||records.length)+' दस्तावेज़। ऊपर Keyword या GO नंबर लिखकर Search करें।</div>';
     };
+    async function beginLoad(){
+      if(preparing&&loadFailure===null&&progressMessage!=="GO का सत्यापित Index लोड हो रहा है…")return;
+      preparing=true;loadFailure=null;progressMessage="GO का सत्यापित Index लोड हो रहा है…";draw();
+      try{await load(showStatus);}
+      catch(e){loadFailure=e?.message||"Internet या Server की समस्या है।";console.warn("GO Search index unavailable",e);}
+      finally{preparing=false;draw();}
+    }
     el.querySelector(".pai-go-form").onsubmit=e=>{e.preventDefault();draw();};
     let searchTimer;
     input.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(draw,180);});
     el.querySelectorAll("[data-go-example]").forEach(b=>b.onclick=()=>{
       input.value=b.dataset.goExample;draw();input.focus();result.scrollIntoView?.({behavior:"smooth",block:"start"});
     });
-    load().then(draw).catch(()=>{result.textContent="GO Library अभी उपलब्ध नहीं है। फिर Try करें।";});
+    void beginLoad();
   }
   document.addEventListener?.("click",async e=>{
     const button=e.target?.closest?.("[data-go-full],[data-go-excerpt]");if(!button)return;
