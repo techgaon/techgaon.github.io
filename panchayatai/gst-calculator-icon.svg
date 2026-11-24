@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="GST Calculator">
+  <defs>
+    <radialGradient id="gst-bg" cx="36%" cy="25%" r="86%"><stop stop-color="#3b81bd"/><stop offset=".58" stop-color="#1b467d"/><stop offset="1" stop-color="#102757"/></radialGradient>
+    <linearGradient id="gst-orbit" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#8cfaee"/><stop offset="1" stop-color="#91b8ff"/></linearGradient>
+    <linearGradient id="gst-face" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#efffff"/><stop offset="1" stop-color="#bddff6"/></linearGradient>
+    <filter id="gst-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#071c45" flood-opacity=".28"/></filter>
+  </defs>
+  <circle cx="64" cy="64" r="55" fill="url(#gst-bg)"/>
+  <circle cx="64" cy="64" r="51" fill="none" stroke="#b1f8f5" stroke-opacity=".34" stroke-width="1.5"/>
+  <ellipse cx="64" cy="64" rx="59" ry="27" transform="rotate(-33 64 64)" stroke="url(#gst-orbit)" stroke-width="3" fill="none"/>
+  <ellipse cx="64" cy="64" rx="56" ry="28" transform="rotate(38 64 64)" stroke="#9cd4ff" stroke-width="1.8" stroke-opacity=".55" fill="none"/>
+  <g fill="#a6fff6"><circle cx="18" cy="96" r="5"/><circle cx="111" cy="38" r="5"/><circle cx="89" cy="117" r="3"/></g>
+  <g filter="url(#gst-shadow)">
+    <rect x="40" y="25" width="48" height="77" rx="11" fill="url(#gst-face)" stroke="#f9ffff" stroke-width="2"/>
+    <rect x="46" y="32" width="36" height="27" rx="6" fill="#164e7b"/>
+    <text x="64" y="53" text-anchor="middle" font-family="'Noto Sans Devanagari',sans-serif" font-size="22" font-weight="800" fill="#f7ffff">₹</text>
+    <g fill="#4e9fca"><rect x="47" y="66" width="14" height="12" rx="3"/><rect x="67" y="66" width="14" height="12" rx="3"/><rect x="47" y="84" width="14" height="12" rx="3"/></g>
+    <rect x="67" y="84" width="14" height="12" rx="3" fill="#119caa"/>
+    <path d="M71 90h6" stroke="#f7ffff" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M52 71h5M54.5 68.5v5" stroke="#f7ffff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M72 71h5" stroke="#f7ffff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M52 89h5" stroke="#f7ffff" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <path d="M96 21v9m-4.5-4.5h9" fill="none" stroke="#dbfffd" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
