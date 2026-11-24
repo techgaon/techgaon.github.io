@@ -390,12 +390,12 @@ function home(el) {
   <div class="home-options">
     <div class="grid draft-grid home-feature-pair">
       <button class="tile ai-tile" data-go="chat"><span class="e pai-ai-logo"><img src="ai-help-icon.svg?v=20261121-generic-ai2" alt="" width="53" height="53" decoding="async"></span><b>AI Help</b><small>UP के नियम व पंचायत कार्य</small></button>
-      <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>6 conversion tools</small></button>
+      <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>10 conversion tools</small></button>
     </div>
     <div class="grid draft-grid pai-office-tiles">
       <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>Search GO · Original PDF</small></button>
       ${BASE_DRAFTS.slice(0,1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
-      <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e">🧮</span><b>GST Calculator</b></button>
+      <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e pai-gst-icon"><img src="gst-calculator-icon.svg?v=20261124-premium1" alt="" width="53" height="53" decoding="async"></span><b>GST Calculator</b></button>
       <button class="tile gst-no-tile" data-go="gstNo"><span class="e">🔎</span><b>GST No Detail</b></button>
       ${BASE_DRAFTS.slice(1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
