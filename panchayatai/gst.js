@@ -472,6 +472,34 @@ function mountDetail(el){
  '<div id="gst-res" aria-live="polite"></div></div>';
  const $=q=>el.querySelector(q);
  let activeStream=null,scanning=false;
+ const exampleInput=$("#gst-no");
+ const exampleText="Example: 27AAPFU0939F1ZV";
+ const reduceMotion=()=>typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+ let exampleTimer=null,exampleIndex=0,examplePause=0,exampleDeleting=false,exampleStopped=false;
+ function stopExample(){
+   if(exampleTimer!==null){clearInterval(exampleTimer);exampleTimer=null;}
+ }
+ function startExample(){
+   stopExample();
+   if(exampleStopped||exampleInput.value||document.activeElement===exampleInput||!el.isConnected)return;
+   if(reduceMotion()){exampleInput.placeholder=exampleText;return;}
+   exampleIndex=0;examplePause=0;exampleDeleting=false;exampleInput.placeholder="";
+   exampleTimer=setInterval(()=>{
+     if(exampleStopped||!el.isConnected||document.activeElement===exampleInput||exampleInput.value){stopExample();return;}
+     if(examplePause>0){examplePause--;return;}
+     if(!exampleDeleting){
+       exampleIndex=Math.min(exampleText.length,exampleIndex+1);
+       exampleInput.placeholder=exampleText.slice(0,exampleIndex);
+       if(exampleIndex===exampleText.length){examplePause=14;exampleDeleting=true;}
+     }else{
+       exampleIndex=Math.max(0,exampleIndex-1);
+       exampleInput.placeholder=exampleText.slice(0,exampleIndex);
+       if(exampleIndex===0){examplePause=5;exampleDeleting=false;}
+     }
+   },105);
+ }
+ exampleInput.addEventListener("focus",()=>{stopExample();exampleInput.placeholder=exampleText;});
+ exampleInput.addEventListener("blur",()=>{if(!exampleInput.value)startExample();});
  function stopCamera(){
   if(activeStream){for(const track of activeStream.getTracks())track.stop();activeStream=null;}
   const panel=$("#gst-camera-panel");
@@ -480,7 +508,7 @@ function mountDetail(el){
   if(video)video.srcObject=null;
  }
  // Main app calls cleanup on navigation; a user can always close the camera manually.
- window.PAI_GST.cleanup=stopCamera;
+ window.PAI_GST.cleanup=()=>{exampleStopped=true;stopExample();stopCamera();};
  const liveLookup=async gstin=>{
   const endpoint=window.PAI_GST_LOOKUP_ENDPOINT;
   if(typeof endpoint!=="string"||!endpoint.trim())return;
@@ -600,8 +628,9 @@ function mountDetail(el){
  $("#gst-cancel").onclick=stopCamera;
  $("#gst-go").onclick=()=>show($("#gst-no").value);
  $("#gst-no").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();show(e.target.value);}};
- $("#gst-no").oninput=()=>{$("#gst-res").replaceChildren();};
- $("#gst-reset").onclick=()=>{stopCamera();$("#gst-no").value="";$("#gst-res").replaceChildren();$("#gst-no").focus();};
+ $("#gst-no").oninput=()=>{stopExample();$("#gst-res").replaceChildren();};
+ $("#gst-reset").onclick=()=>{stopCamera();stopExample();$("#gst-no").value="";$("#gst-res").replaceChildren();$("#gst-no").focus();};
+ startExample();
 }
 
 window.PAI_GST={mountCalc,mountCalculator,mountRates,mountDetail,decode,findGstins,checkChar,calculate};
