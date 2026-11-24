@@ -59,11 +59,10 @@
       }
       if(rows.length)tables.push({name:"Table "+(tables.length+1),rows});
     }
-    if(!tables.length){
-      const nodes=Array.from(dom.body.querySelectorAll("h1,h2,h3,h4,p,li,blockquote"))
-        .map(el=>clean(el.textContent).trim()).filter(Boolean);
-      if(nodes.length)tables.push({name:"Word Text",rows:nodes.map(text=>[text])});
-    }
+    const notes=Array.from(dom.body.querySelectorAll("h1,h2,h3,h4,p,li,blockquote"))
+      .filter(el=>!el.closest("table"))
+      .map(el=>clean(el.textContent).trim()).filter(Boolean);
+    if(notes.length)tables.push({name:"Word Text",rows:notes.map(text=>[text])});
     return guard(tables);
   }
   async function wordToExcel(file,helpers,progress,loaded){
@@ -158,6 +157,7 @@
     const X=await loadXlsx(helpers);
     update(progress,"Excel Sheets पढ़ रहे हैं…",15);
     const sheets=readWorkbook(X,loaded||await file.arrayBuffer());
+    if(sheets.some(s=>s.rows.length>400))throw Error("बड़े Excel से PDF बनाने के लिए प्रति Sheet अधिकतम 400 Rows रखें।");
     if(sheets.some(s=>s.rows.some(row=>row.length>22)))
       throw Error("PDF बनाने के लिए 22 से अधिक Columns वाली Sheet को छोटे हिस्सों में बाँटें।");
     if(!window.html2pdf)await helpers.loadScript(
@@ -199,6 +199,7 @@
     const d=await helpers.loadDocx();
     update(progress,"Excel Sheets पढ़ रहे हैं…",20);
     const sheets=readWorkbook(X,loaded||await file.arrayBuffer());
+    if(sheets.some(s=>s.rows.length>800))throw Error("Excel to Word के लिए प्रति Sheet अधिकतम 800 Rows रखें।");
     if(sheets.some(s=>s.rows.some(row=>row.length>14)))
       throw Error("Word Tables के लिए अधिकतम 14 Columns वाली Sheet चुनें।");
     const parts=[];
