@@ -40,3 +40,19 @@ This is a **contract example, not a response to a real GSTIN**. Do not expose pr
 
 ## Verification
 Run `node --test panchayatai/gst.test.cjs` from repository root. Test real device Camera permission and Mobile file capture on the deployed HTTPS website before claiming live E2E readiness. Verify the official GST search link separately. Disable camera tracks on navigation.
+
+
+## GST Home tile update — 24 November 2026
+
+The existing **GST Calculator** tile now opens two animated selections:
+1. **Calculate** — English-language GST add/remove calculator. Visible quick-rate 3% was removed; there is no negative GST-rate option. The existing other quick rates and custom rate remain. Shareable results now have **Copy** and **WhatsApp Share** actions and no explanatory paragraph below the result.
+2. **GST दरें जानें** — Hindi subtitle: **ईंट, गिट्टी, मौरंग आदि की GST दर जानें**. Select a group, search Panchayat supplies/services, open an item to see reference GST rate, HSN/SAC and classification caveats, then press Calculate to open the same calculator with a prefilled rate. Items without a defensible fixed rate require the user to select/confirm the rate before calculation.
+
+Catalog file: `panchayatai/gst-rates.js`. As of 24 November 2026 it lists 25 goods and service references, each with a public government source link. These values are **a general reference, not a tax invoice or legal opinion**. Confirm classification, ITC conditions, supply date, exemption and any later notifications. General bricks explicitly distinguish special **6% without ITC** and **12% with ITC**; sand-lime bricks have separate treatment. For pure Panchayat sanitation services, labour-only services, transport and potable water the app avoids pretending there is a single universal rate.
+
+Key official sources:
+- [PIB GST Council reform recommendations (3 September 2025)](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2163555)
+- [PIB GST Council bricks FAQ (2025)](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2167151)
+- [CBIC GST goods and services rates](https://cbic-gst.gov.in/hindi/gst-goods-services-rates.html)
+
+The frontend has no server-side PDF/database requirement for this catalog. Keep catalog reviewed and updated when notifications change. The rate explorer is not a substitute for official GST tax classification.
