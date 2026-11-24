@@ -8,12 +8,45 @@
     if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)throw Error('अमान्य दस्तावेज सेवा');
     return url;
   }
+  // The reviewed GO index is ~21 MB: 20s was too short on rural/mobile networks.
+  // Download progress is optional, and verification still uses SHA-256 before parsing.
+  const listeners=new Set();
+  function progress(message){
+    for(const fn of listeners)try{fn(message);}catch{}
+  }
   async function checkedJSON(url,hash){
-    const r=await fetch(url,{credentials:'omit',cache:hash?'default':'no-cache',signal:AbortSignal.timeout(20000)});
-    if(!r.ok)throw Error('दस्तावेज संग्रह अभी उपलब्ध नहीं है');
-    const bytes=await r.arrayBuffer();
-    if(bytes.byteLength>25*1024*1024)throw Error('दस्तावेज index बहुत बड़ा है');
-    if(hash&&await digest(bytes)!==hash)throw Error('दस्तावेज index की जाँच असफल हुई');
+    const timeout=hash?120000:25000;
+    const r=await fetch(url,{credentials:'omit',cache:hash?'default':'no-cache',signal:AbortSignal.timeout(timeout)});
+    if(!r.ok)throw Error('दस्तावेज संग्रह उपलब्ध नहीं है (HTTP '+r.status+')');
+    const max=25*1024*1024;
+    let bytes;
+    if(r.body&&typeof r.body.getReader==='function'){
+      const reader=r.body.getReader(),parts=[];let size=0,shown=-1;
+      try{
+        for(;;){
+          const {done,value}=await reader.read();
+          if(done)break;
+          size+=value.byteLength;
+          if(size>max)throw Error('दस्तावेज index अनुमत आकार से बड़ा है');
+          parts.push(value);
+          if(hash){
+            const mb=Math.floor(size/1048576);
+            if(mb>shown){shown=mb;progress('GO दस्तावेज Index लोड हो रहा है: '+mb+' MB');}
+          }
+        }
+      }finally{reader.releaseLock();}
+      bytes=new Uint8Array(size);let offset=0;
+      for(const part of parts){bytes.set(part,offset);offset+=part.byteLength;}
+    }else{
+      const data=await r.arrayBuffer();
+      if(data.byteLength>max)throw Error('दस्तावेज index अनुमत आकार से बड़ा है');
+      bytes=new Uint8Array(data);
+    }
+    if(hash){
+      progress('GO Index की सत्यता जाँची जा रही है…');
+      if(await digest(bytes)!==hash)throw Error('दस्तावेज index की SHA-256 जाँच असफल हुई');
+    }
+    progress(hash?'GO Index तैयार हो रहा है…':'GO Catalog मिल गया, Index लोड होगा…');
     return JSON.parse(new TextDecoder().decode(bytes));
   }
   async function digest(bytes){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');}
@@ -23,7 +56,12 @@
     if(doc.assetBase!==undefined&&!['https://techgaon-panchayat-orders.pages.dev/','https://raw.githubusercontent.com/techgaon/techgaon.github.io/panchayat-go-pdfs/'].includes(doc.assetBase))throw Error('अनुमति सूची से बाहर दस्तावेज सेवा');
     return new URL(block.file,doc.assetBase||data.url);
   }
-  async function load(){
+  async function load(onProgress){
+    if(typeof onProgress==='function')listeners.add(onProgress);
+    try{return await loadCore();}
+    finally{if(typeof onProgress==='function')listeners.delete(onProgress);}
+  }
+  async function loadCore(){
     const url=catalogURL();if(!url)return null;
     if(loaded)return loaded;
     if(!loading)loading=(async()=>{
