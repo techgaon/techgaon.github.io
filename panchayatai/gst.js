@@ -130,6 +130,11 @@ const CSS=`
 .gst-result-actions .btn{min-width:0;font-size:12px;padding:11px 7px;text-decoration:none;display:flex;align-items:center;justify-content:center;text-align:center}
 @media(max-width:370px){.gst-ref-screen{min-height:125px}.gst-screen-drop{min-width:47px;min-height:56px}.gst-percent-key{min-height:56px}.gst-number-key{min-height:59px}.gst-result-actions{grid-template-columns:1fr 1fr}.gst-result-actions .gst-whatsapp{grid-column:1/-1}.gst-round-label{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.gst-percent-key,.gst-number-key{transition:none}}
+
+/* Scan / Upload and manual GSTIN entry separator (keeps Panchayat AI theme). */
+.gst-or-divider{display:flex;align-items:center;gap:13px;color:var(--mut);font-family:inherit;font-size:14px;font-weight:700;margin:10px 4px 15px}
+.gst-or-divider::before,.gst-or-divider::after{content:"";height:1px;background:var(--bd);flex:1}
+.gst-or-divider span{letter-spacing:.06em}
 `;
 function style(){if(document.getElementById("gst-css"))return;const s=document.createElement("style");s.id="gst-css";s.textContent=CSS;document.head.appendChild(s);}
 async function copy(t){try{await navigator.clipboard.writeText(t);return true;}catch{return false;}}
@@ -457,9 +462,10 @@ function mountDetail(el){
  '<input id="gst-gal" type="file" accept="image/*" hidden>'+
  '<div id="gst-camera-panel" class="gst-camera-panel" hidden><video id="gst-video" autoplay muted playsinline></video>'+
  '<div class="gst-act"><button type="button" class="btn" id="gst-take">Take Photo</button><button type="button" class="btn alt" id="gst-cancel">Cancel</button></div></div>'+
- '<p class="gst-note" id="gst-scan-msg" role="status" aria-live="polite">बिल या रसीद में GSTIN साफ दिखाई दे, ऐसी Photo लें। Image से Text आपके Browser में पढ़ा जाएगा; Photo सर्वर पर नहीं भेजी जाएगी।</p></div>'+
+ '<p class="gst-note" id="gst-scan-msg" role="status" aria-live="polite">बिल या रसीद में GSTIN साफ दिखाई दे, ऐसी Photo लें।</p></div>'+ 
+ '<div class="gst-or-divider" aria-label="or"><span>OR</span></div>'+ 
  '<div class="gst-box"><label for="gst-no">Type GST No</label>'+
- '<input id="gst-no" class="gst-in code" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="27AAPFU0939F1ZV">'+
+ '<input id="gst-no" class="gst-in code" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="Example: 27AAPFU0939F1ZV">'+
  '<div class="gst-act"><button type="button" class="btn" id="gst-go">See Detail</button><button type="button" class="btn alt" id="gst-reset">Clear</button></div></div>'+
  '<div id="gst-res" aria-live="polite"></div></div>';
  const $=q=>el.querySelector(q);
