@@ -84,6 +84,52 @@ const CSS=`
 .gst-whatsapp{background:#158a54!important;color:white!important;white-space:nowrap}
 @media(max-width:420px){.gst-launch-card{min-height:170px;padding:15px 7px}.gst-launch-art{font-size:35px}.gst-launch-card strong{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.gst-launch-card,.gst-launch-art,.gst-rate-detail{animation:none}.gst-launch-card{transition:none}}
+
+/* New keypad: uses the existing Panchayat AI theme tokens and inherited fonts. */
+.gst-ref-calculator{max-width:650px;font-family:inherit;color:var(--ink)}
+.gst-ref-calculator button,.gst-ref-calculator input,.gst-ref-calculator select{font-family:inherit}
+.gst-ref-screen{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:154px;padding:20px 15px 23px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--pai-shadow,0 5px 15px #162e530a)}
+.gst-screen-drop{border:1px solid var(--bd);border-radius:15px;background:var(--gl);color:var(--g);min-width:58px;min-height:65px;font-size:36px;cursor:pointer;line-height:1}
+.gst-ref-screen-right{flex:1;min-width:0;text-align:right;display:flex;flex-direction:column;gap:7px}
+#gst-display-note{font-size:13px;color:var(--mut);font-weight:600}
+#gst-display{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(28px,7.2vw,53px);line-height:1.3;font-weight:700;font-variant-numeric:tabular-nums}
+.gst-option-panel{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-top:8px}
+.gst-option-panel[hidden]{display:none!important}
+.gst-option-panel label{margin:8px 0 4px;color:var(--ink)}
+.gst-option-panel input,.gst-option-panel select{width:100%;background:var(--card);color:var(--ink);border:1px solid var(--bd)}
+.gst-mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.gst-mode-toggle button{padding:11px;border:1px solid var(--bd);border-radius:12px;background:var(--gl);color:var(--ink);cursor:pointer;font-size:13px}
+.gst-mode-toggle button.on{background:var(--g);color:#fff}
+.gst-quick-rates{background:var(--gl);margin:12px 0 0;border-radius:var(--r);padding:11px 7px;display:grid;gap:5px}
+.gst-percent-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.gst-percent-key{background:transparent;color:var(--ink);font-size:clamp(18px,5.2vw,28px);border:1px solid transparent;border-radius:12px;min-height:64px;cursor:pointer;font-weight:600;font-variant-numeric:tabular-nums}
+.gst-percent-key.selected{border-color:var(--g2);background:var(--card);color:var(--g2)}
+.gst-percent-key:active,.gst-number-key:active{transform:scale(.96)}
+.gst-ref-keypad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:8px;padding:6px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r)}
+.gst-number-key{min-width:0;min-height:69px;border:0;background:transparent;border-radius:12px;font-size:clamp(22px,6vw,34px);font-weight:500;color:var(--ink);cursor:pointer;transition:background .14s ease,transform .12s ease}
+.gst-number-key.operator{color:var(--g2);font-weight:700}
+.gst-number-key.equals{background:var(--g);color:#fff;font-weight:700}
+.gst-number-key:hover{background:var(--gl)}
+.gst-number-key.equals:hover{background:var(--g2)}
+.gst-entry-error{font-size:13px;color:#bd3030;margin-top:10px}
+.gst-receipt{background:var(--card);border:1.5px solid var(--bd);border-radius:24px;padding:clamp(17px,4vw,30px);box-shadow:var(--pai-shadow,0 5px 15px #162e530a);font-family:inherit}
+.gst-receipt-head{display:flex;justify-content:space-between;align-items:center;color:var(--mut);font-size:13px;margin-bottom:14px;font-weight:600}
+.gst-receipt-rate{padding:6px 10px;border-radius:99px;background:var(--gl);color:var(--g2)}
+.gst-receipt-line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 0;color:var(--mut);font-size:clamp(14px,3.4vw,19px)}
+.gst-receipt-line b{font-size:clamp(15px,3.5vw,21px);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.gst-receipt-line span{min-width:0}
+.gst-net-line{padding:17px 0 26px;color:var(--ink)}
+.gst-net-line strong{font-size:clamp(22px,5vw,32px);text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.gst-round-line{cursor:pointer;margin:0;font-weight:400}
+.gst-round-label{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.gst-round-label input{width:20px;height:20px;flex:none;accent-color:var(--g2);margin:0}
+.gst-receipt-total{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:2px solid var(--bd);margin-top:7px;padding-top:27px;color:var(--g)}
+.gst-receipt-total span{font-weight:700;font-size:clamp(16px,3.7vw,23px)}
+.gst-receipt-total strong{font-size:clamp(24px,5.3vw,38px);font-weight:800;font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
+.gst-result-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.gst-result-actions .btn{min-width:0;font-size:12px;padding:11px 7px;text-decoration:none;display:flex;align-items:center;justify-content:center;text-align:center}
+@media(max-width:370px){.gst-ref-screen{min-height:125px}.gst-screen-drop{min-width:47px;min-height:56px}.gst-percent-key{min-height:56px}.gst-number-key{min-height:59px}.gst-result-actions{grid-template-columns:1fr 1fr}.gst-result-actions .gst-whatsapp{grid-column:1/-1}.gst-round-label{white-space:normal}}
+@media(prefers-reduced-motion:reduce){.gst-percent-key,.gst-number-key{transition:none}}
 `;
 function style(){if(document.getElementById("gst-css"))return;const s=document.createElement("style");s.id="gst-css";s.textContent=CSS;document.head.appendChild(s);}
 async function copy(t){try{await navigator.clipboard.writeText(t);return true;}catch{return false;}}
@@ -154,67 +200,195 @@ function mountRates(el){
 }
 function mountCalculator(el,options={}){
  style();
- const supplied=Number.isFinite(options.rate)?options.rate:(options.manualOnly?NaN:18);
- const st={rate:supplied,mode:"add",sup:"intra"};
- const presets=[0,0.25,1.5,5,18,40];
- const chosenPreset=presets.includes(st.rate);
- el.innerHTML='<div class="gst-wrap gst-calculator">'+
- '<div class="gst-subhead"><button type="button" class="gst-back" id="gst-back" aria-label="Back">←</button><h2>Calculate</h2></div>'+
- (options.item?'<div class="gst-selected-item">'+esc(options.item)+'</div>':"")+
- '<div class="gst-box"><label for="gst-amt">Amount (₹)</label><input id="gst-amt" class="gst-in" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>'+
- '<div class="gst-box"><label>GST Rate (%)</label><div class="gst-chips" id="gst-rates">'+
- presets.map(r=>'<button type="button" class="gst-chip'+(r===st.rate?' on':'')+'" data-r="'+r+'">'+r+'%</button>').join("")+
- '<input id="gst-custom" aria-label="Custom GST rate" class="gst-in gst-custom" type="number" inputmode="decimal" min="0" max="100" placeholder="Other %" value="'+(!chosenPreset&&Number.isFinite(st.rate)?st.rate:"")+'"></div></div>'+
- '<div class="gst-box"><label>Amount is</label><div class="gst-seg" id="gst-mode"><button type="button" data-m="add" class="on">Without GST (+ Add)</button><button type="button" data-m="remove">With GST (− Remove)</button></div>'+
- '<label class="gst-mt">Supply</label><div class="gst-seg" id="gst-sup"><button type="button" data-s="intra" class="on">Same State (CGST + SGST)</button><button type="button" data-s="inter">Other State (IGST)</button></div></div>'+
- '<div class="gst-box gst-res" id="gst-out" aria-live="polite"></div></div>';
- const $=q=>el.querySelector(q);
- $("#gst-back").onclick=()=>options.fromRates?mountRates(el):mountCalc(el);
- const calc=()=>{
-  const raw=$("#gst-amt").value;
-  if(!Number.isFinite(st.rate)){
-   $("#gst-out").innerHTML='<p class="gst-note">Select a valid GST Rate to calculate.</p>';return;
+ const quickRates=[5,18,40];
+ const startingRate=Number.isFinite(options.rate)?options.rate:(options.manualOnly?NaN:18);
+ const state={entry:"0",rate:startingRate,mode:"add",supply:"intra",
+   roundOff:true,operator:"",stored:null,startFresh:false,showResult:false,error:""};
+ el.innerHTML='<div class="gst-wrap gst-ref-calculator">'+
+  '<div class="gst-subhead gst-keypad-heading"><button type="button" class="gst-back" id="gst-back" aria-label="Back">←</button><h2>Calculate</h2></div>'+
+  (options.item?'<p class="gst-selected-item">'+esc(options.item)+'</p>':"")+
+  '<div id="gst-calculator-stage"></div></div>';
+ const stage=el.querySelector("#gst-calculator-stage");
+ const maxAmount=1e12;
+ const money=x=>inr(x);
+ const formatNumber=raw=>{
+  const parts=String(raw).split(".");
+  const n=Number(parts[0]||"0");
+  const grouped=Number.isFinite(n)?new Intl.NumberFormat("en-IN",{maximumFractionDigits:0}).format(n):"0";
+  return grouped+(parts.length>1?"."+parts[1]:"");
+ };
+ const currentAmount=()=>Number(state.entry);
+ const validRate=()=>Number.isFinite(state.rate)&&state.rate>=0&&state.rate<=100;
+ const roundAmount=total=>Math.round(total);
+ const getNumbers=()=>{
+  if(!validRate()){state.error="Select a valid GST rate.";return null;}
+  const figures=calculate(currentAmount(),state.rate,state.mode,state.supply);
+  if(!figures){state.error="Enter a valid amount.";return null;}
+  state.error="";return figures;
+ };
+ const formatSignedAmount=v=>(v>=0?"+":"−")+money(Math.abs(v));
+ const buildResult=figures=>{
+  const rounded=state.roundOff?roundAmount(figures.total):figures.total;
+  const adjustment=r2(rounded-figures.total);
+  const taxRows=state.supply==="intra"?
+   [["CGST ("+(state.rate/2)+"%)",figures.cgst],["SGST ("+(state.rate/2)+"%)",figures.sgst]]:
+   [["IGST ("+state.rate+"%)",figures.igst]];
+  const rows=[["Net price",figures.base],...taxRows,["GST total",figures.gst]];
+  const plain="GST Calculation\n"+
+   (options.item?options.item+"\n":"")+
+   "GST Rate: "+state.rate+"% ("+(state.mode==="add"?"Add":"Remove")+")\n"+
+   rows.map(x=>x[0]+": "+money(x[1])).join("\n")+"\n"+
+   "Round off: "+(state.roundOff?formatSignedAmount(adjustment):"Off")+"\n"+
+   "Total price: "+money(rounded);
+  return {rounded,adjustment,rows,plain};
+ };
+ function applyOperator(){
+  if(!state.operator||state.stored===null)return;
+  const b=Number(state.entry),a=state.stored;
+  let v;
+  if(state.operator==="+")v=a+b;
+  else if(state.operator==="−")v=a-b;
+  else if(state.operator==="×")v=a*b;
+  else if(state.operator==="÷")v=b===0?NaN:a/b;
+  if(!Number.isFinite(v)||v<0||v>maxAmount){
+   state.error="This calculation is outside the valid amount range.";
+   state.operator="";state.stored=null;return;
   }
-  if(!raw){$("#gst-out").innerHTML='<p class="gst-note">Enter an amount to see the result.</p>';return;}
-  const figures=calculate(Number(raw),st.rate,st.mode,st.sup);
-  if(!figures){$("#gst-out").innerHTML='<p class="gst-bad">Enter a valid amount and GST rate.</p>';return;}
-  const r=st.rate,{base,gst,total,cgst,sgst,igst}=figures;
-  const rows=[["Base Amount",inr(base)]];
-  if(st.sup==="intra")rows.push(["CGST @ "+(r/2)+"%",inr(cgst)],["SGST @ "+(r/2)+"%",inr(sgst)]);
-  else rows.push(["IGST @ "+r+"%",inr(igst)]);
-  rows.push(["Total GST",inr(gst)]);
-  const result=rows.concat([["Total Amount",inr(total)]]);
-  const plain="GST Calculation\n"+(options.item?options.item+"\n":"")+
-   "Rate: "+r+"%\n"+result.map(x=>x.join(": ")).join("\n");
-  $("#gst-out").innerHTML='<table>'+rows.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+'</td></tr>').join("")+
-   '<tr class="tot"><td>Total Amount</td><td>'+inr(total)+'</td></tr></table>'+
-   '<div class="gst-act"><button class="btn alt" type="button" id="gst-copy">📋 Copy</button>'+
-   '<a class="btn gst-whatsapp" id="gst-whatsapp" target="_blank" rel="noopener noreferrer" href="https://wa.me/?text='+encodeURIComponent(plain)+'">WhatsApp Share</a>'+
-   '<button class="btn alt" type="button" id="gst-clear">Clear</button></div>';
-  $("#gst-copy").onclick=async()=>{$("#gst-copy").textContent=(await copy(plain))?"✓ Copied":"Copy blocked";};
-  $("#gst-clear").onclick=()=>{$("#gst-amt").value="";calc();$("#gst-amt").focus();};
- };
- $("#gst-amt").oninput=calc;
- $("#gst-rates").querySelectorAll("[data-r]").forEach(button=>button.onclick=()=>{
-  $("#gst-rates").querySelectorAll("[data-r]").forEach(x=>x.classList.remove("on"));
-  button.classList.add("on");$("#gst-custom").value="";st.rate=Number(button.dataset.r);calc();
- });
- $("#gst-custom").oninput=()=>{
-  const raw=$("#gst-custom").value.trim(),v=Number(raw);
-  $("#gst-rates").querySelectorAll("[data-r]").forEach(x=>x.classList.remove("on"));
-  st.rate=raw&&Number.isFinite(v)&&v>=0&&v<=100?v:NaN;calc();
- };
- $("#gst-mode").querySelectorAll("[data-m]").forEach(button=>button.onclick=()=>{
-  $("#gst-mode").querySelectorAll("[data-m]").forEach(x=>x.classList.remove("on"));
-  button.classList.add("on");st.mode=button.dataset.m;calc();
- });
- $("#gst-sup").querySelectorAll("[data-s]").forEach(button=>button.onclick=()=>{
-  $("#gst-sup").querySelectorAll("[data-s]").forEach(x=>x.classList.remove("on"));
-  button.classList.add("on");st.sup=button.dataset.s;calc();
- });
- calc();
+  state.entry=String(r2(v));state.operator="";state.stored=null;state.startFresh=true;
+  state.error="";
+ }
+ function handleKey(key){
+  if(key==="AC"){
+   state.entry="0";state.stored=null;state.operator="";state.error="";state.startFresh=false;
+  }else if(key==="⌫"){
+   if(state.startFresh){state.entry="0";state.startFresh=false;}
+   else state.entry=state.entry.length<=1?"0":state.entry.slice(0,-1);
+   state.error="";
+  }else if(key==="." || /^[0-9]+$/.test(key)){
+   if(state.startFresh){state.entry="0";state.startFresh=false;}
+   if(key==="."){
+    if(!state.entry.includes("."))state.entry+=".";
+   }else{
+    const raw=state.entry==="0" ? key.replace(/^0+(?=\d)/,"") : state.entry+key;
+    const parts=raw.split(".");
+    if(parts[0].length<=12&&(!parts[1]||parts[1].length<=2)&&Number(raw)<=maxAmount)
+      state.entry=raw||"0";
+   }
+   state.error="";
+  }else if(key==="%"){
+   state.entry=String(r2(currentAmount()/100));state.startFresh=false;
+  }else if(["+","−","×","÷"].includes(key)){
+   if(state.operator)applyOperator();
+   if(state.error){render();return;}
+   state.stored=currentAmount();state.operator=key;state.startFresh=true;
+  }else if(key==="="){
+   if(state.operator)applyOperator();
+   if(state.error){render();return;}
+   if(!getNumbers()){render();return;}
+   state.showResult=true;
+  }
+  render();
+ }
+ function render(){
+  if(state.showResult){
+   const figures=getNumbers();
+   if(!figures){state.showResult=false;render();return;}
+   const {rounded,adjustment,rows,plain}=buildResult(figures);
+   stage.innerHTML='<section class="gst-receipt" aria-label="GST calculation result">'+
+    '<div class="gst-receipt-head"><span>GST Calculation</span><span class="gst-receipt-rate">'+
+    esc((state.mode==="add"?"+":"−")+state.rate+"%")+'</span></div>'+
+    '<div class="gst-receipt-line gst-net-line"><span>Net price</span><strong>'+money(figures.base)+'</strong></div>'+
+    (state.supply==="intra"?
+      '<div class="gst-receipt-line"><span>CGST ('+(state.rate/2)+'%)</span><b>'+money(figures.cgst)+'</b></div>'+
+      '<div class="gst-receipt-line"><span>SGST ('+(state.rate/2)+'%)</span><b>'+money(figures.sgst)+'</b></div>':
+      '<div class="gst-receipt-line"><span>IGST ('+state.rate+'%)</span><b>'+money(figures.igst)+'</b></div>')+
+    '<label class="gst-receipt-line gst-round-line" for="gst-round">'+
+    '<span class="gst-round-label"><input type="checkbox" id="gst-round" '+(state.roundOff?"checked":"")+'><span>Round off</span></span>'+
+    '<b>'+(state.roundOff?formatSignedAmount(adjustment):"Off")+'</b></label>'+
+    '<div class="gst-receipt-total"><span>Total price</span><strong>'+money(rounded)+'</strong></div>'+
+    '</section>'+
+    '<div class="gst-result-actions">'+
+    '<button type="button" class="btn alt" id="gst-edit">← Edit</button>'+
+    '<button type="button" class="btn alt" id="gst-copy">Copy</button>'+
+    '<a class="btn gst-whatsapp" id="gst-whatsapp" href="https://wa.me/?text='+encodeURIComponent(plain)+'" target="_blank" rel="noopener noreferrer">WhatsApp Share</a>'+
+    '</div>';
+   stage.querySelector("#gst-round").onchange=e=>{state.roundOff=e.target.checked;render();};
+   stage.querySelector("#gst-edit").onclick=()=>{state.showResult=false;render();};
+   stage.querySelector("#gst-copy").onclick=async e=>{
+    e.currentTarget.textContent=(await copy(plain))?"✓ Copied":"Copy blocked";
+   };
+   return;
+  }
+  const quickRow=(mode)=>quickRates.map(rate=>{
+   const selected=state.rate===rate&&state.mode===mode;
+   return '<button type="button" class="gst-percent-key'+(selected?" selected":"")+'" data-gst-rate="'+rate+'" data-gst-mode="'+mode+'">'+
+    (mode==="add"?"+":"−")+rate+'%</button>';
+  }).join("");
+  stage.innerHTML='<section class="gst-ref-screen">'+
+   '<button type="button" class="gst-screen-drop" id="gst-options-toggle" aria-expanded="false" aria-controls="gst-option-panel" aria-label="Rate and tax options">⌄</button>'+
+   '<div class="gst-ref-screen-right"><span id="gst-display-note">'+
+     (state.mode==="add"?"Add":"Remove")+' GST · '+(validRate()?state.rate+"%":"Select rate")+
+     (state.operator?" · "+state.operator:"")+'</span>'+
+   '<output id="gst-display" aria-live="polite">'+formatNumber(state.entry)+'</output></div></section>'+
+   '<section class="gst-option-panel" id="gst-option-panel" hidden>'+
+   '<label for="gst-manual-rate">Custom GST Rate (%)</label>'+
+   '<input id="gst-manual-rate" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="Enter rate" value="'+(validRate()?state.rate:"")+'">'+
+   '<label for="gst-supply">Supply Type</label><select id="gst-supply">'+
+   '<option value="intra" '+(state.supply==="intra"?"selected":"")+'>Same State — CGST + SGST</option>'+
+   '<option value="inter" '+(state.supply==="inter"?"selected":"")+'>Other State — IGST</option>'+
+   '</select><div class="gst-mode-toggle"><button type="button" data-gst-switch="add" class="'+(state.mode==="add"?"on":"")+'">Add GST</button>'+
+   '<button type="button" data-gst-switch="remove" class="'+(state.mode==="remove"?"on":"")+'">Remove GST</button></div></section>'+
+   '<div class="gst-quick-rates" role="group" aria-label="GST rates">'+
+   '<div class="gst-percent-row">'+quickRow("add")+'</div>'+
+   '<div class="gst-percent-row">'+quickRow("remove")+'</div></div>'+
+   '<div class="gst-ref-keypad" role="group" aria-label="Calculator keypad">'+
+   [["AC","%","÷","⌫"],["7","8","9","×"],["4","5","6","−"],["1","2","3","+"],["0","00",".","="]]
+     .flat().map(key=>
+      '<button type="button" class="gst-number-key'+(key==="="?" equals":"")+(/[×÷+−]/.test(key)?" operator":"")+'" data-gst-key="'+esc(key)+'">'+
+        esc(key)+'</button>').join("")+
+   '</div>'+
+   (state.error?'<p class="gst-entry-error" role="alert">'+esc(state.error)+'</p>':"");
+  const panel=stage.querySelector("#gst-option-panel");
+  const toggle=stage.querySelector("#gst-options-toggle");
+  toggle.onclick=()=>{
+   panel.hidden=!panel.hidden;
+   toggle.setAttribute("aria-expanded",String(!panel.hidden));
+  };
+  stage.querySelectorAll("[data-gst-rate]").forEach(button=>{
+   button.onclick=()=>{
+    state.rate=Number(button.dataset.gstRate);
+    state.mode=button.dataset.gstMode;
+    state.error="";
+    render();
+   };
+  });
+  stage.querySelectorAll("[data-gst-key]").forEach(button=>{
+   button.onclick=()=>handleKey(button.dataset.gstKey);
+  });
+  stage.querySelector("#gst-manual-rate").oninput=e=>{
+   const raw=e.target.value.trim(),n=Number(raw);
+   state.rate=raw&&Number.isFinite(n)&&n>=0&&n<=100?n:NaN;
+   state.error="";
+   stage.querySelector("#gst-display-note").textContent=
+    (state.mode==="add"?"Add":"Remove")+" GST · "+(validRate()?state.rate+"%":"Select rate");
+   stage.querySelectorAll(".gst-percent-key").forEach(x=>x.classList.toggle("selected",
+    validRate()&&Number(x.dataset.gstRate)===state.rate&&x.dataset.gstMode===state.mode));
+  };
+  stage.querySelector("#gst-supply").onchange=e=>{state.supply=e.target.value;};
+  stage.querySelectorAll("[data-gst-switch]").forEach(button=>{
+   button.onclick=()=>{
+    state.mode=button.dataset.gstSwitch;
+    stage.querySelectorAll("[data-gst-switch]").forEach(x=>x.classList.toggle("on",x===button));
+    stage.querySelector("#gst-display-note").textContent=
+      (state.mode==="add"?"Add":"Remove")+" GST · "+(validRate()?state.rate+"%":"Select rate");
+    stage.querySelectorAll(".gst-percent-key").forEach(x=>x.classList.toggle("selected",
+      validRate()&&Number(x.dataset.gstRate)===state.rate&&x.dataset.gstMode===state.mode));
+   };
+  });
+ }
+ el.querySelector("#gst-back").onclick=()=>options.fromRates?mountRates(el):mountCalc(el);
+ render();
 }
-
 /* ---------------- GSTIN decoding ---------------- */
 const STATES={"01":"Jammu & Kashmir","02":"Himachal Pradesh","03":"Punjab","04":"Chandigarh","05":"Uttarakhand","06":"Haryana","07":"Delhi","08":"Rajasthan","09":"Uttar Pradesh","10":"Bihar","11":"Sikkim","12":"Arunachal Pradesh","13":"Nagaland","14":"Manipur","15":"Mizoram","16":"Tripura","17":"Meghalaya","18":"Assam","19":"West Bengal","20":"Jharkhand","21":"Odisha","22":"Chhattisgarh","23":"Madhya Pradesh","24":"Gujarat","25":"Daman & Diu","26":"Dadra & Nagar Haveli and Daman & Diu","27":"Maharashtra","28":"Andhra Pradesh (Old)","29":"Karnataka","30":"Goa","31":"Lakshadweep","32":"Kerala","33":"Tamil Nadu","34":"Puducherry","35":"Andaman & Nicobar Islands","36":"Telangana","37":"Andhra Pradesh","38":"Ladakh","97":"Other Territory","99":"Centre Jurisdiction"};
 const HOLDER={P:"Individual (Proprietor)",C:"Company",F:"Firm / LLP",H:"Hindu Undivided Family (HUF)",A:"Association of Persons (AOP)",T:"Trust",B:"Body of Individuals (BOI)",L:"Local Authority",J:"Artificial Juridical Person",G:"Government"};
