@@ -40,3 +40,12 @@
 .pai-go-error{color:#a92729;font-size:12px;margin:8px 0}.pai-full-go-dialog{border:0;border-radius:16px;padding:0;max-width:min(96vw,900px);width:100%;max-height:95vh;background:var(--card,#fff);color:inherit;box-shadow:0 30px 95px #1118}.pai-full-go-dialog::backdrop{background:#101c32b8}
 .pai-full-go-modal{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:92vh}.pai-full-go-modal header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.pai-full-go-modal header strong{font-size:16px;line-height:1.5}.pai-full-go-actions{display:flex;gap:8px;flex-wrap:wrap}.pai-full-go-actions .btn{text-decoration:none}
 @media(max-width:600px){.pai-go-results{grid-template-columns:1fr}.pai-full-go-modal{padding:12px}}
+
+/* Verified GO corpus loading and recovery use the app's own theme. */
+.pai-go-loading{display:flex;gap:13px;align-items:center;color:var(--ink);line-height:1.6}
+.pai-go-loading small{display:block;font-size:12px;color:var(--mut);margin-top:3px}
+.pai-go-spinner{display:block;flex:none;width:27px;height:27px;border:3px solid var(--bd);border-top-color:var(--g2);border-radius:50%;animation:pai-go-spin .9s linear infinite}
+.pai-go-error-box{border-left:3px solid var(--g2);line-height:1.6}
+.pai-go-error-box p{font-size:13px;color:var(--mut);margin:8px 0 12px}
+@keyframes pai-go-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.pai-go-spinner{animation:none}}
