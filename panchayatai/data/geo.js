@@ -7,16 +7,21 @@ window.PAI_GEO = {
 
 
 /* Restore district selection for profiles saved with Roman/official district names.
-   The district dropdown and legacy numeric geo JSON order stay unchanged. */
+   Stable district values and legacy numeric geo JSON order stay unchanged;
+   English dropdown labels are separate from the editable Hindi spelling. */
 (() => {
   "use strict";
   const geo=window.PAI_GEO;
   const english=["AGRA","ALIGARH","AMBEDKAR NAGAR","AMETHI","AMROHA","AURAIYA","AYODHYA","AZAMGARH","BAGHPAT","BAHRAICH","BALLIA","BALRAMPUR","BANDA","BARABANKI","BAREILLY","BASTI","SANT RAVIDAS NAGAR","BIJNOR","BUDAUN","BULANDSHAHR","CHANDAULI","CHITRAKOOT","DEORIA","ETAH","ETAWAH","FARRUKHABAD","FATEHPUR","FIROZABAD","GAUTAM BUDDHA NAGAR","GHAZIABAD","GHAZIPUR","GONDA","GORAKHPUR","HAMIRPUR","HAPUR","HARDOI","HATHRAS","JALAUN","JAUNPUR","JHANSI","KANNAUJ","KANPUR DEHAT","KANPUR NAGAR","KASGANJ","KAUSHAMBI","KUSHI NAGAR","KHERI","LALITPUR","LUCKNOW","MAHARAJGANJ","MAHOBA","MAINPURI","MATHURA","MAU","MEERUT","MIRZAPUR","MORADABAD","MUZAFFARNAGAR","PILIBHIT","PRATAPGARH","PRAYAGRAJ","RAE BARELI","RAMPUR","SAHARANPUR","SAMBHAL","SANT KABEER NAGAR","SHAHJAHANPUR","SHAMLI","SHRAVASTI","SIDDHARTH NAGAR","SITAPUR","SONBHADRA","SULTANPUR","UNNAO","VARANASI"];
+  const displayOverrides={"भदोही":"Bhadohi","लखीमपुर खीरी":"Lakhimpur Kheri","कुशीनगर":"Kushinagar","संत कबीर नगर":"Sant Kabir Nagar","सिद्धार्थनगर":"Siddharthnagar","रायबरेली":"Raebareli"};
+  geo.districtEnglish=Object.fromEntries(geo.districts.map((hi,i)=>[hi,displayOverrides[hi]||english[i].toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase())]));
+  geo.englishDistrict=value=>geo.districtEnglish[geo.resolveDistrict?.(value)||value]||String(value||"");
   const fold=s=>String(s??"").normalize("NFKC").toLocaleLowerCase().replace(/[\u200b-\u200d\ufeff]/g,"").replace(/[^\p{L}\p{N}]/gu,"");
   const districtAliases=new Map();
   geo.districts.forEach((h,i)=>{
     districtAliases.set(fold(h),h);
     districtAliases.set(fold(english[i]),h);
+    districtAliases.set(fold(geo.districtEnglish[h]),h);
   });
   [
     ["ALLAHABAD","प्रयागराज"],["FAIZABAD","अयोध्या"],

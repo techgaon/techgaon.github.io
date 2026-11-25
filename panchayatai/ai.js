@@ -1,4 +1,4 @@
-import { request as draftRequest, render as renderDraft } from './drafting-core.mjs?v=20261123-draft-wording1';
+import { request as draftRequest, render as renderDraft } from './drafting-core.mjs?v=20261125-english-profile5';
 /* पंचायत AI — Gemini (Firebase AI Logic, Spark/निःशुल्क प्लान पर चलता है; API key Firebase में सुरक्षित) */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-ai.js";
@@ -85,7 +85,7 @@ const lang = () => "Choose the response language from the latest user's own ques
 const UP_OFFICER_TITLES = {
   pradhan:"ग्राम प्रधान",prashasak:"प्रशासक (ग्राम पंचायत)",
   gpa:"पंचायत सचिव (ग्राम पंचायत अधिकारी)",gva:"पंचायत सचिव (ग्राम विकास अधिकारी)",
-  sahayak:"पंचायत सहायक",ado:"सहायक विकास अधिकारी (पंचायत)",
+  sahayak:"पंचायत सहायक",rojgar_sevak:"ग्राम रोजगार सेवक",takniki_sahayak:"तकनीकी सहायक",ado:"सहायक विकास अधिकारी (पंचायत)",
   bdo:"खण्ड विकास अधिकारी",adpro:"सहायक जिला पंचायत राज अधिकारी",
   dpro:"जिला पंचायत राज अधिकारी",ddo:"जिला विकास अधिकारी",
   clerk:"विभागीय लिपिक",resident:"पंचायत निवासी",other_staff:"अन्य विभागीय कर्मचारी"

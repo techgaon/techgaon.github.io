@@ -1,6 +1,6 @@
 import { corpus } from './drafting-corpus.mjs?v=20261121-53sources36patterns';
 
-export const roles = {gpa:'पंचायत सचिव (ग्राम पंचायत अधिकारी)',gva:'पंचायत सचिव (ग्राम विकास अधिकारी)',pradhan:'ग्राम प्रधान',prashasak:'प्रशासक (ग्राम पंचायत)',sahayak:'पंचायत सहायक',ado:'सहायक विकास अधिकारी (पंचायत)',bdo:'खण्ड विकास अधिकारी',dpro:'जिला पंचायत राज अधिकारी',adpro:'सहायक जिला पंचायत राज अधिकारी',ddo:'जिला विकास अधिकारी',clerk:'लिपिक',resident:'प्रार्थी',other_staff:'अन्य विभागीय कर्मचारी'};
+export const roles = {gpa:'पंचायत सचिव (ग्राम पंचायत अधिकारी)',gva:'पंचायत सचिव (ग्राम विकास अधिकारी)',pradhan:'ग्राम प्रधान',prashasak:'प्रशासक (ग्राम पंचायत)',sahayak:'पंचायत सहायक',rojgar_sevak:'ग्राम रोजगार सेवक',takniki_sahayak:'तकनीकी सहायक',ado:'सहायक विकास अधिकारी (पंचायत)',bdo:'खण्ड विकास अधिकारी',dpro:'जिला पंचायत राज अधिकारी',adpro:'सहायक जिला पंचायत राज अधिकारी',ddo:'जिला विकास अधिकारी',clerk:'लिपिक',resident:'प्रार्थी',other_staff:'अन्य विभागीय कर्मचारी'};
 const str = v => typeof v === 'string' ? v.trim().slice(0,16000) : '';
 const hole = label => `[${label} भरें]`;
 export const escapeHTML = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
