@@ -178,6 +178,10 @@ async function api(path, body) {
     console.warn("Panchayat AI request failure",{
       type:diagnostics.code,stage:path,status:diagnostics.status||null
     });
+    if(!isAdmin()){
+      if(diagnostics.code==="AI_BACKUP_TEXT_ONLY")throw new Error("PDF या फोटो की AI जाँच अभी उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।");
+      throw new Error("AI सेवा अस्थायी रूप से अनुपलब्ध है। कृपया पुनः प्रयास करें।");
+    }
     const safe=window.PAI_AI_ERRORS?.asError(error,path);
     if(safe)throw safe;
     throw new Error(diagnostics.title+" — "+diagnostics.message+" ["+diagnostics.code+"]");
@@ -1231,14 +1235,30 @@ function payUI(id) {
 
 async function admin(el) {
   if (!isAdmin()) { S.after = 'admin'; el.innerHTML = '<div class="card"><h2>Admin login</h2><p>Sign in with the administrator Google account.</p><button class="gbtn" data-go="login">' + googleIcon() + ' Continue with Google</button></div>'; return; }
-  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="limits">Limits</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button><button data-panel="design">🎨 Design</button></div><div id="adminPanel"></div>';
+  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="limits">Limits</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button><button data-panel="design">🎨 Design</button><button data-panel="aiStatus">AI Status</button></div><div id="adminPanel"></div>';
   el.querySelectorAll('[data-panel]').forEach(b => b.onclick = async () => {
     el.querySelectorAll('[data-panel]').forEach(x => x.classList.toggle('on', x === b));
     const panel = $("#adminPanel"); panel.innerHTML = '<p class="typing">Loading…</p>';
-    try { await ({ overview: adminOverview, limits: adminLimits, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments, design:adminDesign }[b.dataset.panel])(panel); }
+    try { await ({ overview: adminOverview, limits: adminLimits, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments, design:adminDesign, aiStatus:adminAIStatus }[b.dataset.panel])(panel); }
     catch (e) { panel.innerHTML = '<div class="card">Admin data could not load. Please try again.</div>'; console.error(e); }
   });
   el.querySelector('[data-panel="overview"]').click();
+}
+async function adminAIStatus(panel) {
+  if(!isAdmin())throw Error("Administrator access is required.");
+  panel.innerHTML='<div class="card"><h3>AI Status</h3><p>Gemini → Groq → Cloudflare Workers AI</p><button class="btn" id="paiAiTest">Check AI connection</button><div id="paiAiTestResult" role="status"></div></div>';
+  const btn=panel.querySelector("#paiAiTest"), out=panel.querySelector("#paiAiTestResult");
+  btn.onclick=async()=>{
+    btn.disabled=true;out.textContent="Checking AI providers…";
+    try{
+      await aiReady();
+      if(!isAdmin())throw Error("Administrator access is required.");
+      const d=await window.PAI_AI.diagnose();
+      const row=(name,value)=>'<p><strong>'+esc(name)+':</strong> '+esc(value)+'</p>';
+      out.innerHTML=row("Gemini",d.ai?"Online":"Unavailable")+row("Model",d.model)+row("App Check",d.appCheck?"OK":"Failed")+row("Backup configuration",d.backup?.ready?"Ready (configuration only)":d.backup?.code||"Unavailable")+row("Groq",d.backup?.providers?.groq?"Configured":"Not confirmed")+row("Cloudflare Workers AI",d.backup?.providers?.cloudflare?"Configured":"Not confirmed")+(d.error?row("Error code",d.error.code)+row("Details",d.error.message)+row("Action",d.error.action||""):"");
+    }catch(e){out.textContent="AI diagnostic failed. Please refresh and try again.";}
+    finally{btn.disabled=false;}
+  };
 }
 async function adminDesign(panel) {
   if (!isAdmin()) throw new Error("Administrator access is required.");
