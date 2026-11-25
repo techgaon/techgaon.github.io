@@ -51,6 +51,6 @@ test("Profile retains up to 3 clusters and 25 GPs, uses Hindi labels and offers 
  assert.match(app,/G\.matchPlace\?\.\(availableGpNames,name,st\.gpsHindi\)/);
  assert.doesNotMatch(app,/st\.clusters=st\.clusters\.filter\(name=>availableGpNames\.includes\(name\)\)/);
  assert.match(app,/आपका पद चुनें/);
- assert.match(app,/तहसील \(वैकल्पिक\)/);
+ assert.doesNotMatch(app,/id="aTeh(?:Hindi)?"/);
  assert.match(app,/id="aGeoRetry"/);
 });

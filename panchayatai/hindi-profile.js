@@ -63,6 +63,16 @@
  function label(raw,mapping){
    return trim(mapping?.[raw])||trim(cached()[raw])||guess(raw);
  }
+ function placeLabel(raw,mapping){
+   let value=label(raw,mapping);
+   // Translate the place name, never add the category around it. Explicit
+   // English names containing "Panchayat" keep that actual source wording.
+   if(!/(?:panchayat|पंचायत)/iu.test(String(raw||""))){
+     value=value.replace(/^(?:ग्राम\s*पंचायत|पंचायत)\s*[:–—-]?\s+/u,"")
+       .replace(/\s+(?:ग्राम\s*पंचायत|पंचायत)\s*[।.]?$/u,"").trim();
+   }
+   return canUseHindi(value)?value:guess(raw);
+ }
  const cacheKey="pai-hindi-hints-2026";
  function cached(){
    try{return JSON.parse(localStorage.getItem(cacheKey)||"{}")}catch{return {};}
@@ -85,5 +95,5 @@
    for(const n of unique)if(!answers[n])answers[n]=guess(n);
    return answers;
  }
- window.PAI_HINDI={guess,label,suggest,canUseHindi};
+ window.PAI_HINDI={guess,label,placeLabel,suggest,canUseHindi};
 })();

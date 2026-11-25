@@ -25,7 +25,7 @@ const server=http.createServer((req,res)=>{
         ${roles}
         const G=window.PAI_GEO,$=(s,r=document)=>r.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         let liveSettings={plans:[{id:'existing-plan'}],disabledRoles:[]};
-        const S={user:{uid:'profile-test',email:'test@example.test',displayName:'Test Person'},profile:{uid:'profile-test',role:'pradhan',name:'Test Person',nameHindi:'परीक्षण प्रधान',phone:'9876543210',district:'BARABANKI',districtHindi:'बाराबंकी जनपद',block:'Haidergarh',blockHindi:'हैदरगढ़',gps:['कमेला'],gpsHindi:{'कमेला':'कमेला गाँव'},profileComplete:true},after:null};
+        const S={user:{uid:'profile-test',email:'test@example.test',displayName:'Test Person'},profile:{uid:'profile-test',role:'pradhan',name:'Test Person',nameHindi:'परीक्षण प्रधान',phone:'9876543210',district:'BARABANKI',districtHindi:'बाराबंकी जनपद',block:'Haidergarh',blockHindi:'हैदरगढ़',gps:['कमेला'],gpsHindi:{'कमेला':'कमेला पंचायत'},profileComplete:true},after:null};
         const LS={get:()=>true,set:()=>true},toast=m=>{window.lastToast=m;document.querySelector('#toast').textContent=m;},go=v=>{window.lastView=v;},saveProfile=async()=>{window.savedProfile=structuredClone(S.profile);};
         ${functions}
         window.testProfile=()=>structuredClone(S.profile);
@@ -43,13 +43,13 @@ const server=http.createServer((req,res)=>{
     const english=async selector=>{const texts=await page.locator(selector+' option').evaluateAll(els=>els.filter(x=>x.value).map(x=>x.textContent));assert.ok(texts.length);assert.ok(texts.every(x=>!/[\u0900-\u097f]/.test(x)));};
     await english('#aDist');await english('#aBlock');await english('#aGp');
     assert.equal(await page.locator('#aDist').inputValue(),'बाराबंकी');assert.equal(await page.locator('#aBlock').inputValue(),'Haidargarh');assert.equal(await page.locator('#aGp').inputValue(),'Kamela');
-    assert.equal(await page.locator('#aDistHindi').inputValue(),'बाराबंकी जनपद');assert.equal(await page.locator('#aGpHindi').inputValue(),'कमेला गाँव');
-    await page.locator('#aTeh').fill('Haidargarh');await page.locator('#aTeh').dispatchEvent('change');await page.locator('#aTehHindi').waitFor();assert.equal(await page.locator('#aTehHindi').inputValue(),'हैदरगढ़');
-    await page.locator('#aTehHindi').fill('हैदरगढ़ तहसील');await page.locator('#aBlockHindi').fill('हैदरगढ़ विकास खण्ड');await page.locator('#aGpHindi').fill('कमेला पंचायत');await page.locator('#aDistHindi').fill('बाराबंकी');
+    assert.equal(await page.locator('#aDistHindi').inputValue(),'बाराबंकी जनपद');assert.equal(await page.locator('#aGpHindi').inputValue(),'कमेला');
+    assert.equal(await page.locator('#aTeh,#aTehHindi').count(),0);
+    await page.locator('#aBlockHindi').fill('हैदरगढ़ विकास खण्ड');await page.locator('#aGpHindi').fill('कमेला खास');await page.locator('#aDistHindi').fill('बाराबंकी');
     await page.locator('#pSuggestHindi').click();await page.getByText('सुझाव आ गए हैं। हिंदी वर्तनी जाँचें; गलत हो तो यहीं सुधारकर Save करें।',{exact:true}).waitFor();
-    assert.equal(await page.locator('#aGpHindi').inputValue(),'कमेला पंचायत');assert.equal(await page.locator('#aBlockHindi').inputValue(),'हैदरगढ़ विकास खण्ड');await english('#aBlock');await english('#aGp');
-    await page.locator('#pSave').click();let saved=await page.evaluate(()=>savedProfile);assert.equal(saved.gps[0],'Kamela');assert.equal(saved.gpsHindi.Kamela,'कमेला पंचायत');assert.equal(saved.districtEnglish,'Barabanki');assert.equal(saved.districtHindi,'बाराबंकी');assert.equal(saved.tehsilHindi,'हैदरगढ़ तहसील');assert.equal(saved.blockHindi,'हैदरगढ़ विकास खण्ड');
-    await page.evaluate(()=>testReloadProfile());await page.locator('#aGpHindi').waitFor();assert.equal(await page.locator('#aGpHindi').inputValue(),'कमेला पंचायत');
+    assert.equal(await page.locator('#aGpHindi').inputValue(),'कमेला खास');assert.equal(await page.locator('#aBlockHindi').inputValue(),'हैदरगढ़ विकास खण्ड');await english('#aBlock');await english('#aGp');
+    await page.locator('#pSave').click();let saved=await page.evaluate(()=>savedProfile);assert.equal(saved.gps[0],'Kamela');assert.equal(saved.gpsHindi.Kamela,'कमेला खास');assert.equal(saved.districtEnglish,'Barabanki');assert.equal(saved.districtHindi,'बाराबंकी');assert.equal(Object.hasOwn(saved,'tehsilHindi'),false);assert.equal(saved.blockHindi,'हैदरगढ़ विकास खण्ड');
+    await page.evaluate(()=>testReloadProfile());await page.locator('#aGpHindi').waitFor();assert.equal(await page.locator('#aGpHindi').inputValue(),'कमेला खास');
     await page.screenshot({path:path.join(out,'previews/13-profile-english-hindi.png'),fullPage:true});
     await page.locator('#pRole').selectOption('takniki_sahayak');await page.locator('#aClusterSelect').waitFor();await english('#aClusterSelect');await english('#aGpAdd');
     await page.locator('#aClusterSelect').selectOption('Kamela');await page.locator('#aClusterBtn').click();await page.locator('#aGpAdd').selectOption('Khanpur');
@@ -69,6 +69,6 @@ const server=http.createServer((req,res)=>{
     await page.locator('#pSave').click();assert.equal(await page.locator('#toast').innerText(),'यह पद अभी नए चयन के लिए बंद है। दूसरा पद चुनें।');
     await page.locator('[data-role-show="takniki_sahayak"]').check();await page.locator('[data-role-save]').click();await page.getByText('पदों की सूची सेव हो गई है।',{exact:true}).waitFor();
     await page.screenshot({path:path.join(out,'previews/14-admin-role-visibility.png'),fullPage:true});
-    assert.deepEqual(errors,[]);const report={passed:true,checks:['English district/block/GP options; canonical IDs unchanged','legacy Hindi GP restore and custom spellings retained','editable state/district/tehsil/block/GP Hindi fields','automatic suggestions preserve edits and English option labels','profile save/reload Hindi mappings','technical assistant multiple GPs and cluster','employment servant single GP','admin role off/on without overwriting plans','disabled new assignment blocked; other form values preserved','no browser errors']};fs.writeFileSync(path.join(out,'profile-options-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+    assert.deepEqual(errors,[]);const report={passed:true,checks:['English district/block/GP options; canonical IDs unchanged','legacy Hindi GP restore and custom spellings retained','editable state/district/block/GP Hindi; tehsil removed; bare Kamela name','automatic suggestions preserve edits and English option labels','profile save/reload Hindi mappings','technical assistant multiple GPs and cluster','employment servant single GP','admin role off/on without overwriting plans','disabled new assignment blocked; other form values preserved','no browser errors']};fs.writeFileSync(path.join(out,'profile-options-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
   }finally{await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
