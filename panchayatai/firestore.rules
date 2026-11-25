@@ -89,6 +89,113 @@ service cloud.firestore {
       allow update: if request.resource.data.keys().hasOnly(['count'])
         && request.resource.data.count is int && request.resource.data.count == resource.data.count + 1;
     }
+    // Prototype, additive cashbook rules. Merge this block's helpers and matches
+    // into the CURRENT production rules; never replace unrelated app rules.
+    // paiCashbooks/{id}: uid/email (immutable), statement descriptor (immutable),
+    // status, results {pdf?, excel?}, createdAt (immutable), updatedAt timestamps.
+    // Descriptor: name, mime, size (1..20MiB), chunks (1..80), sha256;
+    // result descriptors additionally contain a format-scoped random fileId.
+    // chunks/{fileId_000}: fileId, index (0..79), payload (bytes, <=256KiB).
+    function cbAdmin() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email == 'surajbhanpandey853@gmail.com';
+    }
+    function cbActive() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && (!exists(/databases/$(db)/documents/users/$(request.auth.uid))
+          || get(/databases/$(db)/documents/users/$(request.auth.uid)).data.get('blocked', false) == false);
+    }
+    function cbDescriptor(d, format, output) {
+      return d is map
+        && d.keys().hasAll(['name', 'mime', 'size', 'chunks', 'sha256'])
+        && d.keys().hasOnly(output ? ['name', 'mime', 'size', 'chunks', 'sha256', 'fileId'] : ['name', 'mime', 'size', 'chunks', 'sha256'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 180
+        && d.size is int && d.size > 0 && d.size <= 20971520
+        && d.chunks is int && d.chunks > 0 && d.chunks <= 80
+        && d.size > (d.chunks - 1) * 262144 && d.size <= d.chunks * 262144
+        && d.sha256 is string && d.sha256.matches('[a-f0-9]{64}')
+        && (format == 'pdf' ? d.mime == 'application/pdf'
+          : d.mime in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
+        && (!output || (d.fileId is string && d.fileId.matches(format + '-[a-f0-9]{32}')));
+    }
+    function cbValid(d) {
+      return d.keys().hasAll(['uid','email','statement','status','results','createdAt','updatedAt'])
+        && d.keys().hasOnly(['uid','email','statement','status','results','createdAt','updatedAt','returnCode','returnReason','returnedAt','returnedBy'])
+        && d.uid is string && d.uid.size() > 0 && d.uid.size() <= 128
+        && d.email is string && d.email.size() > 0 && d.email.size() <= 320
+        && d.status in ['uploading','pending','in_progress','ready','returned','deleting']
+        && (!('returnCode' in d) || d.returnCode in ['unclear','incomplete','wrong_file','other'])
+        && (!('returnReason' in d) || (d.returnReason is string && d.returnReason.size() > 0 && d.returnReason.size() <= 500))
+        && (!('returnedAt' in d) || d.returnedAt is timestamp)
+        && (!('returnedBy' in d) || (d.returnedBy is string && d.returnedBy.size() > 0 && d.returnedBy.size() <= 128))
+        && (d.status != 'returned' || (d.keys().hasAll(['returnCode','returnReason','returnedAt']) && d.results.size() == 0))
+        && cbDescriptor(d.statement, 'pdf', false)
+        && d.results is map && d.results.keys().hasOnly(['pdf','excel'])
+        && (!('pdf' in d.results) || cbDescriptor(d.results.pdf, 'pdf', true))
+        && (!('excel' in d.results) || cbDescriptor(d.results.excel, 'excel', true))
+        && (d.status != 'ready' || d.results.size() > 0)
+        && d.createdAt is timestamp && d.updatedAt is timestamp;
+    }
+    function cbAdminTransition(old, next) {
+      return (next.status == 'deleting' && next.diff(old).affectedKeys().hasOnly(['status','updatedAt']))
+        || (old.status in ['pending','in_progress','ready','returned'] && next.status == 'returned'
+          && next.returnedAt == request.time && next.returnedBy == request.auth.uid
+          && next.returnReason.matches('[\\s\\S]*[^\\s][\\s\\S]*')
+          && next.diff(old).affectedKeys().hasOnly(['status','returnCode','returnReason','returnedBy','returnedAt','results','updatedAt']))
+        || (old.status in ['pending','in_progress'] && next.status in ['in_progress','ready']
+          && next.diff(old).affectedKeys().hasOnly(['status','results','updatedAt']))
+        || (old.status == 'ready' && next.status == 'ready'
+          && next.diff(old).affectedKeys().hasOnly(['status','results','updatedAt']));
+    }
+    match /paiCashbooks/{id} {
+      allow read: if cbAdmin() || (cbActive() && resource.data.uid == request.auth.uid);
+      allow create: if cbActive() && cbValid(request.resource.data)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'uploading'
+        && !request.resource.data.keys().hasAny(['returnCode','returnReason','returnedAt','returnedBy'])
+        && request.resource.data.results.size() == 0
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if cbValid(request.resource.data)
+        && request.resource.data.updatedAt == request.time
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','email','statement','createdAt'])
+        && ((cbActive() && resource.data.uid == request.auth.uid
+          && resource.data.status == 'uploading' && request.resource.data.status == 'pending'
+          && request.resource.data.results.size() == 0
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']))
+        || (cbAdmin() && cbAdminTransition(resource.data, request.resource.data)));
+      allow delete: if cbAdmin() && resource.data.status == 'deleting';
+      match /chunks/{chunkId} {
+        function parent() { return get(/databases/$(db)/documents/paiCashbooks/$(id)).data; }
+        function published(p, fileId) {
+          return p.status == 'ready' && (('pdf' in p.results && p.results.pdf.fileId == fileId)
+            || ('excel' in p.results && p.results.excel.fileId == fileId));
+        }
+        function cbChunk(d) {
+          return d.keys().hasAll(['fileId','index','payload']) && d.keys().hasOnly(['fileId','index','payload'])
+            && d.fileId is string && (d.fileId == 'statement' || d.fileId.matches('(pdf|excel)-[a-f0-9]{32}'))
+            && d.index is int && d.index >= 0 && d.index < 80
+            && chunkId == d.fileId + '_' + (d.index < 10 ? '00' : '0') + string(d.index)
+            && d.payload is bytes && d.payload.size() > 0 && d.payload.size() <= 262144;
+        }
+        function ownerUpload(d) {
+          let p = parent();
+          return cbActive() && p.uid == request.auth.uid && p.status == 'uploading'
+            && d.fileId == 'statement' && d.index < p.statement.chunks
+            && d.payload.size() == (d.index == p.statement.chunks - 1
+              ? p.statement.size - d.index * 262144 : 262144);
+        }
+        allow read: if cbAdmin() || (cbActive() && parent().uid == request.auth.uid && parent().status != 'deleting'
+          && (resource.data.fileId == 'statement' || published(parent(), resource.data.fileId)));
+        allow create: if cbChunk(request.resource.data) && (ownerUpload(request.resource.data)
+          || (cbAdmin() && parent().status in ['pending','in_progress','ready'] && request.resource.data.fileId != 'statement'));
+        allow update: if cbChunk(request.resource.data) && ownerUpload(request.resource.data)
+          && request.resource.data.fileId == resource.data.fileId && request.resource.data.index == resource.data.index;
+        allow delete: if cbAdmin() && parent().status == 'deleting';
+      }
+    }
     match /{p=**} { allow read, write: if false; }
   }
 }
+
