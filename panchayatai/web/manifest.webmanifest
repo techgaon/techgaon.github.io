@@ -1,0 +1,19 @@
+{
+  "name": "Panchayat AI",
+  "short_name": "Panchayat AI",
+  "start_url": "/panchayatai/web/",
+  "display": "standalone",
+  "background_color": "#f5f8fc",
+  "theme_color": "#172f58",
+  "lang": "hi",
+  "icons": [
+    {
+      "src": "/panchayatai/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "scope": "/panchayatai/web/",
+  "id": "/panchayatai/web/"
+}
