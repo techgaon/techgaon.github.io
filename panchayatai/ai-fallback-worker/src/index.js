@@ -6,6 +6,8 @@
 const JWKS_URL="https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 const PROJECT="panchayat-ai-f00d5";
 const ORIGIN="https://techgaon.in";
+// Packaged Android app (Capacitor) runs at https://localhost; Firebase ID token is still verified.
+const APP_ORIGIN="https://localhost";
 const headers={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":ORIGIN,"Vary":"Origin"};
 const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers});
 const fail=(code,status=503)=>reply({error:{code,message:code==="BACKUP_EXHAUSTED"?"Groq और Cloudflare दोनों की Free AI सेवाएँ अभी अनुपलब्ध हैं।":"AI बैकअप सेवा उपलब्ध नहीं है।"}},status);
@@ -84,13 +86,12 @@ async function cloudflareAI(body,env){
   if(typeof text!=="string"||!text.trim())throw Error("CLOUDFLARE_EMPTY");
   return {text,provider:"Cloudflare Workers AI",model};
 }
-export default {
-  async fetch(req,env){
+async function handle(req,env){
     const url=new URL(req.url);
     if(!url.pathname.startsWith("/panchayatai/api/"))return fail("NOT_FOUND",404);
     if(req.method==="OPTIONS")return new Response(null,{status:204,headers:{...headers,"Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Headers":"Authorization, Content-Type"}});
     const origin=req.headers.get("Origin");
-    if(origin&&origin!==ORIGIN)return fail("INVALID_ORIGIN",403);
+    if(origin&&origin!==ORIGIN&&origin!==APP_ORIGIN)return fail("INVALID_ORIGIN",403);
     if(url.pathname==="/panchayatai/api/ai-health"&&req.method==="GET")
       return reply({status:"online",configured:{
         groq:!!env.GROQ_API_KEY,cloudflare:env.ENABLE_CF_AI==="true"&&!!env.AI
@@ -122,6 +123,12 @@ export default {
       catch(e){/* Never log letters, identifiers, tokens, or the provider response. */ }
     }
     return fail("BACKUP_EXHAUSTED",503);
+}
+export default {
+  async fetch(req,env){
+    const res=await handle(req,env);
+    if(req.headers.get("Origin")!==APP_ORIGIN)return res;
+    const h=new Headers(res.headers);h.set("Access-Control-Allow-Origin",APP_ORIGIN);
+    return new Response(res.body,{status:res.status,headers:h});
   }
 };
-
