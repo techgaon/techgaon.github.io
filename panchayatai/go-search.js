@@ -177,7 +177,7 @@
       const q=input.value.trim(),matches=q?search(q):[];
       result.innerHTML=q
         ?(matches.length?matches.map(d=>card(d,false,q)).join(""):'<div class="card">इस Keyword पर कोई GO नहीं मिला। अलग Keyword या GO नंबर से Search करें।</div>')
-        :'<div class="card pai-go-start">संग्रह तैयार: '+(corpus?.index?.docs?.length||records.length)+' दस्तावेज़। ऊपर Keyword या GO नंबर लिखकर Search करें।</div>';
+        :"";
     };
     async function beginLoad(){
       if(preparing&&loadFailure===null&&progressMessage!=="GO का सत्यापित Index लोड हो रहा है…")return;
