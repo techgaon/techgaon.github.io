@@ -348,7 +348,7 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, igrs, estimate: estimateMB, gstCalc, gstNo, settings:settingsScreen }[S.view] || home;
+  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, igrs, estimate: estimateMB, gstCalc, gstRates, gstNo, cashbook:cashbookScreen, cashbookDownload:cashbookDownloadScreen, settings:settingsScreen }[S.view] || home;
   stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
@@ -369,6 +369,17 @@ function settingsScreen(el) {
 }
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 function gstCalc(el) { if(window.PAI_GST?.mountCalc) window.PAI_GST.mountCalc(el); else el.textContent="GST Calculator अभी नहीं खुल रहा। Refresh करें।"; }
+function gstRates(el) { window.PAI_GST.mountRates(el); }
+function cashbookScreen(el) {
+  if(needLogin("cashbook"))return;
+  const screen=window.PAI_CASHBOOK.mount(el,{db:S.db,user:S.user,profile:S.profile,go,toast});
+  S.chatCleanup=()=>screen?.destroy();
+}
+function cashbookDownloadScreen(el) {
+  if(needLogin("cashbookDownload"))return;
+  const screen=window.PAI_CASHBOOK.mountDownloads(el,{db:S.db,user:S.user,go,toast});
+  S.chatCleanup=()=>screen?.destroy();
+}
 function gstNo(el) { if(window.PAI_GST?.mountDetail) { window.PAI_GST.mountDetail(el); S.chatCleanup=()=>window.PAI_GST?.cleanup?.(); } else el.textContent="GST No Detail अभी नहीं खुल रहा। Refresh करें।"; }
 function estimateMB(el) { if(window.PAI_ESTIMATE && window.PAI_ESTIMATE.mount) window.PAI_ESTIMATE.mount(el); else el.textContent="Estimate Calculator could not load. Refresh and try again."; }
 function igrs(el){
@@ -392,6 +403,9 @@ function home(el) {
   ${!S.user && S.authReady ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" id="homeGoogleLogin" type="button">${googleIcon()} Continue with Google</button></div></div>` : ""}
   <div class="home-options">
+    <div class="grid draft-grid cashbook-first-grid">
+      <button class="tile cashbook-home-tile" data-go="cashbook"><span class="e">📒</span><b>कैशबुक बनवाएँ</b><small>स्टेटमेंट अपलोड करें और 10 मिनट में कैशबुक पाएँ</small></button>
+    </div>
     <div class="grid draft-grid home-feature-pair">
       <button class="tile ai-tile" data-go="chat"><span class="e pai-ai-logo"><img src="ai-help-icon.svg?v=20261121-generic-ai2" alt="" width="53" height="53" decoding="async"></span><b>AI Help</b><small>UP के नियम व पंचायत कार्य</small></button>
       <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>10 conversion tools</small></button>
@@ -400,7 +414,9 @@ function home(el) {
       <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>Search GO · Original PDF</small></button>
       ${BASE_DRAFTS.slice(0,1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e pai-gst-icon"><img src="gst-calculator-icon.svg?v=20261124-premium1" alt="" width="53" height="53" decoding="async"></span><b>GST Calculator</b></button>
+      <button class="tile gst-rates-tile" data-go="gstRates"><span class="e">📦</span><b>GST दरें जानें</b><small>ईंट, गिट्टी, मौरंग आदि की GST दर जानें</small></button>
       <button class="tile gst-no-tile" data-go="gstNo"><span class="e">🔎</span><b>GST No Detail</b></button>
+      <button class="tile cashbook-download-tile" data-go="cashbookDownload"><span class="new-pulse">NEW</span><span class="e">📥</span><b>Download Your Cashbook</b><small>तैयार PDF और Excel डाउनलोड करें</small></button>
       ${BASE_DRAFTS.slice(1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
       <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
@@ -433,8 +449,8 @@ async function startGoogleLogin() {
     // Both the TWA and Chrome must be able to recover the same local session.
     try { await S.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
     catch(e) { console.warn("Auth persistence unavailable", e); }
-    
-    
+
+
     try {
       const res = await S.auth.signInWithPopup(pr);
       const tok = res.credential && res.credential.accessToken;
@@ -1235,14 +1251,20 @@ function payUI(id) {
 
 async function admin(el) {
   if (!isAdmin()) { S.after = 'admin'; el.innerHTML = '<div class="card"><h2>Admin login</h2><p>Sign in with the administrator Google account.</p><button class="gbtn" data-go="login">' + googleIcon() + ' Continue with Google</button></div>'; return; }
-  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="limits">Limits</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button><button data-panel="design">🎨 Design</button><button data-panel="aiStatus">AI Status</button></div><div id="adminPanel"></div>';
+  el.innerHTML = '<h2>Admin</h2><div class="seg"><button data-panel="overview">Visitors</button><button data-panel="limits">Limits</button><button data-panel="plans">Plans</button><button data-panel="coupons">Coupons</button><button data-panel="users">Users</button><button data-panel="payments">Payments</button><button data-panel="design">🎨 Design</button><button data-panel="aiStatus">AI Status</button><button data-panel="cashbooks">📒 Cashbook</button></div><div id="adminPanel"></div>';
   el.querySelectorAll('[data-panel]').forEach(b => b.onclick = async () => {
     el.querySelectorAll('[data-panel]').forEach(x => x.classList.toggle('on', x === b));
+    S.chatCleanup?.(); S.chatCleanup=null;
     const panel = $("#adminPanel"); panel.innerHTML = '<p class="typing">Loading…</p>';
-    try { await ({ overview: adminOverview, limits: adminLimits, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments, design:adminDesign, aiStatus:adminAIStatus }[b.dataset.panel])(panel); }
+    try { await ({ overview: adminOverview, limits: adminLimits, plans: adminPlans, coupons: adminCoupons, users: adminUsers, payments: adminPayments, design:adminDesign, aiStatus:adminAIStatus, cashbooks:adminCashbooks }[b.dataset.panel])(panel); }
     catch (e) { panel.innerHTML = '<div class="card">Admin data could not load. Please try again.</div>'; console.error(e); }
   });
   el.querySelector('[data-panel="overview"]').click();
+}
+function adminCashbooks(panel) {
+  if(!isAdmin())throw Error("Administrator access is required.");
+  const screen=window.PAI_CASHBOOK.mountAdmin(panel,{db:S.db,user:S.user,toast});
+  S.chatCleanup=()=>screen?.destroy();
 }
 async function adminAIStatus(panel) {
   if(!isAdmin())throw Error("Administrator access is required.");
@@ -1460,7 +1482,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'gstCalc', 'gstNo', 'settings', 'goSearch', 'igrs'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'gstCalc', 'gstRates', 'gstNo', 'cashbook', 'cashbookDownload', 'settings', 'goSearch', 'igrs'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
@@ -1469,4 +1491,3 @@ window.addEventListener('hashchange', () => {
 });
 render();
 })();
-

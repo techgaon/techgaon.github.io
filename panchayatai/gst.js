@@ -152,16 +152,7 @@ function calculate(amount,rate,mode="add",sup="intra"){
 /* ---------------- GST Calculator menu / rate explorer ---------------- */
 const RATE_GROUPS=["सभी","निर्माण सामग्री","जलापूर्ति व स्वच्छता","बिजली व उपकरण","सेवाएँ","विशेष जाँच"];
 const rateItems=()=>Array.isArray(window.PAI_GST_RATES)?window.PAI_GST_RATES:[];
-function mountCalc(el){
- style();
- el.innerHTML='<div class="gst-wrap gst-landing"><h2>GST Calculator</h2>'+
- '<div class="gst-launch-grid">'+
- '<button type="button" class="gst-launch-card" id="gst-launch-calc"><span class="gst-launch-art"><img src="gst-calculator-icon.svg?v=20261124-premium1" alt="" width="60" height="60"></span><strong>Calculate</strong></button>'+
- '<button type="button" class="gst-launch-card" id="gst-launch-rates"><span class="gst-launch-art">📦</span><strong>GST दरें जानें</strong><small>ईंट, गिट्टी, मौरंग आदि की GST दर जानें</small></button>'+
- '</div></div>';
- el.querySelector("#gst-launch-calc").onclick=()=>mountCalculator(el);
- el.querySelector("#gst-launch-rates").onclick=()=>mountRates(el);
-}
+function mountCalc(el){ mountCalculator(el); }
 function mountRates(el){
  style();
  let group="सभी",query="",selectedId="";
@@ -200,7 +191,7 @@ function mountRates(el){
   $("#gst-rate-list").querySelectorAll("[data-gst-item]").forEach(button=>button.onclick=()=>select(button.dataset.gstItem));
   if(selectedId&&!items.some(i=>i.id===selectedId)){$("#gst-rate-detail").replaceChildren();selectedId="";}
  }
- $("#gst-back-menu").onclick=()=>mountCalc(el);
+ $("#gst-back-menu").onclick=()=>{ location.hash="home"; };
  $("#gst-rate-group").onchange=e=>{group=e.target.value;draw();};
  $("#gst-rate-search").oninput=e=>{query=e.target.value;draw();};
  draw();
@@ -393,7 +384,7 @@ function mountCalculator(el,options={}){
    };
   });
  }
- el.querySelector("#gst-back").onclick=()=>options.fromRates?mountRates(el):mountCalc(el);
+ el.querySelector("#gst-back").onclick=()=>options.fromRates?mountRates(el):(location.hash="home");
  render();
 }
 /* ---------------- GSTIN decoding ---------------- */
@@ -464,8 +455,8 @@ function mountDetail(el){
  '<input id="gst-gal" type="file" accept="image/*" hidden>'+
  '<div id="gst-camera-panel" class="gst-camera-panel" hidden><video id="gst-video" autoplay muted playsinline></video>'+
  '<div class="gst-act"><button type="button" class="btn" id="gst-take">Take Photo</button><button type="button" class="btn alt" id="gst-cancel">Cancel</button></div></div>'+
- '<p class="gst-note" id="gst-scan-msg" role="status" aria-live="polite">बिल या रसीद में GSTIN साफ दिखाई दे, ऐसी Photo लें।</p></div>'+ 
- '<div class="gst-or-divider" aria-label="or"><span>OR</span></div>'+ 
+ '<p class="gst-note" id="gst-scan-msg" role="status" aria-live="polite">बिल या रसीद में GSTIN साफ दिखाई दे, ऐसी Photo लें।</p></div>'+
+ '<div class="gst-or-divider" aria-label="or"><span>OR</span></div>'+
  '<div class="gst-box"><label for="gst-no">Type GST No</label>'+
  '<input id="gst-no" class="gst-in code" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="Example: 27AAPFU0939F1ZV">'+
  '<div class="gst-act"><button type="button" class="btn" id="gst-go">See Detail</button><button type="button" class="btn alt" id="gst-reset">Clear</button></div></div>'+
