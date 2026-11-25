@@ -403,20 +403,15 @@ function home(el) {
   ${!S.user && S.authReady ? `<div class="card"><b>पंचायत निवासी के रूप में जारी रखें। अधिकारी, कर्मचारी या प्रधान अपनी भूमिका My Profile में चुन सकते हैं।</b>
    <div class="btn-row"><button class="gbtn" id="homeGoogleLogin" type="button">${googleIcon()} Continue with Google</button></div></div>` : ""}
   <div class="home-options">
-    <div class="grid draft-grid cashbook-first-grid">
-      <button class="tile cashbook-home-tile" data-go="cashbook"><span class="e">📒</span><b>कैशबुक बनवाएँ</b><small>स्टेटमेंट अपलोड करें और 10 मिनट में कैशबुक पाएँ</small></button>
-    </div>
-    <div class="grid draft-grid home-feature-pair">
+    <div class="grid draft-grid home-feature-pair pai-office-tiles">
+      <button class="tile cashbook-home-tile pai-home-tile" data-go="cashbook"><span class="new-pulse">NEW</span><span class="e pai-home-icon"><svg class="pai-tile-svg cb-book-svg" viewBox="0 0 96 96" aria-hidden="true"><rect x="20" y="14" width="57" height="69" rx="7" fill="#27896d" stroke="#17624f" stroke-width="2"/><path d="M28 15v67" stroke="#a4ead4" stroke-width="4"/><g class="cb-book-page"><rect x="36" y="25" width="31" height="42" rx="3" fill="#f2fff9"/><path d="M42 35h19m-19 8h19m-19 8h12" stroke="#76bba6" stroke-width="3" stroke-linecap="round"/></g><circle cx="68" cy="73" r="14" fill="#d6f9e5" stroke="#74bd9a" stroke-width="2"/><path d="m61 73 5 5 10-12" fill="none" stroke="#1a8655" stroke-width="4" stroke-linecap="round"/></svg></span><b>कैशबुक बनवाएँ</b><small>स्टेटमेंट अपलोड करें और 10 मिनट में कैशबुक पाएँ</small></button>
       <button class="tile ai-tile" data-go="chat"><span class="e pai-ai-logo"><img src="ai-help-icon.svg?v=20261121-generic-ai2" alt="" width="53" height="53" decoding="async"></span><b>AI Help</b><small>UP के नियम व पंचायत कार्य</small></button>
-      <button class="tile ai-tile home-ai-new" data-go="tools"><span class="new-pulse">NEW</span><span class="e">🧰</span><b>AI Tools</b><small>10 conversion tools</small></button>
-    </div>
-    <div class="grid draft-grid pai-office-tiles">
+      <button class="tile ai-tile" data-go="tools"><span class="e">🧰</span><b>AI Tools</b><small>10 conversion tools</small></button>
       <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>Search GO · Original PDF</small></button>
       ${BASE_DRAFTS.slice(0,1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e pai-gst-icon"><img src="gst-calculator-icon.svg?v=20261124-premium1" alt="" width="53" height="53" decoding="async"></span><b>GST Calculator</b></button>
       <button class="tile gst-rates-tile" data-go="gstRates"><span class="e">📦</span><b>GST दरें जानें</b><small>ईंट, गिट्टी, मौरंग आदि की GST दर जानें</small></button>
       <button class="tile gst-no-tile" data-go="gstNo"><span class="e">🔎</span><b>GST No Detail</b></button>
-      <button class="tile cashbook-download-tile" data-go="cashbookDownload"><span class="new-pulse">NEW</span><span class="e">📥</span><b>Download Your Cashbook</b><small>तैयार PDF और Excel डाउनलोड करें</small></button>
       ${BASE_DRAFTS.slice(1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
       <a class="tile" href="https://techgaon.in/karmcharinews/"><span class="e">📰</span><b>Panchayat News</b><small>District & State updates</small></a>
       <button class="tile home-estimate" data-go="estimate"><span class="e">📐</span><b>Estimate Calculator</b></button>
