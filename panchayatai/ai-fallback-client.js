@@ -38,8 +38,9 @@
    return outcome;
  }
  async function complete({action,system,messages,attachments=[]}={}){
-   const state=await health();
-   if(!state.ready)throw fail(state.code||NO_DEPLOY,state.message||"Free AI Fallback सेटअप अधूरा है।");
+   // A cached or transient health failure must not block a real authenticated request.
+   // The health endpoint is diagnostic only; the completion endpoint decides availability.
+   if(!enabled())throw fail("AI_BACKUP_DISABLED","Free AI बैकअप बंद है।");
    const current=window.firebase?.auth?.().currentUser;
    if(!current)throw fail("AI_BACKUP_LOGIN","Free AI बैकअप इस्तेमाल करने के लिए Google Login आवश्यक है।");
    if(attachments.some(a=>a?.data&&!a?.text))
@@ -58,7 +59,7 @@
      const res=await fetch(endpoint(ENDPOINT),{method:"POST",cache:"no-store",credentials:"omit",redirect:"error",
        headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},
        body:JSON.stringify({action,system,messages:items}),signal:ctrl.signal});
-     let j={};try{j=await res.json()}catch{}
+     let j={};try{j=await res.json()}catch{throw fail("AI_BACKUP_INVALID_RESPONSE","बैकअप सर्वर से मान्य JSON उत्तर नहीं मिला।");}
      if(!res.ok){
        const code=/^[A-Z0-9_]{3,60}$/.test(String(j.error?.code||""))?j.error.code:"AI_BACKUP_HTTP_"+res.status;
        throw fail(code,code==="BACKUP_EXHAUSTED"?"Groq और Cloudflare की Free AI सीमा या सेवा अभी उपलब्ध नहीं है।":
