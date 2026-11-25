@@ -8,8 +8,8 @@
   const RETURN_REASONS = {unclear:"स्टेटमेंट साफ़ नहीं है",incomplete:"स्टेटमेंट अधूरा है",wrong_file:"गलत फाइल भेजी गई है",other:"अन्य कारण"};
   function returnReason(code,custom) {
     if(!Object.hasOwn(RETURN_REASONS,code))throw Error("वापस करने का कारण चुनें।");
-    const reason=code==="other"?String(custom||"").trim():RETURN_REASONS[code];
-    if(!reason || reason.length>500)throw Error("अन्य कारण 1 से 500 अक्षरों में लिखें।");
+    const reason=String(custom||"").trim();
+    if(!reason || reason.length>500)throw Error("वापस भेजने का कारण / अपना संदेश 1 से 500 अक्षरों में लिखें।");
     return reason;
   }
   const NOTICE = "स्टेटमेंट अपलोड होने के बाद एडमिन टीम द्वारा आपकी कैशबुक तैयार करके भेजी जाएगी। इसके बाद आप उसे डाउनलोड कर सकेंगे। इस प्रक्रिया में कुछ समय लग सकता है।";
@@ -115,8 +115,8 @@
         session();const reason=returnReason(code,custom),ref=collection.doc(request.id);
         await db.runTransaction(async tx=>{
           const current=(await tx.get(ref)).data();
-          if(!current || current.status==="deleting")throw Error("यह अनुरोध हटाया जा चुका है।");
-          tx.update(ref,{status:"returned",returnCode:code,returnReason:reason,returnedAt:stamp(),results:{},updatedAt:stamp()});
+          if(!current || !["pending","in_progress","ready","returned"].includes(current.status))throw Error("केवल भेजा हुआ अनुरोध वापस किया जा सकता है। स्थिति बदल गई है; फिर जाँचें।");
+          tx.update(ref,{status:"returned",returnCode:code,returnReason:reason,returnedBy:user.uid,returnedAt:stamp(),results:{},updatedAt:stamp()});
         });
       },
       async remove(request,progress) {
@@ -207,7 +207,7 @@
     return {active,message,run,get busy(){return busy;},watch(service,callback){unsubscribe=service.watch(data=>{if(active())callback(data);},e=>message(errorText(e)));},destroy(){destroyed=true;unsubscribe();}};
   }
   const heading = title => '<div class="cb-heading"><button type="button" class="btn alt" data-go="home">← वापस</button><h2>'+title+'</h2></div>';
-  const returnedNote=r=>r.status==="returned"?'<div class="cb-return-note"><b>वापस करने का कारण:</b><br>'+esc(r.returnReason)+'</div>':"";
+  const returnedNote=r=>r.status==="returned"?'<div class="cb-return-note"><b>एडमिन का संदेश / वापस भेजने का कारण:</b><br>'+esc(r.returnReason)+'<p>संदेश के अनुसार सुधार करके सही PDF नए अनुरोध के रूप में भेजें।</p></div>':"";
   const sample = () => '<a class="tile cb-option" href="'+SAMPLE+'" download="Sample_Cashbook_Redacted.pdf"><span class="e">📄</span><b>Download Sample Cashbook</b><small>स्वीकृत 13 पेज का नमूना PDF</small></a>';
   function mountSubmitted(el) {
     el.innerHTML='<div class="cb-wrap">'+heading("स्टेटमेंट अपलोड हो गया")+
@@ -269,8 +269,8 @@
       return '<div class="cb-format-grid">'+["pdf","excel"].map(f=>'<section class="cb-format"><h4>'+(f==="pdf"?'PDF Cashbook':'Excel Cashbook')+'</h4>'+(r.results?.[f]?'<p>'+esc(r.results[f].name)+'</p><button class="btn alt" type="button" data-cb-check="'+f+'">डाउनलोड करके जाँचें</button>':'<p>अभी अपलोड नहीं हुई</p>')+'<label for="cb-'+esc(r.id)+'-'+f+'">तैयार फाइल चुनें</label><input id="cb-'+esc(r.id)+'-'+f+'" type="file" data-cb-input="'+f+'" accept="'+(f==="pdf"?'.pdf,application/pdf':'.xlsx,.xls')+'"><button type="button" class="btn" data-cb-publish="'+f+'">अपलोड करके उपलब्ध कराएँ</button></section>').join("")+'</div>';
     }
     function returnForm(r){
-      if(r.status==="deleting")return "";
-      return '<button type="button" class="btn alt" data-cb-return-open>कारण सहित वापस करें</button><section class="cb-return-box" data-cb-return-box hidden><label for="cb-reason-'+esc(r.id)+'">वापस करने का कारण</label><select id="cb-reason-'+esc(r.id)+'" data-cb-return-code><option value="">कारण चुनें</option>'+Object.entries(RETURN_REASONS).map(([k,v])=>'<option value="'+k+'" '+(r.returnCode===k?'selected':'')+'>'+v+'</option>').join("")+'</select><div data-cb-other '+(r.returnCode==="other"?'':'hidden')+'><label for="cb-other-'+esc(r.id)+'">अन्य कारण लिखें</label><textarea id="cb-other-'+esc(r.id)+'" maxlength="500" data-cb-return-text placeholder="कारण लिखें…">'+(r.returnCode==="other"?esc(r.returnReason):"")+'</textarea></div><div class="btn-row"><button type="button" class="btn" data-cb-return-confirm>कारण भेजकर वापस करें</button><button type="button" class="btn alt" data-cb-return-cancel>रद्द करें</button></div></section>';
+      if(["uploading","deleting"].includes(r.status))return "";
+      return '<button type="button" class="btn alt" data-cb-return-open>कारण सहित वापस भेजें</button><section class="cb-return-box" data-cb-return-box hidden><label for="cb-reason-'+esc(r.id)+'">वापस करने का कारण</label><select id="cb-reason-'+esc(r.id)+'" data-cb-return-code><option value="">कारण चुनें</option>'+Object.entries(RETURN_REASONS).map(([k,v])=>'<option value="'+k+'" '+(r.returnCode===k?'selected':'')+'>'+v+'</option>').join("")+'</select><div><label for="cb-other-'+esc(r.id)+'">कारण / अपना संदेश लिखें (अनिवार्य)</label><textarea id="cb-other-'+esc(r.id)+'" required maxlength="500" data-cb-return-text placeholder="क्या सुधार करना है, यहाँ लिखें…">'+esc(r.returnReason||"")+'</textarea><p class="hint">कारण चुनने के साथ अपना संदेश लिखना भी आवश्यक है। अधिकतम 500 अक्षर।</p></div><div class="btn-row"><button type="button" class="btn" data-cb-return-confirm>कारण भेजकर वापस करें</button><button type="button" class="btn alt" data-cb-return-cancel>रद्द करें</button></div></section>';
     }
     function deleteForm(r){
       return '<button type="button" class="btn cb-danger" data-cb-delete-open>'+(r.status==="deleting"?'हटाना पूरा करें':'Delete अनुरोध')+'</button><section class="cb-delete-box" data-cb-delete-box hidden><p><b>यह अनुरोध और इसकी सभी स्टेटमेंट व तैयार कैशबुक फाइलें स्थायी रूप से हटेंगी।</b> उपयोगकर्ता की सूची से भी सब गायब हो जाएगा।</p><div class="btn-row"><button type="button" class="btn cb-danger" data-cb-delete-confirm>हाँ, अनुरोध और फाइलें हटाएँ</button><button type="button" class="btn alt" data-cb-delete-cancel>रद्द करें</button></div></section>';
@@ -285,9 +285,8 @@
         q("[data-cb-start]")?.addEventListener("click",()=>run(()=>service.start(request),"कैशबुक बनाना शुरू किया गया है।"));
         card.querySelectorAll("[data-cb-check]").forEach(b=>b.onclick=()=>run(async progress=>save(await service.download(request,b.dataset.cbCheck,progress)),"फाइल डाउनलोड कर दी गई है।"));
         card.querySelectorAll("[data-cb-publish]").forEach(b=>b.onclick=()=>run(progress=>service.publish(request,b.dataset.cbPublish,q('[data-cb-input="'+b.dataset.cbPublish+'"]').files[0],progress),"कैशबुक उपयोगकर्ता के लिए उपलब्ध कर दी गई है।"));
-        q("[data-cb-return-open]")?.addEventListener("click",()=>{editingId=request.id;q("[data-cb-return-box]").hidden=false;q("[data-cb-return-code]").focus();});
+        q("[data-cb-return-open]")?.addEventListener("click",()=>{editingId=request.id;q("[data-cb-return-box]").hidden=false;q("[data-cb-return-text]").focus();});
         q("[data-cb-return-cancel]")?.addEventListener("click",()=>{editingId="";q("[data-cb-return-box]").hidden=true;if(pendingRender){pendingRender=false;draw();}});
-        q("[data-cb-return-code]")?.addEventListener("change",()=>{q("[data-cb-other]").hidden=q("[data-cb-return-code]").value!=="other";});
         q("[data-cb-return-confirm]")?.addEventListener("click",()=>run(()=>service.returnRequest(request,q("[data-cb-return-code]").value,q("[data-cb-return-text]").value),"कारण सहित अनुरोध वापस कर दिया गया है।"));
         q("[data-cb-delete-open]").onclick=()=>{editingId=request.id;q("[data-cb-delete-box]").hidden=false;};
         q("[data-cb-delete-cancel]").onclick=()=>{editingId="";q("[data-cb-delete-box]").hidden=true;if(pendingRender){pendingRender=false;draw();}};
@@ -299,3 +298,4 @@
   }
   window.PAI_CASHBOOK={mount,mountDownloads,mountAdmin,createService,readFile,validDescriptor,WHATSAPP_MESSAGE,WHATSAPP_URL,RETURN_REASONS,returnReason,chunkId,CHUNK_SIZE,MAX_SIZE,NOTICE,STATUS};
 })();
+
