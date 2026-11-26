@@ -350,7 +350,7 @@ function render() {
     window.history.replaceState(null, "", location.pathname + "#admin");
   }
   if (S.blocked) { $("#view").innerHTML = '<div class="card"><h2>Account blocked</h2><p>Please contact the administrator.</p></div>'; chrome(); return; }
-  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, igrs, estimate: estimateMB, gstCalc, gstRates, gstNo, cashbook:cashbookScreen, cashbookDownload:cashbookDownloadScreen, settings:settingsScreen }[S.view] || home;
+  const V = { home, login, details, profile, letterhead:letterheadScreen, chat, draft, draftEdit, news, plans, history, admin, rti, tools: aiTools, goSearch, igrs, estimate: estimateMB, gstCalc, ageCalc, gstRates, gstNo, cashbook:cashbookScreen, cashbookDownload:cashbookDownloadScreen, settings:settingsScreen }[S.view] || home;
   stopSpeech();
   const cw = $("#composerWrap"); if (cw) cw.remove();
   $("#view").innerHTML = ""; V($("#view")); chrome();
@@ -371,6 +371,47 @@ function settingsScreen(el) {
 }
 function aiTools(el) { if (window.PAI_TOOLS && window.PAI_TOOLS.mount) window.PAI_TOOLS.mount(el); else el.textContent = "AI Tools could not load. Refresh and try again."; }
 function gstCalc(el) { if(window.PAI_GST?.mountCalc) window.PAI_GST.mountCalc(el); else el.textContent="GST Calculator अभी नहीं खुल रहा। Refresh करें।"; }
+function ageCalc(el) {
+  const today = new Date();
+  const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const isoToday = [today.getFullYear(), String(today.getMonth()+1).padStart(2,"0"), String(today.getDate()).padStart(2,"0")].join("-");
+  el.innerHTML = `<section class="card pai-age-card">
+    <h2>🎂 Age Calculator</h2>
+    <p class="hint">जन्मतिथि (Date of Birth) दर्ज करके सटीक आयु जानें।</p>
+    <label for="paiDob" class="pai-age-label">जन्मतिथि (DOB)</label>
+    <input id="paiDob" class="pai-age-input" type="date" max="${isoToday}" required aria-label="जन्मतिथि चुनें">
+    <button type="button" class="btn" id="paiAgeCalculate">आयु निकालें</button>
+    <p id="paiAgeError" class="pai-age-error" role="alert" aria-live="polite"></p>
+    <div id="paiAgeResult" class="pai-age-result hidden" aria-live="polite"></div>
+  </section>`;
+  const dobInput = el.querySelector("#paiDob");
+  const result = el.querySelector("#paiAgeResult");
+  const error = el.querySelector("#paiAgeError");
+  el.querySelector("#paiAgeCalculate").addEventListener("click", () => {
+    error.textContent = "";
+    result.classList.add("hidden");
+    if (!dobInput.value) { error.textContent = "कृपया जन्मतिथि चुनें।"; dobInput.focus(); return; }
+    const [y,m,d] = dobInput.value.split("-").map(Number);
+    const dob = new Date(y,m-1,d);
+    if (dob.getFullYear()!==y || dob.getMonth()!==m-1 || dob.getDate()!==d) { error.textContent = "कृपया सही जन्मतिथि दर्ज करें।"; return; }
+    if (dob > todayLocal) { error.textContent = "जन्मतिथि भविष्य की नहीं हो सकती।"; return; }
+    let years=todayLocal.getFullYear()-y, months=todayLocal.getMonth()-(m-1), days=todayLocal.getDate()-d;
+    if (days<0) {
+      months--;
+      days += new Date(todayLocal.getFullYear(),todayLocal.getMonth(),0).getDate();
+    }
+    if (months<0) { years--; months+=12; }
+    const nextYear = todayLocal.getFullYear() + (todayLocal.getMonth()>m-1 || (todayLocal.getMonth()===m-1 && todayLocal.getDate()>d) ? 1 : 0);
+    const nextMonth = m-1;
+    const nextDay = (nextMonth===1 && d===29 && !((nextYear%4===0 && nextYear%100!==0)||nextYear%400===0)) ? 28 : d;
+    const nextBirthday = new Date(nextYear,nextMonth,nextDay);
+    const daysLeft = Math.round((Date.UTC(nextBirthday.getFullYear(),nextBirthday.getMonth(),nextBirthday.getDate())-Date.UTC(todayLocal.getFullYear(),todayLocal.getMonth(),todayLocal.getDate()))/86400000);
+    const fmt = n => String(n).padStart(2,"0");
+    result.innerHTML = `<div class="pai-age-main"><strong>${years}</strong> वर्ष <strong>${months}</strong> माह <strong>${days}</strong> दिन</div>
+      <div class="pai-age-next"><span>अगला जन्मदिन</span><b>${fmt(nextDay)}/${fmt(nextMonth+1)}/${nextYear}</b><span>${daysLeft===0?"आज जन्मदिन है!":daysLeft+" दिन शेष"}</span></div>`;
+    result.classList.remove("hidden");
+  });
+}
 function gstRates(el) { window.PAI_GST.mountRates(el); }
 function cashbookScreen(el) {
   if(needLogin("cashbook"))return;
@@ -411,7 +452,7 @@ function home(el) {
       <button class="tile ai-tile" data-go="tools"><span class="e">🧰</span><b>AI Tools</b><small>10 conversion tools</small></button>
       <button class="tile go-search-tile" type="button" data-go="goSearch"><span class="e">📚</span><b>GO Search</b><small>Search GO · Original PDF</small></button>
       ${BASE_DRAFTS.slice(0,1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
-      <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e pai-gst-icon"><img src="gst-calculator-icon.svg?v=20261124-premium1" alt="" width="53" height="53" decoding="async"></span><b>GST Calculator</b></button>
+      <button class="tile gst-calc-tile" data-go="gstCalc"><span class="e pai-gst-icon"><img src="gst-calculator-icon.svg?v=20261124-premium1" alt="" width="53" height="53" decoding="async"></span><b>GST Calculator</b></button>\n       <button class="tile pai-age-tile" data-go="ageCalc"><span class="e">🎂</span><b>Age Calculator</b><small>DOB से आयु निकालें</small></button>
       <button class="tile gst-rates-tile" data-go="gstRates"><span class="e">📦</span><b>GST दरें जानें</b><small>ईंट, गिट्टी, मौरंग आदि की GST दर जानें</small></button>
       <button class="tile gst-no-tile" data-go="gstNo"><span class="e">🔎</span><b>GST No Detail</b></button>
       ${BASE_DRAFTS.slice(1).map(d => `<button class="tile" data-draft="${d.k}"><span class="e">${d.e}</span><b>${d.n} बनाएँ</b></button>`).join("")}
@@ -1490,7 +1531,7 @@ async function adminPayments(panel) {
   });
 }
 
-const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'gstCalc', 'gstRates', 'gstNo', 'cashbook', 'cashbookDownload', 'settings', 'goSearch', 'igrs'];
+const publicViews = ['home', 'login', 'profile', 'chat', 'draft', 'draftEdit', 'letterhead', 'plans', 'history', 'admin', 'rti', 'tools', 'estimate', 'gstCalc', 'ageCalc', 'gstRates', 'gstNo', 'cashbook', 'cashbookDownload', 'settings', 'goSearch', 'igrs'];
 const initialView = location.hash.slice(1);
 if (publicViews.includes(initialView)) S.view = initialView;
 window.addEventListener('hashchange', () => {
